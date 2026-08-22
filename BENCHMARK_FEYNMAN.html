@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The benchmark, explained from nothing — hay</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="What a code-search benchmark measures, why MRR is a reciprocal, what a bootstrap interval does, and where the benchmark is wrong — explained with no jargon.">
+<meta property="og:title" content="The benchmark, explained from nothing">
+<meta property="og:description" content="Feynman-style explanation of hay's benchmark: the amnesiac librarian, flipped positions, paired bootstrap intervals, and the C bug the test itself caught.">
+<meta name="color-scheme" content="light dark">
+<style>:root{color-scheme:light dark;
+  --ground:light-dark(#f8f5ec,#16130c);--panel:light-dark(#fffdf6,#1e1a10);
+  --ink:light-dark(#201b10,#ece5d2);--soft:light-dark(#5c5544,#b3aa92);
+  --faint:light-dark(#8b8371,#847c66);--rule:light-dark(#e7e1cf,#2e2918);
+  --rule-strong:light-dark(#cfc6a8,#46402a);--accent:light-dark(#8a6d10,#ddb84f);
+  --accent-soft:light-dark(#f1e7c8,#332b14);--accent-ink:light-dark(#6b5408,#e6c86e);
+  --warn:light-dark(#8a6410,#d9ad55)}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--ground);color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:17px;line-height:1.68}
+.wrap{max-width:52rem;margin:0 auto;padding:0 1.25rem}
+.topnav{display:flex;gap:1rem;flex-wrap:wrap;padding:1.1rem 0;border-bottom:1px solid var(--rule);
+  font-family:"IBM Plex Mono",monospace;font-size:.74rem;letter-spacing:.08em;text-transform:uppercase}
+.topnav a{color:var(--faint);text-decoration:none}
+.topnav a:hover{color:var(--accent-ink)}
+header.hero{border-bottom:2px solid var(--rule-strong);padding:3rem 0 1.6rem;
+  background-image:repeating-linear-gradient(color-mix(in srgb,var(--rule) 36%,transparent) 0 1px,transparent 1px 28px)}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:var(--accent);margin:0 0 .7rem}
+h1{font-family:"IBM Plex Serif",Georgia,serif;font-weight:600;font-size:clamp(2rem,5vw,3rem);line-height:1.12;margin:0;letter-spacing:-.01em}
+.lede{font-size:1.05rem;color:var(--soft);max-width:60ch;margin:.9rem 0 0;font-style:italic}
+main{padding:2.5rem 0 4rem}
+h2{font-family:"IBM Plex Serif",Georgia,serif;font-weight:600;font-size:1.55rem;margin:2.8rem 0 .8rem;
+  padding-bottom:.35rem;border-bottom:1px solid var(--rule);text-wrap:balance}
+h3{font-family:"IBM Plex Serif",Georgia,serif;font-weight:600;font-size:1.15rem;margin:1.7rem 0 .5rem}
+p,li{text-wrap:pretty}
+p{margin:0 0 1rem;max-width:70ch}
+ul,ol{padding-left:1.2rem}li{margin-bottom:.45rem}
+a{color:var(--accent-ink);text-decoration-thickness:1px;text-underline-offset:2px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:2px}
+code{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.86em;background:var(--accent-soft);
+  border-radius:3px;padding:.08em .35em}
+pre{background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:1rem 1.15rem;
+  overflow-x:auto;font-size:.82rem;line-height:1.6}
+pre code{background:none;padding:0}
+blockquote{border-left:3px solid var(--accent);background:var(--accent-soft);border-radius:0 3px 3px 0;
+  padding:.85rem 1.1rem;margin:1.3rem 0}
+blockquote p:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;font-size:.88rem;margin:1.3rem 0;font-variant-numeric:tabular-nums}
+th,td{border:1px solid var(--rule);padding:.45rem .8rem;text-align:center}
+thead th{font-family:"IBM Plex Mono",monospace;font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--faint);font-weight:500}
+tbody th{font-family:"IBM Plex Mono",monospace;font-size:.76rem;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;font-weight:500}
+tbody td{font-family:"IBM Plex Mono",monospace}
+hr{border:0;border-top:1px dashed var(--rule);margin:2.2rem 0}
+strong{font-weight:600}
+footer{border-top:1px solid var(--rule);padding:1.5rem 0 3rem;color:var(--faint);font-size:.82rem}
+footer a{color:inherit}
+@supports (animation-timeline:view()){
+  @media (prefers-reduced-motion:no-preference){
+    main>*{animation:rise linear both;animation-timeline:view();animation-range:entry 0% entry 42%}
+    @keyframes rise{from{opacity:.15;translate:0 16px}}
+  }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="topnav"><a href="./">← hay</a><a href="benchmark.html">report</a><a href="MANUAL.html">manual</a><a href="https://github.com/mneves75/hay">source</a></nav>
+<header class="hero">
+<p class="eyebrow">grep-hygiene · from zero</p>
+<h1>The benchmark, explained from nothing</h1>
+<p class="lede">Feynman's rule: if you can't explain it without jargon, you don't understand it.
+The places where the explanation gets slippery are exactly the places where something is wrong.</p>
+</header>
+<main>
+<h1>The benchmark, explained from nothing</h1>
+<p><em>Feynman&#39;s rule: if you can&#39;t explain it without jargon, you don&#39;t understand it — and the places
+where the explanation gets slippery are exactly the places where something is wrong. This document
+explains what <code>BENCHMARK.md</code> measures, why every piece of it is shaped the way it is, and where it
+breaks. It assumes you know nothing about information retrieval and don&#39;t want to.</em></p>
+<p><em>Live companions: the <a href="benchmark.html">full report</a> with charts and intervals, the
+<a href="MANUAL.html">manual</a> for the tool itself, and <a href="install.sh"><code>./install.sh</code></a> to get it. Numbers in
+here reflect the latest committed run.</em></p>
+<hr>
+<h2>1. The whole thing in one sentence</h2>
+<p><strong>You type a word into a search tool. How far down the list is the thing you were looking for?</strong></p>
+<p>That&#39;s it. Everything else on this page is the consequence of trying to answer that honestly.</p>
+<hr>
+<h2>2. Why this question exists at all</h2>
+<p>Imagine a librarian who is fast, tireless, and has complete amnesia every single morning. You ask
+her &quot;where do we handle refunds?&quot; She has never remembered anything, so she does the only thing
+available to her: she walks the shelves looking for the word <em>refund</em>, and hands you every book
+that contains it — <strong>in shelf order</strong>.</p>
+<p>Shelf order. Not &quot;most useful first&quot;. Not &quot;the actual refund manual first&quot;. The order the books
+happen to sit on the shelves.</p>
+<p>That librarian is <code>grep</code>, and by extension every tool like it. It isn&#39;t stupid. It is <em>prior-free</em>:
+it has no opinion about which of its results is more likely to be the one you wanted, because
+nothing ever gave it one.</p>
+<p>Now: a coding agent reads the first page of results and acts on what it sees. If a dead planning
+document from two years ago happens to sort before the actual function, the agent reads the dead
+plan. So the position of the answer in the list is not cosmetic. It is the whole product.</p>
+<p><code>hay</code> is a librarian who has been given exactly one opinion: <em>a book that defines a thing is
+probably more useful than a book that merely mentions it.</em> The benchmark asks whether that one
+opinion is worth anything, and how it compares to everyone else&#39;s approach.</p>
+<hr>
+<h2>3. The hard part, which is not the searching</h2>
+<p>Here is the thing that surprises people. Measuring a search tool is not hard because searching is
+hard. It&#39;s hard because <strong>to score an answer you must already know the right answer.</strong></p>
+<p>If I want to say &quot;tool A puts the answer at position 1 and tool B puts it at position 7&quot;, I need
+someone to have decided, in advance, what &quot;the answer&quot; <em>is</em> — for every single query. That list of
+(question, correct answer) pairs is the entire cost of the exercise. In the research world it&#39;s
+called a <em>test collection</em>, and building one is normally a funded project with human annotators.</p>
+<p>So: where do correct answers come from?</p>
+<p><strong>The tempting wrong idea:</strong> ask <code>hay</code> what the answer is. Obviously absurd when stated plainly —
+the tool would grade its own homework and score 100% — but the trap has subtler forms. If I decided
+the right answer using the same rule <code>hay</code> uses internally to spot definitions, I would be doing
+exactly this while feeling rigorous.</p>
+<p><strong>What I actually did:</strong> ask a <em>parser</em>. <code>ast-grep</code> reads source code the way a compiler does — it
+builds a syntax tree and knows that <code>fn validateSession(...)</code> is a function declaration in a way
+that has nothing to do with searching for text. I ask it: <em>which symbols are declared exactly once
+in this repository, and in which file?</em></p>
+<p>That gives me thousands of pairs like:</p>
+<pre><code class="language-text">question: &quot;validateSession&quot;     correct answer: &quot;src/auth.ts&quot;
+</code></pre>
+<p>The correct answer comes from a different mechanism than any tool being tested. That&#39;s the point.
+It isn&#39;t perfect — §9 is entirely about how it isn&#39;t — but it isn&#39;t circular.</p>
+<p><strong>Why &quot;exactly once&quot;?</strong> If a symbol is declared in three places, there is no single right answer,
+and scoring a tool against one arbitrarily chosen site measures nothing but luck. Those symbols are
+thrown away rather than guessed at.</p>
+<hr>
+<h2>4. Turning &quot;position in a list&quot; into a number</h2>
+<p>Say I run four queries and the answer comes back at position 1, 2, 10, and 4.</p>
+<p>The naive move is to average the positions: (1 + 2 + 10 + 4) / 4 = 4.25. This is wrong, and it&#39;s
+worth understanding <em>why</em>, because the reason shapes the whole metric.</p>
+<p><strong>Positions are not worth what their size suggests.</strong> The difference between position 1 and
+position 2 is enormous — you either read the right thing first or you didn&#39;t. The difference
+between position 50 and position 51 is nothing at all; nobody reads either. But plain averaging
+treats both gaps as &quot;1 apart&quot;. And one catastrophic result at position 500 would drag the average
+so far that nine perfect results couldn&#39;t rescue it.</p>
+<p><strong>The fix: flip it.</strong> Instead of the position, use <strong>1 divided by the position</strong>.</p>
+<table>
+<thead>
+<tr>
+<th align="right">position</th>
+<th align="right">1/position</th>
+<th>what it feels like</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="right">1</td>
+<td align="right">1.00</td>
+<td>perfect — first thing you see</td>
+</tr>
+<tr>
+<td align="right">2</td>
+<td align="right">0.50</td>
+<td>still fine</td>
+</tr>
+<tr>
+<td align="right">4</td>
+<td align="right">0.25</td>
+<td>you&#39;re scrolling</td>
+</tr>
+<tr>
+<td align="right">10</td>
+<td align="right">0.10</td>
+<td>bottom of the first page</td>
+</tr>
+<tr>
+<td align="right">100</td>
+<td align="right">0.01</td>
+<td>never happening</td>
+</tr>
+<tr>
+<td align="right">never found</td>
+<td align="right">0.00</td>
+<td>—</td>
+</tr>
+</tbody></table>
+<p>Now the numbers behave the way the experience behaves. Going from 2nd to 1st gains you 0.50. Going
+from 100th to 99th gains you 0.0001. That matches reality: the top of the list is where all the
+value is.</p>
+<p>Average those flipped values across all queries and you get <strong>Mean Reciprocal Rank</strong> — MRR.
+&quot;Reciprocal&quot; is just the fancy word for &quot;1 divided by&quot;. That&#39;s the whole metric. An MRR of 1.0
+means the answer was always first. In the committed benchmark, <code>hay</code> scores 0.967 on the Linux
+kernel; plain ripgrep scores 0.670.</p>
+<p><strong>An honest complication.</strong> A researcher named Norbert Fuhr published a paper arguing you shouldn&#39;t
+average reciprocal ranks at all, because rank is an <em>ordinal</em> scale — an ordering, not a quantity —
+and averaging orderings is a category error, like averaging the finishing places in a race and
+calling it a speed. Tetsuya Sakai wrote a rebuttal saying the argument rests on a theory of
+measurement scales that is itself disputed. This is not settled.</p>
+<p>So the report gives you a second number that has no such problem: <strong>the share of queries answered
+within the first ten results.</strong> That&#39;s a proportion — a plain percentage of a count — and nobody
+disputes averaging those. Both numbers move the same way, which is mildly reassuring. When two
+different ways of measuring agree, you worry less that you invented the result.</p>
+<h3>A third number, because MRR ignores most of the answer</h3>
+<p>There is one more thing wrong with reciprocal rank, and it has nothing to do with scales: <strong>it only
+looks at the first correct result and throws the rest away.</strong></p>
+<p>That would be fine if every question had exactly one right answer. It doesn&#39;t. In the behavioural
+corpus, <strong>57% of entries name more than one answer file</strong> — an agent searching for &quot;auth&quot; opened
+three files, and all three were reasonable. MRR finds the earliest of those and stops. A tool that
+puts one good file at position 1 and nothing else useful on the page scores identically to a tool
+that puts four good files at positions 1 through 4. Those are not the same page to read.</p>
+<p>The fix is a metric that credits <em>every</em> correct result on the first page, worth less the further
+down it sits: <strong>nDCG@10</strong>. Take the ten results, give each correct one a score that shrinks with
+depth, add them up, and divide by the best possible arrangement so a perfect page scores 1.0. The
+&quot;n&quot; is for that normalisation, which is what makes a question with five right answers comparable to
+one with a single right answer.</p>
+<p>It agrees with MRR — +0.131 against +0.132 on the same data — which is the outcome you want and not
+the one you can assume. Three metrics with three different weaknesses pointing the same direction
+is a much better position than one metric you had to defend.</p>
+<hr>
+<h2>5. Why a single number is a lie</h2>
+<p>Say <code>hay</code> scores 0.967 and ripgrep scores 0.670. Difference: 0.296. Done?</p>
+<p>No. Because I only asked <strong>30 questions</strong>. If I&#39;d picked 30 <em>different</em> symbols from the same
+kernel, I&#39;d have got different numbers. So the real question isn&#39;t &quot;what&#39;s the difference&quot; but
+<strong>&quot;how much would this difference move if I&#39;d been unlucky with which questions I picked?&quot;</strong></p>
+<p>If the difference would jump around between −0.1 and +0.7 depending on the sample, then 0.296 is
+noise wearing a suit. If it would stay somewhere between 0.16 and 0.45 no matter which questions I
+drew, that&#39;s a real effect.</p>
+<h3>Trick one: compare on the same questions</h3>
+<p>Instead of running <code>hay</code> on one set of queries and ripgrep on another and comparing the two
+averages, I run <strong>both tools on every single query</strong> and record the <em>difference per query</em>.</p>
+<p>This is enormously more powerful, and the reason is intuitive: some questions are just hard for
+everyone. A symbol that appears 800 times is hard for every tool. If tool A got the easy questions
+and tool B got the hard ones, comparing their averages tells you about the questions, not the
+tools. Asking both the same question and looking at the gap cancels the question&#39;s difficulty out
+entirely.</p>
+<p>This is why you weigh yourself on the same scale before and after, rather than using two scales.</p>
+<h3>Trick two: the bootstrap</h3>
+<p>Now I have 30 per-query differences. I want to know how stable their average is. The honest way
+would be to get 30 fresh questions, then another 30, a thousand times, and see how much the answer
+wobbles. I can&#39;t; I only have the 30.</p>
+<p>So I fake it, and the faking is legitimate:</p>
+<blockquote>
+<p>Write each of the 30 differences on a card. Put them in a hat. Draw one, <strong>write it down, and put
+it back</strong>. Do that 30 times. You now have a new set of 30 — some cards drawn twice, some not at
+all. Average it. Write that average down.</p>
+<p>Do the whole thing 10,000 times.</p>
+</blockquote>
+<p>You end up with 10,000 averages. Sort them and chop off the lowest 2.5% and the highest 2.5%. What
+remains is the <strong>95% confidence interval</strong>: the range the answer lands in almost all the time when
+the sample is jostled.</p>
+<p>Why does putting the card back matter? Because that&#39;s what makes each draw independent, and it&#39;s
+what simulates &quot;a different sample from the same underlying world&quot;. Without replacement you&#39;d just
+get the same 30 cards in a different order, every time, and learn nothing.</p>
+<p>For <code>hay</code> versus ripgrep on the kernel, the interval is <strong>[0.150, 0.446]</strong>.</p>
+<h3>Reading the interval — the only skill you need here</h3>
+<p><strong>If the interval does not contain zero, the difference is probably real.</strong> [0.150, 0.446] is
+entirely above zero: in essentially every resampling, <code>hay</code> won.</p>
+<p><strong>If the interval contains zero, you have not detected anything</strong> — regardless of how good the
+headline number looks. <code>ugrep</code> on the kernel scores +0.019 over ripgrep, interval
+<strong>[−0.107, 0.145]</strong>. That interval includes zero, which means &quot;on a different sample of questions
+this could easily have gone the other way&quot;. +0.019 is not a result. It&#39;s a shrug with a decimal
+point.</p>
+<p>This is why the benchmark tables bold some rows and not others. On the current kernel run, <strong>only
+<code>hay</code> beats plain ripgrep by an amount that survives both tests</strong>. Every other interval crosses
+zero or fails the randomization check.</p>
+<h3>Where I had to correct this section</h3>
+<p>I wrote the paragraph above as &quot;the difference is real&quot; — flat, no hedge. Then the bootstrap and a
+second test disagreed, and the disagreement went against this project.</p>
+<p>The hat trick in §5 is one way to ask the question. There is another, called a <strong>randomization</strong>
+(or permutation) test, and its logic is even more direct. If <code>hay</code> and ripgrep were really
+equivalent, then for any given query it would be a coin flip which one came out ahead — so the
+<em>sign</em> of each difference is arbitrary. So: take the differences, randomly flip the sign of each
+one, average them, repeat 10,000 times, and ask how often pure sign-flipping produces a gap as
+large as the one actually measured. If the answer is &quot;often&quot;, the gap is what coin flips look like.</p>
+<p>On the <strong>openclaw</strong> corpus, <code>hay</code> beats ripgrep by +0.150. The bootstrap interval is
+<strong>[0.005, 0.297]</strong> — it excludes zero, barely, and by the rule I gave you two paragraphs ago that
+counts as detected. The randomization test says <strong>p = 0.058</strong>, which does not.</p>
+<p>They disagree, and the reason is known rather than mysterious: the bootstrap runs optimistic at
+small samples. Thirty queries is a small sample.</p>
+<p>So the report no longer bolds on the interval alone. A difference is claimed only when <strong>both</strong>
+tests agree; where they disagree the table says so and takes the conservative reading. That 0.5.0
+report reduced <code>hay</code>&#39;s detected wins from three corpora to two. The current run restores openclaw
+because the tool improved: +0.210 [0.067, 0.354], randomization p=0.008.</p>
+<p>I&#39;ve left my original wording standing above rather than quietly editing it, because the sequence
+is the lesson: a rule can sound crisp enough to teach and still be too crisp, and the way you find
+out is to ask the same question a second way while being willing to lose.</p>
+<h3>One more subtlety, which cost me a correction</h3>
+<p>The report also gives a p-value, and the first version printed <strong>p = 0.0000</strong>.</p>
+<p>That&#39;s impossible, and noticing why is the useful part. The p-value here is &quot;what fraction of my
+10,000 resamples landed on the other side of zero?&quot; If none did, the fraction is 0/10,000 = 0. But
+that doesn&#39;t mean the probability <em>is</em> zero — it means <strong>my simulation isn&#39;t fine-grained enough to
+see it.</strong> Ten thousand coin flips coming up heads doesn&#39;t prove tails is impossible; it proves you
+need more flips to measure how rare it is.</p>
+<p>The standard repair is to count as if there had been one more of everything: (0+1)/(10,000+1). Now
+the smallest thing the report can say is p ≈ 0.0002, which is exactly the resolution the simulation
+has and no finer. Reporting 0.0000 was claiming a precision I hadn&#39;t bought.</p>
+<h3>Trick three: shuffle the labels instead</h3>
+<p>There&#39;s a second column in that table now, <strong>randomization p</strong>, and it answers the same question by
+a different route — which is the whole reason to have it.</p>
+<p>The bootstrap asks: <em>if I&#39;d sampled a different set of queries, how much would the answer wobble?</em>
+The randomization test asks something more direct. Suppose the two tools are secretly identical.
+Then for any one query, which tool &quot;won&quot; is pure coin-flip — the label <code>hay</code> versus <code>ripgrep</code> is
+meaningless and I could swap them without changing anything. So: take the real per-query
+differences, flip a random subset of their signs, and average. Do it ten thousand times. That
+builds the distribution of results a world with <em>no real difference</em> would produce. Then ask how
+often that pretend world matched what I actually measured.</p>
+<p>If shuffled coin-flips reach my result all the time, my result is a coin-flip. If they essentially
+never do, something real is going on.</p>
+<p>Why bother having both? Because the paper this project cites for its statistics — Smucker,
+Allan and Carterette — doesn&#39;t actually recommend the bootstrap. It uses the <em>randomization</em> test
+as the yardstick and checks the bootstrap against it. And their follow-up found the bootstrap leans
+toward smaller p-values than it should when you don&#39;t have many samples, which is most of the
+corpora here. So the project was citing a paper for the shortcut that paper was written to
+validate, and reporting the more flattering of the two numbers.</p>
+<p>Both are printed now. Where they disagree, the report takes the conservative result and leaves the
+row unbolded.</p>
+<hr>
+<h2>6. Two completely different ways to be good at this</h2>
+<p>The most interesting thing in the results isn&#39;t that <code>hay</code> won. It&#39;s <em>how differently the two
+winners work.</em></p>
+<p>Take the symbol <code>quiet</code> in ripgrep&#39;s own source code:</p>
+<table>
+<thead>
+<tr>
+<th>tool</th>
+<th align="right">results returned</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>plain ripgrep</td>
+<td align="right">73</td>
+</tr>
+<tr>
+<td><code>hay</code></td>
+<td align="right">72</td>
+</tr>
+<tr>
+<td><code>ast-grep</code></td>
+<td align="right"><strong>11</strong></td>
+</tr>
+</tbody></table>
+<p><em>(Counted directly at the command line, so these are each tool&#39;s own defaults rather than the
+flag-matched file set the scored comparison uses.)</em></p>
+<p><code>ast-grep</code> throws away 85% of what the others return — and it&#39;s right to. It parses the code, so it
+knows that <code>quiet</code> inside a comment isn&#39;t a use of the symbol, that <code>&quot;--quiet&quot;</code> in a string isn&#39;t
+either, and that <code>test_quiet</code> is a <em>different word that merely contains those letters</em>. The text
+tools can&#39;t tell any of that apart.</p>
+<p>So there are two distinct strategies:</p>
+<ul>
+<li><strong><code>ast-grep</code> filters.</strong> It shrinks 73 candidates to 11 real ones, then hands them to you <strong>in the
+order it happened to walk the files</strong>. It doesn&#39;t rank; it doesn&#39;t need to, because it&#39;s given
+you so few things.</li>
+<li><strong><code>hay</code> ranks.</strong> It keeps all 72, including the junk, but <em>sorts</em> them so the declaration is
+first.</li>
+</ul>
+<p>Both often put the answer at position 1. The gap shows up in the tail, especially on languages
+where the parser patterns are incomplete. And I think the reason is this: <code>hay</code>&#39;s position-1 is a <em>guarantee</em>
+(the declaration is scored highest, so it goes first, always), while <code>ast-grep</code>&#39;s position-1 is
+<em>luck</em> (the declaration was among the 11 survivors and its file happened to sort early). When the
+luck doesn&#39;t hold, <code>ast-grep</code> drops to 3rd or 5th while <code>hay</code> is still 1st.</p>
+<p><strong>I want to flag that as a hypothesis, not a finding.</strong> It&#39;s consistent with everything I measured
+— same median, different mean, ast-grep returning far fewer results — but I did not run the
+experiment that would prove it, which would be to record where in ast-grep&#39;s own output the
+declaration sits, query by query. I&#39;m telling you what I believe and how confident I am, which is
+different from telling you what I know.</p>
+<hr>
+<h2>7. The bug the benchmark found, which was worth more than the benchmark</h2>
+<p><code>hay</code> scored <strong>below</strong> ripgrep on the Linux kernel. That shouldn&#39;t happen. The entire idea of the
+tool is that it does better.</p>
+<p>Here&#39;s the mechanism, and it&#39;s embarrassingly simple. <code>hay</code> decides &quot;this line declares something&quot;
+by looking for a <strong>declaration keyword</strong> before the symbol — words like <code>function</code>, <code>fn</code>, <code>class</code>,
+<code>def</code>, <code>const</code>. In Rust that works:</p>
+<pre><code class="language-rust">pub fn ext4_read_block(x: u8) {}     ← &quot;fn&quot; is right there
+</code></pre>
+<p>In C, there is no such word:</p>
+<pre><code class="language-c">static int ext4_read_block(struct inode *inode)     ← &quot;static&quot;? &quot;int&quot;? Neither is a declaration keyword.
+</code></pre>
+<p>A C function declaration announces itself with a <em>type</em>, and a type is just some identifier —
+indistinguishable, to a keyword-matcher, from anything else. So on C, <code>hay</code>&#39;s central signal never
+fired. Not &quot;fired weakly&quot;. <strong>Never fired at all.</strong></p>
+<h3>The experiment that settles it</h3>
+<p>I could have argued about this. Instead:</p>
+<blockquote>
+<p>Run the benchmark on the kernel with the definition signal <strong>completely switched off</strong>.</p>
+</blockquote>
+<p>If the signal is doing work, removing it should hurt. Result:</p>
+<table>
+<thead>
+<tr>
+<th>configuration</th>
+<th align="right">MRR on the Linux kernel</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>definition signal <strong>on</strong></td>
+<td align="right">0.8400</td>
+</tr>
+<tr>
+<td>definition signal <strong>off</strong></td>
+<td align="right">0.8400</td>
+</tr>
+</tbody></table>
+<p>Identical. Not close — <em>identical</em>. For four released versions, on the largest C codebase in
+existence, the feature the whole tool is built around was decorative.</p>
+<p>This is the kind of experiment worth internalising: <strong>the strongest evidence that something does
+nothing is turning it off and watching nothing happen.</strong> It&#39;s cheap, it&#39;s unambiguous, and no
+amount of reasoning about the code would have been as convincing.</p>
+<h3>Why no test caught it</h3>
+<p>Every unit test in the project was written in Rust or TypeScript — the languages I write. The bug
+existed only in the languages I don&#39;t. A test suite is a mirror; it shows you your own assumptions
+in high resolution and is perfectly blind to everything outside them.</p>
+<p>The fix adds a second rule for the &quot;type then name then parenthesis&quot; shape that C, C++, Java and
+Objective-C all share. On the kernel it&#39;s worth <strong>+0.081 MRR, interval [0.018, 0.148]</strong> — real by
+the rule in §5 — with no detectable harm to Rust, TypeScript, or the separate behavioural corpus.</p>
+<h3>And a second lesson, from fixing it</h3>
+<p>The first version of that rule made Rust <em>worse</em>, significantly. I could have guessed at why. I
+didn&#39;t: I ran the rule across ripgrep&#39;s entire source and <strong>counted the word immediately before
+every wrong firing</strong>. The answer was <code>match</code> (11 times), <code>in</code> (5), <code>dyn</code> (2), and English prose
+inside comments for the rest. Excluding those cut the regression five-fold, below detectability.</p>
+<p>The counting took ten minutes. For the record, I <em>had</em> guessed first, and the guess was partly
+right and confidently over-broad: it included <code>match</code>, <code>in</code> and <code>dyn</code>, but also <code>as</code>, <code>move</code>,
+<code>mut</code>, <code>ref</code>, <code>typeof</code>, <code>instanceof</code> and <code>throw</code> — seven words that never fired once. And it missed
+the comment-prose category completely, which turned out to be about a third of all the false
+firings. Guessing got me the headline and none of the tail.</p>
+<hr>
+<h2>8. The traps that nearly poisoned the measurement</h2>
+<p>Every one of these was found and fixed <em>before</em> any number was published. They&#39;re listed because
+each is a general lesson about measuring anything.</p>
+<p><strong><code>grep</code> was not grep.</strong> On this machine, typing <code>grep</code> runs a shell function that resolves to
+<code>ugrep</code>, a completely different program. A benchmark of &quot;grep&quot; would have silently measured the
+wrong tool and been internally consistent about it. <em>Every binary is now invoked by absolute path.</em>
+When you measure a thing, make sure you&#39;re holding the thing.</p>
+<p><strong>The &quot;deterministic&quot; sample wasn&#39;t.</strong> Query selection used a fixed random seed, so it should have
+picked identical questions every run. It didn&#39;t: the questions came out of a hash map, which
+iterates in <em>insertion</em> order, and insertion order came from <code>ast-grep</code>&#39;s parallel file walk, which
+varies. Two runs of the same binary disagreed on MRR by 0.01. Sorting before sampling fixed it.
+<em>A fixed seed guarantees nothing if what you feed it isn&#39;t in a fixed order.</em></p>
+<p><strong>The timeout reported itself as &quot;no timeout&quot;.</strong> When a search exceeded 60 seconds I killed it —
+but killing a process closes its output stream as a perfectly ordinary end-of-file, so my code saw
+a normal finish and recorded <code>timedOut: false</code>. The report would have announced zero timeouts no
+matter how many searches were cut off, with a timeout indistinguishable from &quot;answer not found&quot;.
+<em>If you don&#39;t record an event at the moment you cause it, you will report that it never happened.</em></p>
+<p><strong>The timeout that hangs.</strong> Worse: the timing runs wrap each tool in <code>/usr/bin/time</code> to measure
+memory. Killing the wrapper doesn&#39;t kill the search running underneath it — and the orphaned search
+still holds the output pipe my code was about to read. The &quot;timeout&quot; would have blocked until the
+thing it was supposed to interrupt finished on its own.</p>
+<p><strong>Peak memory that was never a peak.</strong> The report took memory from the first timed query and
+labelled it &quot;peak memory&quot; across three queries. Usually a later query is larger.</p>
+<p><strong>One question is not a sample.</strong> This repository yielded exactly <strong>one</strong> usable query. On it,
+<code>hay</code> scores 1.000 and ripgrep 0.014. Printing that beside samples of 23–30 queries would be the
+precise sin this whole project exists to complain about, so any corpus under ten queries is now
+marked, in the report, as <em>not evidence</em> — and no difference is flagged as detected there.</p>
+<hr>
+<h2>9. Where this benchmark is wrong</h2>
+<p><strong>It is rigged in <code>hay</code>&#39;s favour, structurally.</strong> The task is &quot;find the declaration&quot;. <code>hay</code> is
+built to rank declarations first. I designed a test whose right answer is the thing my tool
+optimises for. That doesn&#39;t make the numbers false, but it makes them weaker than they look, and
+anyone reading them should discount accordingly. The project&#39;s <em>other</em> evaluation — real agent
+searches paired with the files the agent actually opened next — has no such problem, because those
+answers were produced by people doing their jobs, not by me choosing a task. It is also
+unreproducible by anyone else, since those transcripts are private. Neither evaluation is
+sufficient alone. That&#39;s why both exist.</p>
+<p><strong>The bias runs the other way too, and here&#39;s a case.</strong> For the query <code>quiet</code>, my ground truth says
+the correct answer is <code>crates/printer/src/summary.rs:1106</code>. That line is:</p>
+<pre><code class="language-rust">#[test]
+fn quiet() {
+</code></pre>
+<p>A <strong>test function</strong>. The real implementation, <code>pub(crate) fn quiet(&amp;self)</code>, lives in
+<code>hiargs.rs:685</code> — and my parser patterns never saw it, because <code>pub(crate) fn</code> doesn&#39;t match the
+patterns I wrote for <code>fn</code> and <code>pub fn</code>. So the benchmark declares the test to be the right answer.</p>
+<p>And <code>hay</code> deliberately <strong>down-ranks test files</strong>, because when you search for a concept you usually
+want the implementation, not its test. On this query, my measurement punishes <code>hay</code> for doing
+exactly the right thing.</p>
+<p>I&#39;m not going to pretend that balances out the structural bias — it doesn&#39;t, it&#39;s one query. But it
+does show the ground truth is a <em>parser&#39;s opinion with gaps in it</em>, not a fact, and the gaps aren&#39;t
+politically neutral.</p>
+<p><strong>Definition-finding is a small slice of searching.</strong> An agent also asks &quot;where is this used&quot;,
+&quot;what calls this&quot;, &quot;where does this behaviour live&quot; when there&#39;s no symbol to name. None of that is
+measured here. A tool could win this benchmark outright and still be unhelpful.</p>
+<p><strong>One machine, one operating system, one filesystem.</strong> The machine was under variable load.
+Rankings are immune to that, but the timing table is indicative and the <em>ratios</em> between tools
+deserve more trust than the absolute milliseconds.</p>
+<hr>
+<h2>10. What I still can&#39;t explain simply</h2>
+<p>In Feynman&#39;s spirit, the honest residue:</p>
+<ol>
+<li><p><strong>Why <code>hay</code> beats <code>ast-grep</code> specifically.</strong> §6 gives a hypothesis (guarantee versus luck) that
+fits every number I have. I did not run the experiment that would confirm it.</p>
+</li>
+<li><p><strong>Why several tools score <em>identically</em>.</strong> On ripgrep&#39;s source, <code>ack</code>, BSD <code>grep</code>, <code>git grep</code>
+and <code>ripgrep --sort path</code> all land on MRR 0.418–0.419. That&#39;s suspicious in an interesting way: it probably
+means they return the same matches in the same file order, and the tiny differences come from
+which files they skip. Probably. I haven&#39;t verified it, and &quot;probably&quot; is doing real work in
+that sentence.</p>
+</li>
+<li><p><strong>Whether 23–30 questions per corpus is enough.</strong> No. The intervals remain wide, and an earlier
+openclaw run was small enough that two legitimate statistical tests reached opposite
+conclusions. More queries would narrow the interval. I stopped at 30
+because the kernel run already takes the better part of an hour, which is a reason and not a
+justification.</p>
+</li>
+<li><p><strong>Whether any of this predicts what actually matters</strong> — tokens spent and tool calls needed for
+an agent to finish a real task. MRR is a proxy for that. It&#39;s a reasonable proxy. It has not
+been checked against the real thing, here or, as far as I can tell, anywhere in this project.</p>
+</li>
+</ol>
+<hr>
+<h2>11. The one-paragraph version</h2>
+<p>Searching is easy to do and hard to grade, because grading needs answers you know in advance. I got
+answers from a parser, so no tool could grade itself. I scored each result by one-over-its-position,
+because position 1 versus 2 matters and position 50 versus 51 does not. I ran every tool on the
+identical questions so the questions&#39; difficulty cancels out, then resampled those results ten
+thousand times to see how much the answer wobbles, then asked the same question a second way by
+flipping signs at random, and I claim a difference only when both methods agree. By that standard,
+<code>hay</code>&#39;s gain over plain ripgrep is detected on all four usable corpora in the current report.
+Building the test found a bug worth more than the test: <code>hay</code>&#39;s core feature
+had never once worked on C, which I proved by switching it off and watching the score not move.</p>
+
+
+</main>
+<footer>Part of <a href="./">hay</a> · <a href="benchmark.html">full report</a> · <a href="MANUAL.html">manual</a> · source of truth: <a href="BENCHMARK_FEYNMAN.md">BENCHMARK_FEYNMAN.md</a></footer>
+</div>
+</body>
+</html>
