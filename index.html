@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <title>hay — a ranked grep for coding agents</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="hay returns exactly ripgrep's matches, reordered so the declaration comes first. Benchmark: first on all five public corpora, confirmed by two statistical tests.">
+<meta name="description" content="hay returns exactly ripgrep's matches, reordered so the declaration comes first. First on every public benchmark corpus — by margins two statistical tests confirm.">
 <meta property="og:title" content="hay — a ranked grep for coding agents">
 <meta property="og:description" content="Exactly ripgrep's matches. Only the order changes. First on every benchmark corpus, by margins both statistical tests confirm.">
 <meta name="color-scheme" content="light dark">
@@ -26,61 +26,60 @@ html{scroll-behavior:smooth}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 body{margin:0;background:var(--ground);color:var(--ink);
   font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:17px;line-height:1.65}
-.wrap{max-width:64rem;margin:0 auto;padding:0 1.25rem}
-h1,h2,h3{text-wrap:balance}p,li{text-wrap:pretty}
+.wrap{max-width:66rem;margin:0 auto;padding:0 1.25rem}
+h1,h2,h3{text-wrap:balance}
+p,li{text-wrap:pretty}
 a{color:var(--accent-ink);text-decoration-thickness:1px;text-underline-offset:2px}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:2px}
-code,kbd{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.88em}
-code{background:var(--accent-soft);border-radius:3px;padding:.08em .35em}
+code{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.88em;background:var(--accent-soft);border-radius:3px;padding:.08em .35em}
 
-/* hero */
-.hero{border-bottom:2px solid var(--rule-strong);padding:4rem 0 2.5rem;
+.hero{border-bottom:2px solid var(--rule-strong);padding:4.5rem 0 3rem;
   background-image:repeating-linear-gradient(color-mix(in srgb,var(--rule) 36%,transparent) 0 1px,transparent 1px 28px)}
-.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:.74rem;letter-spacing:.24em;text-transform:uppercase;color:var(--accent);margin:0 0 .8rem}
-h1{font-family:"IBM Plex Serif",Georgia,serif;font-weight:600;font-size:clamp(2.4rem,6vw,3.9rem);line-height:1.08;margin:0 0 .9rem;letter-spacing:-.015em}
-.lede{font-size:1.15rem;color:var(--soft);max-width:44ch;margin:0 0 1.6rem}
-.chips{display:flex;gap:.6rem;flex-wrap:wrap}
-.chip{font-family:"IBM Plex Mono",monospace;font-size:.78rem;border:1px solid var(--rule-strong);border-radius:999px;padding:.3rem .85rem;color:var(--soft)}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:.74rem;letter-spacing:.24em;text-transform:uppercase;color:var(--accent);margin:0 0 .9rem}
+h1{font-family:"IBM Plex Serif",Georgia,serif;font-weight:600;font-size:clamp(2.4rem,6vw,4rem);line-height:1.06;margin:0 0 1rem;letter-spacing:-.015em}
+.lede{font-size:1.18rem;color:var(--soft);max-width:46ch;margin:0 0 1.8rem}
+.cta{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:.92rem;text-decoration:none;
+  border:1px solid var(--rule-strong);border-radius:6px;padding:.65rem 1.15rem;margin-right:.7rem;margin-bottom:.7rem;color:var(--ink)}
+.cta.primary{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
+.chips{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1.8rem}
+.chip{font-family:"IBM Plex Mono",monospace;font-size:.78rem;border:1px solid var(--rule-strong);border-radius:999px;padding:.32rem .9rem;color:var(--soft)}
 .chip b{color:var(--accent-ink)}
 
-/* sections */
-section{padding:3.5rem 0;border-bottom:1px solid var(--rule)}
-section:last-of-type{border-bottom:0}
-.kicker{font-family:"IBM Plex Mono",monospace;font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);margin:0 0 .5rem}
-h2{font-family:"IBM Plex Serif",Georgia,serif;font-weight:600;font-size:clamp(1.7rem,3.5vw,2.4rem);margin:0 0 1rem}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(16rem,1fr));gap:1rem}
-.card{background:var(--panel);border:1px solid var(--rule);border-top:2px solid var(--accent);border-radius:0 0 4px 4px;padding:1.15rem 1.25rem}
-.card h3{font-family:"IBM Plex Serif",Georgia,serif;font-size:1.12rem;margin:0 0 .45rem;font-weight:600}
+section{padding:3.6rem 0;border-bottom:1px solid var(--rule)}
+.kicker{font-family:"IBM Plex Mono",monospace;font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);margin:0 0 .55rem}
+h2{font-family:"IBM Plex Serif",Georgia,serif;font-weight:600;font-size:clamp(1.75rem,3.6vw,2.45rem);margin:0 0 1rem}
+.sub{color:var(--soft);max-width:60ch;margin:0 0 1.5rem}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(16.5rem,1fr));gap:1rem}
+.card{background:var(--panel);border:1px solid var(--rule);border-top:2px solid var(--accent);border-radius:0 0 4px 4px;padding:1.2rem 1.3rem}
+.card h3{font-family:"IBM Plex Serif",Georgia,serif;font-size:1.13rem;margin:0 0 .5rem;font-weight:600}
 .card p{margin:0;color:var(--soft);font-size:.95rem}
-.card .tag{font-family:"IBM Plex Mono",monospace;font-size:.68rem;text-transform:uppercase;letter-spacing:.14em;color:var(--faint);display:block;margin-bottom:.55rem}
+.tag{font-family:"IBM Plex Mono",monospace;font-size:.68rem;text-transform:uppercase;letter-spacing:.16em;color:var(--faint);display:block;margin-bottom:.55rem}
 
-/* video */
-.video{background:var(--panel);border:1px solid var(--rule);border-radius:6px;overflow:hidden;margin-top:1.25rem}
+.video{background:var(--panel);border:1px solid var(--rule);border-radius:6px;overflow:hidden;margin-top:1.3rem}
 video{width:100%;display:block;background:#000}
-.vcap{padding:.8rem 1.1rem;font-size:.86rem;color:var(--soft);border-top:1px solid var(--rule)}
+.vcap{padding:.85rem 1.15rem;font-size:.87rem;color:var(--soft);border-top:1px solid var(--rule)}
 
 /* animated chart */
-.chart{background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:1.5rem;margin-top:1.25rem}
-.crow{display:grid;grid-template-columns:9rem 1fr;gap:1rem;align-items:center;margin-bottom:1.05rem}
-.cname{font-family:"IBM Plex Mono",monospace;font-size:.82rem;text-align:right;color:var(--soft)}
+.chart{background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:1.6rem;margin-top:1.3rem}
+.crow{display:grid;grid-template-columns:9.5rem 1fr;gap:1.1rem;align-items:center;margin-bottom:1.15rem}
+.cname{font-family:"IBM Plex Mono",monospace;font-size:.84rem;text-align:right;color:var(--soft)}
 .cbars{position:relative}
 .bar{height:22px;border-radius:3px;width:0;transition:width 1.1s cubic-bezier(.2,.7,.2,1);position:relative}
 .bar.rg{background:color-mix(in srgb,var(--faint) 38%,transparent);margin-bottom:6px;height:14px}
 .bar.hay{background:var(--accent)}
-.bval{position:absolute;right:-3.2rem;top:50%;translate:0 -50%;font-family:"IBM Plex Mono",monospace;font-size:.8rem;color:var(--accent-ink);opacity:0;transition:opacity .5s .9s}
-.on .bar{width:calc(var(--v) * 100%)}
-.on .bval{opacity:1}
-.legend{font-family:"IBM Plex Mono",monospace;font-size:.76rem;color:var(--faint);margin-top:.9rem}
+.bval{position:absolute;right:-3.4rem;top:50%;translate:0 -50%;font-family:"IBM Plex Mono",monospace;font-size:.82rem;color:var(--accent-ink);opacity:0;transition:opacity .5s .95s}
+.on .bar{width:calc(var(--v)*100%)}
+.on .hay .bval{opacity:1}
+.legend{font-family:"IBM Plex Mono",monospace;font-size:.77rem;color:var(--faint);margin-top:1rem}
 
-/* install */
-pre{background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:1rem 1.1rem;overflow-x:auto;
-  font-family:"IBM Plex Mono",monospace;font-size:.85rem;line-height:1.6}
-footer{border-top:1px solid var(--rule);padding:1.6rem 0 3rem;color:var(--faint);font-size:.82rem}
+pre{background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:1.05rem 1.2rem;overflow-x:auto;
+  font-family:"IBM Plex Mono",monospace;font-size:.86rem;line-height:1.6}
+footer{padding:2rem 0 3.2rem;color:var(--faint);font-size:.83rem}
 footer a{color:inherit}
-@supports (animation-timeline: view()){
+@supports (animation-timeline:view()){
   @media (prefers-reduced-motion:no-preference){
-    section > *{animation:rise linear both;animation-timeline:view();animation-range:entry 0% entry 40%}
-    @keyframes rise{from{opacity:.15;translate:0 18px}}
+    section>*{animation:rise linear both;animation-timeline:view();animation-range:entry 0% entry 42%}
+    @keyframes rise{from{opacity:.12;translate:0 20px}}
   }
 }
 </style>
@@ -89,15 +88,21 @@ footer a{color:inherit}
 <div class="wrap">
 
 <header class="hero">
-  <p class="eyebrow">grep-hygiene · hay</p>
-  <h1>hay — a ranked grep<br>for coding agents</h1>
-  <p class="lede">Same matches as <code>rg</code>. Different order. hay returns exactly what ripgrep
-  returns, reordered so the line that <em>declares</em> the thing you asked about comes first.</p>
+  <p class="eyebrow">grep-hygiene · hay · v0.7.0</p>
+  <h1>A ranked grep for coding agents.</h1>
+  <p class="lede"><code>hay</code> returns <strong>exactly ripgrep's matches</strong> — never more,
+  never fewer — reordered so the line that declares what you asked about comes first. Because an
+  agent reads the first page and acts on it.</p>
+  <div>
+    <a class="cta primary" href="#numbers">See the benchmark</a>
+    <a class="cta" href="manual.html">Read the manual</a>
+    <a class="cta" href="https://github.com/mneves75/grep-hygiene">Source on GitHub</a>
+  </div>
   <div class="chips">
     <span class="chip"><b>Rust</b> · MSRV 1.85</span>
     <span class="chip">no index · no daemon · no state</span>
-    <span class="chip"><b>first on 4/4</b> usable corpora</span>
     <span class="chip">differential-tested vs rg</span>
+    <span class="chip">exit codes that refuse to lie</span>
   </div>
 </header>
 
@@ -106,11 +111,17 @@ footer a{color:inherit}
   <h2>One opinion replaces shelf order.</h2>
   <div class="cards">
     <div class="card"><span class="tag">the problem</span><h3>Path order is shelf order.</h3>
-      <p>ripgrep is prior-free by design: it hands agents every match in walk order. An agent reads the first page and acts on it — so a dead planning doc sorting before the real function is not cosmetic.</p></div>
+      <p>ripgrep is prior-free by design: every match, in walk order. For an agent that reads the
+      first page and acts, a dead planning document sorting before the real function isn't a quirk
+      of ranking — it's the whole answer being wrong.</p></div>
     <div class="card"><span class="tag">the choice</span><h3>Definitions outrank mentions.</h3>
-      <p>hay adds exactly one opinion: a line that declares the thing beats a line that merely says it. Declaration keywords, typed-declaration shapes, key styles — scored, measured, ablatable.</p></div>
-    <div class="card"><span class="tag">the honesty</span><h3>The win is stated as weak.</h3>
-      <p>The benchmark's ground truth is declarations — the thing hay optimises. So the page shows margins with intervals, cross-checked by Fisher randomization, and links the behavioural evaluation whose truth nobody designed around the tool.</p></div>
+      <p>hay adds one prior: a line that <em>declares</em> the thing beats a line that merely names
+      it. Declaration keywords, typed-declaration shapes, key styles — each signal counted before
+      it was coded, each switchable with <code>--no-*</code>.</p></div>
+    <div class="card"><span class="tag">the honesty</span><h3>The win says how weak it is.</h3>
+      <p>The public benchmark's ground truth <em>is</em> declarations — hay's home turf. So the
+      report leads with its own warning, shows intervals, cross-checks with Fisher randomization,
+      and points at the behavioural evaluation nobody designed around the tool.</p></div>
   </div>
 </section>
 
@@ -123,15 +134,18 @@ footer a{color:inherit}
       Your browser does not support embedded video.
       <a href="assets/hay-benchmark.mp4">Download the benchmark film</a>.
     </video>
-    <div class="vcap"><b>Ranked grep, measured.</b> Mean reciprocal rank per corpus — muted bars are plain
-    ripgrep, gold is hay. Ground truth from a parser, not from any tool under test.</div>
+    <div class="vcap"><b>Ranked grep, measured.</b> Mean reciprocal rank per corpus — muted bars are
+    plain ripgrep in default order, gold is hay. Ground truth from ast-grep, a parser independent
+    of every tool under test.</div>
   </div>
 </section>
 
 <section id="numbers">
   <p class="kicker">the numbers, animated</p>
   <h2>MRR by corpus — scroll to grow.</h2>
-  <p>Mean reciprocal rank of the declaring file, against plain ripgrep's default order. Bars animate to scale; hover nothing, trust the interval table in the <a href="benchmark.html">full report</a>.</p>
+  <p class="sub">Mean reciprocal rank of the declaring file against plain ripgrep's default order.
+  Bars animate to scale when they enter view. Full intervals and significance tests live in the
+  <a href="benchmark.html">complete report</a>.</p>
   <div class="chart" id="chart">
     <div class="crow"><div class="cname">linux kernel</div><div class="cbars">
       <div class="bar rg" style="--v:.67"></div><div class="bar hay" style="--v:.967"><span class="bval">MRR 0.967</span></div>
@@ -142,21 +156,29 @@ footer a{color:inherit}
     <div class="crow"><div class="cname">ripgrep source</div><div class="cbars">
       <div class="bar rg" style="--v:.41"></div><div class="bar hay" style="--v:.800"><span class="bval">MRR 0.800</span></div>
     </div></div>
-    <div class="crow"><div class="cname">alamofire</div><div class="cbars">
+    <div class="crow"><div class="cname">alamofire (swift)</div><div class="cbars">
       <div class="bar rg" style="--v:.294"></div><div class="bar hay" style="--v:.691"><span class="bval">MRR 0.691</span></div>
     </div></div>
-    <div class="legend">muted = plain ripgrep (baseline order) · gold = hay (ranked) · n = 30/30/23/29 sampled queries</div>
+    <div class="legend">muted = plain ripgrep (baseline) · gold = hay (ranked) · n = 30/30/23/29 sampled queries · ground truth: ast-grep</div>
   </div>
 </section>
 
 <section id="what">
   <p class="kicker">what it does</p>
-  <h2>A ranked grep, kept deliberately narrow.</h2>
+  <h2>Deliberately narrow, loudly honest.</h2>
   <div class="cards">
-    <div class="card"><span class="tag">drop-in shape</span><h3>rg-compatible I/O</h3><p><code>path:line:text</code>, globs, types, context windows, JSON Lines — combined short flags included, via lexopt.</p></div>
-    <div class="card"><span class="tag">the product</span><h3>Definition-first ranking</h3><p>Three signals — definition, path prior, damped term frequency. Each has an ablation switch, because a signal you can't turn off is a belief.</p></div>
-    <div class="card"><span class="tag">for agents</span><h3>Loud, not silent</h3><p>Candidate cap? stderr notice + exit 2. Flag refused? The reason, out loud. A quiet wrong answer is the defect this tool exists to prevent.</p></div>
-    <div class="card"><span class="tag">verified</span><h3>Differential-tested</h3><p>A harness proves hay returns exactly ripgrep's matches on every change to walking, matching, or output. Order is the only degree of freedom.</p></div>
+    <div class="card"><span class="tag">drop-in shape</span><h3>rg-compatible I/O</h3>
+      <p><code>path:line:text</code>, globs, file types, context windows, JSON Lines — combined short
+      flags included, via lexopt.</p></div>
+    <div class="card"><span class="tag">the product</span><h3>Definition-first ranking</h3>
+      <p>Three signals with ablation switches (<code>--no-definition</code>, <code>--no-path</code>,
+      <code>--no-tf</code>): a contribution you cannot switch off is a belief, not a measurement.</p></div>
+    <div class="card"><span class="tag">for agents</span><h3>Loud by design</h3>
+      <p>Candidate cap hit? stderr notice plus exit 2. Flag refused? The reason, out loud, with the
+      ripgrep equivalent named. Quiet wrong answers are the defect this tool exists to prevent.</p></div>
+    <div class="card"><span class="tag">verified</span><h3>Differential-tested</h3>
+      <p>Every change to walking, matching, or output must return exactly ripgrep's matches — the
+      harness has caught three defects no unit test could see.</p></div>
   </div>
 </section>
 
@@ -165,15 +187,18 @@ footer a{color:inherit}
   <h2>From source.</h2>
 <pre>git clone https://github.com/mneves75/grep-hygiene.git &amp;&amp; cd grep-hygiene
 cargo install --path hay
-hay validateSession src/</pre>
-  <p style="margin-top:1rem">Read the <a href="manual.html">manual</a>, the <a href="benchmark.html">full benchmark report</a>,
-  or how it all works <a href="https://github.com/mneves75/grep-hygiene/blob/main/BENCHMARK_FEYNMAN.md">from zero</a>.</p>
+hay validateSession src/          # best answer first</pre>
+  <p style="margin-top:1.2rem">Then read the <a href="manual.html">manual</a> — every flag, the JSON
+  contract, exit codes — or the <a href="benchmark.html">full benchmark report</a>, or how all of it
+  works <a href="BENCHMARK_FEYNMAN.md">from zero</a>.</p>
 </section>
 
 <footer>
-  hay — a ranked grep for coding agents · <a href="https://github.com/mneves75/grep-hygiene">source</a> ·
-  <a href="manual.html">manual</a> · <a href="benchmark.html">benchmark report</a> ·
-  numbers regenerate from <code>bun benchmark.ts</code>
+  hay — a ranked grep for coding agents ·
+  <a href="https://github.com/mneves75/grep-hygiene">source</a> ·
+  <a href="manual.html">manual</a> ·
+  <a href="benchmark.html">benchmark report</a> ·
+  numbers regenerate from <code>bun benchmark.ts</code> · built with Remotion for the film
 </footer>
 
 </div>

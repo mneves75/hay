@@ -142,14 +142,14 @@ footer{border-top:1px solid var(--rule);margin-top:3rem;padding-top:1.25rem;colo
 </style>
 </head>
 <body>
-<a class="skip" href="#start">Skip to content</a>
+<a class="skip" href="#main">Skip to content</a>
 <div class="layout">
 
 <div>
 <header class="hero">
   <div class="heroline">
     <div>
-      <p class="eyebrow">grep-hygiene · hay</p>
+      <p class="eyebrow">hay · manual</p>
       <h1>hay — the manual</h1>
       <p class="lede">A ranked <code>grep</code> for coding agents. Same matches as ripgrep,
       reordered so the declaration comes first. This manual covers every flag, every output
@@ -176,7 +176,7 @@ footer{border-top:1px solid var(--rule);margin-top:3rem;padding-top:1.25rem;colo
 </nav>
 </div>
 
-<main id="main">
+<main id="main" tabindex="-1">
 
 <p class="noresults"><strong>Nothing matches.</strong> Try a shorter fragment — the search looks at
 headings, flag names, and body text.</p>
@@ -185,7 +185,7 @@ headings, flag names, and body text.</p>
 <section id="start">
 <h2>Start here</h2>
 <p>Install from source (Rust edition 2024, MSRV 1.85):</p>
-<div class="codewrap"><pre><code>git clone &lt;this repo&gt; &amp;&amp; cd grep-hygiene
+<div class="codewrap"><pre><code>git clone https://github.com/mneves75/hay.git &amp;&amp; cd hay
 cargo install --path hay</code></pre><button class="copy" type="button">copy</button></div>
 <p>Then search exactly like you would with ripgrep:</p>
 <div class="codewrap"><pre><code>hay validateSession src/          # ranked results, best first
@@ -212,7 +212,7 @@ are supporting material; the dead planning document that mentions the name is no
 same match semantics), scores every matching line, keeps the strongest 20,000 candidates, sorts
 them, and prints. The scoring never changes <em>which</em> lines match — only their order.</p>
 <p>If you want the full story — why ranking exists at all, what a bootstrap interval is, and the C
-bug the benchmark itself caught — read <a href="../BENCHMARK_FEYNMAN.md">BENCHMARK_FEYNMAN.md</a>.
+bug the benchmark itself caught — read <a href="BENCHMARK_FEYNMAN.md">BENCHMARK_FEYNMAN.md</a>.
 It assumes no information-retrieval background.</p>
 </section>
 
@@ -432,7 +432,7 @@ grep -q "candidate cap" err.log &amp;&amp; echo "truncated — switch to rg for 
 <section id="faq">
 <h2>FAQ</h2>
 <p><strong>Is it faster than ripgrep?</strong> Roughly comparable on typical queries; ranking adds
-work, measured honestly on the <a href="../benchmark.html">benchmark page</a>. Read the timing
+work, measured honestly on the <a href="benchmark.html">benchmark page</a>. Read the timing
 chart there — ratios, not absolutes, survive machine noise.</p>
 <p><strong>Why did my test file rank low?</strong> The path prior downgrades tests deliberately:
 in agent transcripts, tests are rarely the answer to “where is X defined”. Overriding is a
@@ -547,7 +547,7 @@ addEventListener("keydown", (e) => {
 // ── version stamp from the built binary, when served over http from a checkout ──
 // fetch() cannot read file:// URLs, so the stamp simply stays empty when opened from disk.
 if (location.protocol !== "file:") {
-  fetch("../hay/Cargo.toml").then((r) => r.ok ? r.text() : "").then((t) => {
+  fetch("hay/Cargo.toml").then((r) => r.ok ? r.text() : "").then((t) => {
     const v = t.match(/^version = "(.+)"$/m);
     if (v) document.getElementById("ver").textContent = `v${v[1]}`;
   }).catch(() => {});
