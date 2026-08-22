@@ -1,0 +1,18 @@
+# Real queries and file paths harvested from private repositories. Never publish.
+corpus/
+
+# Build output
+hay/target/
+node_modules/
+site/video-src/build/
+site/video-src/out/
+
+# Local environment files may contain secrets or personal paths.
+.env
+.env.*
+!.env.example
+
+# Agent and editor scratch
+.scratch/
+.codemap/
+.DS_Store

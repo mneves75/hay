@@ -1,0 +1,29 @@
+version: 2
+updates:
+  - package-ecosystem: cargo
+    directory: /hay
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      # ripgrep's crates move together; one PR per week beats four.
+      ripgrep-crates:
+        patterns: ["grep-*", "ignore"]
+
+  - package-ecosystem: bun
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: npm
+    directory: /site/video-src
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+
+  # Workflow actions are pinned by SHA, which is only safe if something bumps them.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>hay — the manual</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="The complete user manual for hay, a ranked grep for coding agents: every flag, the JSON contract, exit codes, ranking signals, and recipes.">
+<meta property="og:title" content="hay — the manual">
+<meta property="og:description" content="A ranked grep for coding agents: every flag, the JSON contract, exit codes, ranking signals, and recipes.">
+<meta name="color-scheme" content="light dark">
+<style>
+/* Theme via light-dark(): one value per custom property, resolved by color-scheme.
+   The toggle sets data-theme for explicit choice; absence follows the OS. */
+:root{color-scheme:light dark;
+  --ground:light-dark(#f8f5ec,#16130c);
+  --panel:light-dark(#fffdf6,#1e1a10);
+  --ink:light-dark(#201b10,#ece5d2);
+  --ink-soft:light-dark(#5c5544,#b3aa92);
+  --ink-faint:light-dark(#8b8371,#847c66);
+  --rule:light-dark(#e7e1cf,#2e2918);
+  --rule-strong:light-dark(#cfc6a8,#46402a);
+  --accent:light-dark(#8a6d10,#ddb84f);
+  --accent-soft:light-dark(#f1e7c8,#332b14);
+  --accent-ink:light-dark(#6b5408,#e6c86e);
+  --warn:light-dark(#8a6410,#d9ad55);
+  --mark:light-dark(#ffe9a8,#4a4420);
+}
+:root[data-theme="dark"]{color-scheme:dark}
+:root[data-theme="light"]{color-scheme:light}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{
+  margin:0;background:var(--ground);color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:16px;line-height:1.65;
+}
+h1,h2,h3{text-wrap:balance}
+p,li{text-wrap:pretty}
+a{color:var(--accent-ink);text-decoration-thickness:1px;text-underline-offset:2px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:2px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--panel);padding:.5rem 1rem;z-index:99}
+.skip:focus{left:.5rem;top:.5rem}
+code,kbd,pre{font-family:"IBM Plex Mono",ui-monospace,monospace}
+kbd{
+  border:1px solid var(--rule-strong);border-bottom-width:2px;border-radius:4px;
+  padding:.05em .45em;font-size:.82em;background:var(--panel)
+}
+.layout{display:grid;grid-template-columns:minmax(0,1fr);max-width:76rem;margin:0 auto;padding:0 1.25rem}
+@media (min-width:60rem){
+  .layout{grid-template-columns:15rem minmax(0,1fr);gap:3rem}
+  /* Hero spans the full measure; the TOC drops beside the content below it. */
+  .layout > div:first-child{grid-column:1/-1}
+  main{grid-column:2}
+  nav.toc{position:sticky;top:2rem;align-self:start;max-height:calc(100vh - 4rem);overflow:auto;border:0;margin:3.2rem 0 0;padding:0}
+}
+header.hero{border-bottom:2px solid var(--rule-strong);padding:2.75rem 0 1.5rem;
+  background-image:repeating-linear-gradient(
+    color-mix(in srgb,var(--rule) 36%,transparent) 0 1px,transparent 1px 28px)}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:0 0 .6rem}
+h1{font-family:"IBM Plex Serif",Georgia,serif;font-size:clamp(1.9rem,4.5vw,2.8rem);line-height:1.12;margin:0 0 .6rem;font-weight:600}
+.lede{font-size:1.06rem;color:var(--ink-soft);max-width:64ch;margin:0}
+.heroline{display:flex;justify-content:space-between;align-items:start;gap:1rem}
+#theme-toggle{
+  flex:none;background:var(--panel);border:1px solid var(--rule-strong);border-radius:4px;
+  padding:.4rem .7rem;cursor:pointer;color:var(--ink);font:inherit;font-size:.85rem
+}
+#theme-toggle:hover{border-color:var(--accent)}
+nav.toc{border-bottom:1px solid var(--rule);margin:1.5rem 0 0;padding:.75rem 0;display:flex;gap:.35rem;flex-wrap:wrap}
+nav.toc a{
+  font-family:"IBM Plex Mono",monospace;font-size:.74rem;letter-spacing:.04em;text-transform:uppercase;
+  text-decoration:none;color:var(--ink-faint);padding:.25rem .55rem;border-radius:3px
+}
+nav.toc a:hover{color:var(--accent-ink);background:var(--accent-soft)}
+nav.toc a[aria-current="true"]{color:var(--accent-ink);background:var(--accent-soft);font-weight:600}
+main{padding:2rem 0 5rem;min-width:0}
+section[id]{scroll-margin-top:1.5rem}
+h2{
+  font-family:"IBM Plex Serif",Georgia,serif;font-weight:600;font-size:1.6rem;
+  margin:2.75rem 0 1rem;padding-bottom:.4rem;border-bottom:1px solid var(--rule)
+}
+h3{font-family:"IBM Plex Serif",Georgia,serif;font-weight:600;font-size:1.15rem;margin:1.9rem 0 .5rem}
+p{margin:0 0 1rem;max-width:70ch}
+table{border-collapse:collapse;width:100%;font-size:.87rem;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:.5rem .7rem;border-bottom:1px solid var(--rule);vertical-align:top}
+thead th{
+  font-family:"IBM Plex Mono",monospace;font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--ink-faint);font-weight:500;border-bottom:1px solid var(--rule-strong)
+}
+tbody th[scope="row"]{white-space:nowrap;font-weight:500}
+tbody th code{background:none;padding:0}
+td p{margin:0}
+code{background:var(--accent-soft);border-radius:3px;padding:.08em .35em;font-size:.86em}
+pre{
+  background:var(--panel);border:1px solid var(--rule);border-radius:4px;padding:.9rem 1rem;
+  overflow-x:auto;font-size:.8rem;line-height:1.55;position:relative
+}
+pre code{background:none;padding:0}
+.codewrap{position:relative;margin:0 0 1rem;max-width:70ch}
+.copy{
+  position:absolute;top:.45rem;right:.45rem;border:1px solid var(--rule-strong);background:var(--ground);
+  color:var(--ink-faint);border-radius:3px;font:inherit;font-size:.72rem;padding:.15rem .5rem;cursor:pointer
+}
+.copy[data-done]{color:var(--accent-ink);border-color:var(--accent)}
+.callout{background:var(--accent-soft);border-left:3px solid var(--accent);padding:.9rem 1.1rem;margin:1.4rem 0;border-radius:0 3px 3px 0;max-width:70ch}
+.callout p:last-child,.callout ul:last-child{margin-bottom:0}
+.warn{border-left-color:var(--warn)}
+mark{background:var(--mark);color:inherit;padding:0 .1em;border-radius:2px}
+.searchbar{margin:1.5rem 0 .5rem;max-width:34rem}
+.searchbar input{
+  width:100%;font:inherit;font-size:.95rem;color:var(--ink);
+  background:var(--panel);border:1px solid var(--rule-strong);border-radius:6px;padding:.6rem .9rem
+}
+.searchbar input:focus-visible{outline-offset:0;border-color:var(--accent)}
+.searchmeta{font-size:.8rem;color:var(--ink-faint);min-height:1.2em;margin:.4rem 0 0}
+body.searching section:not(.hit){display:none}
+body.searching .toc-else{display:none}
+.noresults{display:none}
+body.searching .noresults{display:block}
+.explain-anatomy{display:block;width:100%;height:auto;font-size:13px}
+details.flaggroup{border:1px solid var(--rule);border-radius:4px;background:var(--panel);margin:0 0 .7rem}
+details.flaggroup summary{
+  cursor:pointer;padding:.7rem 1rem;font-family:"IBM Plex Serif",Georgia,serif;font-weight:600;
+  list-style:none;display:flex;gap:.6rem;align-items:center
+}
+details.flaggroup summary::-webkit-details-marker{display:none}
+details.flaggroup summary::after{content:"+";margin-left:auto;color:var(--ink-faint);font-family:"IBM Plex Mono",monospace}
+details.flaggroup[open] summary::after{content:"–"}
+details.flaggroup .body{padding:0 1rem 1rem;overflow-x:auto}
+button.linkish{
+  background:none;border:0;color:var(--accent-ink);cursor:pointer;font:inherit;
+  text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:2px;padding:0
+}
+footer{border-top:1px solid var(--rule);margin-top:3rem;padding-top:1.25rem;color:var(--ink-faint);font-size:.8rem}
+@supports (animation-timeline: view()){
+  @media (prefers-reduced-motion: no-preference){
+    section[id] > *{animation:rise linear both;animation-timeline:view();animation-range:entry 0% entry 40%}
+    @keyframes rise{from{opacity:.2;translate:0 14px}}
+  }
+}
+@media print{.searchbar,nav.toc,#theme-toggle,.copy{display:none}body{background:#fff}section[id]{break-before:page}section:first-of-type{break-before:auto}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="layout">
+
+<div>
+<header class="hero">
+  <div class="heroline">
+    <div>
+      <p class="eyebrow">hay · manual</p>
+      <h1>hay — the manual</h1>
+      <p class="lede">A ranked <code>grep</code> for coding agents. Same matches as ripgrep,
+      reordered so the declaration comes first. This manual covers every flag, every output
+      format, and the reasoning behind the sharp edges.</p>
+    </div>
+    <button id="theme-toggle" type="button" aria-label="Switch color theme">auto</button>
+  </div>
+</header>
+
+<div class="searchbar">
+  <search>
+    <label class="skip" for="q">Search the manual</label>
+    <input id="q" type="search" placeholder="Search — try “json”, “exit”, “definition”… ( / to focus )"
+           autocomplete="off" spellcheck="false">
+  </search>
+  <p class="searchmeta" id="search-meta" role="status"></p>
+</div>
+
+<nav class="toc" id="toc" aria-label="Manual sections">
+  <a href="#start">start</a><a href="#model">mental model</a><a href="#ranking">ranking</a>
+  <a href="#flags">flags</a><a href="#output">output</a><a href="#explain">explain</a>
+  <a href="#diffs">vs ripgrep</a><a href="#exits">exit codes</a><a href="#cap">the cap</a>
+  <a href="#agents">agent recipes</a><a href="#faq">faq</a><a href="#kit">the kit</a>
+</nav>
+</div>
+
+<main id="main" tabindex="-1">
+
+<p class="noresults"><strong>Nothing matches.</strong> Try a shorter fragment — the search looks at
+headings, flag names, and body text.</p>
+
+<!-- ─────────────────────────────── start ─────────────────────────────── -->
+<section id="start">
+<h2>Start here</h2>
+<p>Install from source — one line, or inspect first (Rust edition 2024, MSRV 1.85):</p>
+<div class="codewrap"><pre><code>curl -fsSL https://raw.githubusercontent.com/mneves75/hay/main/install.sh | sh
+
+# inspect-first form:
+git clone https://github.com/mneves75/hay.git &amp;&amp; cd hay &amp;&amp; ./install.sh</code></pre><button class="copy" type="button">copy</button></div>
+<p>The script gates on the toolchain version, clones, builds release, installs via
+<code>cargo install</code>, and smoke-tests. Then search exactly like you would with ripgrep:</p>
+<div class="codewrap"><pre><code>hay validateSession src/          # ranked results, best first
+hay -t ts -w fetchUser            # TypeScript only, whole words
+hay -C 3 -m 20 'parseConfig'      # context, capped result count</code></pre><button class="copy" type="button">copy</button></div>
+<p>The deal hay offers is narrow and honest: it returns <strong>exactly ripgrep’s matches</strong> —
+never more, never fewer, verified continuously by a differential test against ripgrep itself — but
+<strong>ordered by likelihood of being the answer</strong> instead of by file path. If two orderings
+would ever differ in which lines match, that is a bug; the project treats it as such.</p>
+<div class="callout">
+<p><strong>One-sentence mental model:</strong> ripgrep answers <em>“where does this string
+appear?”</em>; hay answers <em>“where is the thing I’m asking about — most likely first?”</em></p>
+</div>
+</section>
+
+<!-- ─────────────────────────────── model ─────────────────────────────── -->
+<section id="model">
+<h2>The mental model</h2>
+<p>hay is built around one opinion, borrowed from how coding agents read: <strong>a line that
+<em>declares</em> a thing is worth more than a line that merely mentions it.</strong> When an agent
+searches <code>validateSession</code>, the function definition is the answer; the forty call sites
+are supporting material; the dead planning document that mentions the name is noise.</p>
+<p>Mechanically, hay runs a ripgrep-grade search over your tree (same ignore rules, same walk,
+same match semantics), scores every matching line, keeps the strongest 20,000 candidates, sorts
+them, and prints. The scoring never changes <em>which</em> lines match — only their order.</p>
+<p>If you want the full story — why ranking exists at all, what a bootstrap interval is, and the C
+bug the benchmark itself caught — read <a href="BENCHMARK_FEYNMAN.md">BENCHMARK_FEYNMAN.md</a>.
+It assumes no information-retrieval background.</p>
+</section>
+
+<!-- ─────────────────────────────── ranking ────────────────────────────── -->
+<section id="ranking">
+<h2>How results are ranked</h2>
+<p>Every matching line gets a score from three signals. The defaults:</p>
+<table>
+<thead><tr><th scope="col">signal</th><th scope="col">weight</th><th scope="col">what it rewards</th></tr></thead>
+<tbody>
+<tr><th scope="row"><code>definition</code></th><td>+6.0</td>
+<td>The line declares the query rather than mentioning it: a declaration keyword before it
+(<code>fn</code>, <code>function</code>, <code>class</code>, <code>def</code>, <code>const</code>,
+typed-declaration shapes like <code>static int foo(</code>), or key-style shapes
+(<code>query:</code>, <code>"query":</code>). The match must sit at a word boundary — a hit inside
+<code>SemanticFingerprint</code> is not a declaration of <code>fingerprint</code>.</td></tr>
+<tr><th scope="row"><code>path</code></th><td>−1.0 … +1.0</td>
+<td>A prior on where answers live. Source directories (<code>/src/</code>, <code>/lib/</code>,
+…) score up; tests, fixtures/prose/data, and buried trees (<code>/vendor/</code>, <code>/dist/</code>,
+<code>/archive/</code>, <code>/node_modules/</code>, …) score down. A vendored test is buried first:
+buried wins over everything.</td></tr>
+<tr><th scope="row"><code>tf</code></th><td>0.5 max</td>
+<td>Gentle term frequency within the line — a line naming the symbol twice outranks a drive-by
+mention, deliberately damped so repetition cannot buy a win.</td></tr>
+</tbody>
+</table>
+<p>Tie-breaks fall back to file path, so output is deterministic for a given tree.</p>
+<h3>Turning signals off</h3>
+<p>Each signal has an ablation switch, because a contribution you cannot switch off is a belief,
+not a measurement:</p>
+<div class="codewrap"><pre><code>hay --no-definition validateSession .
+hay --no-path        validateSession .
+hay --no-tf          validateSession .</code></pre><button class="copy" type="button">copy</button></div>
+<p>This is also how several published claims here were proven: the definition signal’s value on C
+was established by turning it off and watching the kernel score collapse to ripgrep’s.</p>
+</section>
+
+<!-- ─────────────────────────────── flags ─────────────────────────────── -->
+<section id="flags">
+<h2>Flags</h2>
+<p>The parser is <code>lexopt</code> — the same crate ripgrep moved to — so combined short flags
+(<code>-in</code>), <code>--flag=value</code>, attached values (<code>-C3</code>) and <code>--</code>
+all work as you expect.</p>
+
+<details class="flaggroup" open>
+<summary>Picking the pattern</summary>
+<div class="body"><table>
+<tbody>
+<tr><th scope="row"><code>-e, --regexp</code></th><td>Add a pattern; repeat for the union of all patterns.</td></tr>
+<tr><th scope="row"><code>-i, --ignore-case</code></th><td>Case-insensitive matching.</td></tr>
+<tr><th scope="row"><code>-w, --word-regexp</code></th><td>Match whole words only.</td></tr>
+<tr><th scope="row"><code>-F, --fixed-strings</code></th><td>Treat the pattern as a literal string — no regex metacharacters. Agents searching identifiers should default to this.</td></tr>
+</tbody>
+</table></div>
+</details>
+
+<details class="flaggroup">
+<summary>Narrowing the tree</summary>
+<div class="body"><table>
+<tbody>
+<tr><th scope="row"><code>-g, --glob</code></th><td>Include/exclude files by glob; repeatable. Leading <code>!</code> excludes.</td></tr>
+<tr><th scope="row"><code>-t, --type</code></th><td>Only search a named file type (<code>ts</code>, <code>rust</code>, …); repeatable. <code>--type-list</code> prints them all.</td></tr>
+<tr><th scope="row"><code>-T, --type-not</code></th><td>Never search a named file type; repeatable.</td></tr>
+<tr><th scope="row"><code>--hidden</code></th><td>Also search hidden files and directories.</td></tr>
+<tr><th scope="row"><code>--no-ignore</code></th><td>Do not respect <code>.gitignore</code>. Like ripgrep, ignore rules only apply inside a git repository.</td></tr>
+</tbody>
+</table></div>
+</details>
+
+<details class="flaggroup">
+<summary>Shaping the output</summary>
+<div class="body"><table>
+<tbody>
+<tr><th scope="row"><code>-l, --files-with-matches</code></th><td>Print only file paths, best-ranked file first. Wins over <code>--json</code>: under both flags you get plain paths, because hay’s JSON contract has no files-only message (see <a href="#output">Output</a>).</td></tr>
+<tr><th scope="row"><code>-n / --no-line-number</code></th><td>Line numbers are on by default; this turns them off.</td></tr>
+<tr><th scope="row"><code>-A/-B/-C &lt;N&gt;</code></th><td>After/before/either-side context lines. Partial overrides behave like ripgrep 14+: <code>-C1 -A2</code> means <code>-B1 -A2</code>. Context never reorders results and never duplicates a line inside one window block; a real gap between windows is marked <code>--</code>.</td></tr>
+<tr><th scope="row"><code>-m, --max-count &lt;N&gt;</code></th><td>Stop after N <em>ranked results</em> (default 50; <code>0</code> = no limit). Unlike ripgrep, where <code>-m</code> bounds matches per file, this bounds the total output — see <a href="#cap">the cap</a>.</td></tr>
+<tr><th scope="row"><code>--json</code></th><td>Ripgrep-shaped JSON Lines: <code>match</code> and <code>context</code> messages only. No <code>begin</code>/<code>end</code>/<code>summary</code> — those are file-scoped and meaningless once output is rank-ordered.</td></tr>
+<tr><th scope="row"><code>--explain</code></th><td>Prefix each result with its score and per-signal breakdown (see <a href="#explain">Explain</a>).</td></tr>
+<tr><th scope="row"><code>--type-list</code></th><td>Print known file types and exit.</td></tr>
+<tr><th scope="row"><code>-h, -V</code></th><td>Help and version.</td></tr>
+</tbody>
+</table></div>
+</details>
+
+<details class="flaggroup">
+<summary>Deliberately absent</summary>
+<div class="body"><p>Three ripgrep staples are refused — loudly, not silently — because ranking and
+the flag are mutually meaningless. Each refusal says why and names the ripgrep equivalent:</p>
+<table>
+<tbody>
+<tr><th scope="row"><code>-v</code></th><td>Inverting the match leaves nothing to rank: every non-matching line would score identically. Use <code>rg -v</code>.</td></tr>
+<tr><th scope="row"><code>-c</code></th><td>hay ranks lines, it does not count them. Use <code>rg -c</code>.</td></tr>
+<tr><th scope="row"><code>-o</code></th><td>Only-matching prints substrings, not lines — no line, nothing to rank. Use <code>rg -o</code>.</td></tr>
+</tbody>
+</table></div>
+</details>
+</section>
+
+<!-- ─────────────────────────────── output ─────────────────────────────── -->
+<section id="output">
+<h2>Output formats</h2>
+<h3>Plain</h3>
+<p>Ripgrep-compatible <code>path:line:text</code>, rank-ordered, with <code>--</code> marking a true
+discontinuity between context windows:</p>
+<div class="codewrap"><pre><code>$ hay -C1 -F validateSession src/
+src/auth.ts:2:export function validateSession(t: string) {
+src/auth.ts-3-  return t
+--
+src/session.ts:17:// delegates to validateSession</code></pre><button class="copy" type="button">copy</button></div>
+<h3>JSON Lines (<code>--json</code>)</h3>
+<p>Ripgrep-shaped objects, one per line, <strong><code>match</code> and <code>context</code> messages
+only</strong>:</p>
+<div class="codewrap"><pre><code>{"type":"match","data":{"path":{"text":"src/auth.ts"},
+ "lines":{"text":"export function validateSession(t: string) {\n"},
+ "line_number":2,"absolute_offset":31,
+ "submatches":[{"match":{"text":"validateSession"},"start":16,"end":30}]}}</code></pre><button class="copy" type="button">copy</button></div>
+<ul>
+<li>No <code>begin</code>/<code>end</code>/<code>summary</code> records: those describe a
+file-scoped stream, and rank order interleaves files by design.</li>
+<li>Under <code>-l --json</code> you get plain paths — the files-only question has no match record
+to carry it, and a lone <code>begin</code> would be neither the documented contract nor rg-shaped.</li>
+<li>Every line is one valid JSON object, so <code>jq -c 'select(.type=="match")'</code> composes
+cleanly (recipe below).</li>
+</ul>
+</section>
+
+<!-- ─────────────────────────────── explain ────────────────────────────── -->
+<section id="explain">
+<h2><code>--explain</code>: reading a score</h2>
+<p>Each result is prefixed with its total score and the per-signal breakdown:</p>
+<div class="codewrap"><pre><code>$ hay --explain -F validateSession src/ | head -1
+6.00 [def +6.0 path +1.0 tf +1.00]  src/auth.ts:2:export function validateSession(t: string) {</code></pre><button class="copy" type="button">copy</button></div>
+<table>
+<thead><tr><th scope="col">field</th><th scope="col">meaning</th></tr></thead>
+<tbody>
+<tr><th scope="row">total</th><td>Sum of the weighted signals. Higher ranks first; equal totals tie-break by path.</td></tr>
+<tr><th scope="row"><code>def</code></th><td>Definition signal: <code>+6.0</code> when the line declares the query, <code>+0.0</code> otherwise.</td></tr>
+<tr><th scope="row"><code>path</code></th><td>Path-class prior for the file’s directory class (source up, tests down, buried furthest down).</td></tr>
+<tr><th scope="row"><code>tf</code></th><td>Damped term frequency within the line.</td></tr>
+</tbody>
+</table>
+<div class="callout warn">
+<p><strong>Use it to audit, not to tune blindly.</strong> The weights are hand-set, and fitting
+them on the corpus they are published against is the exact mistake this project exists to warn
+about. <code>--explain</code> answers “why did this line rank here?”; it does not certify that the
+weights are optimal.</p>
+</div>
+</section>
+
+<!-- ─────────────────────────────── diffs ─────────────────────────────── -->
+<section id="diffs">
+<h2>Differences from ripgrep</h2>
+<table>
+<thead><tr><th scope="col">difference</th><th scope="col">why</th></tr></thead>
+<tbody>
+<tr><th scope="row">Rank-ordered results</th><td>The entire product. Path order is shelf order; agents need answer order.</td></tr>
+<tr><th scope="row"><code>-m</code> bounds total results, not matches-per-file</th><td>An agent wants “the twenty best lines”, not “twenty per file”.</td></tr>
+<tr><th scope="row"><code>--json</code> emits only <code>match</code>/<code>context</code></th><td><code>begin</code>/<code>end</code>/<code>summary</code> assume a file-scoped stream; rank order interleaves files.</td></tr>
+<tr><th scope="row"><code>-l</code> wins over <code>--json</code></th><td>Plain paths beat a bare <code>begin</code> with no <code>end</code>.</td></tr>
+<tr><th scope="row">A 20,000-candidate cap (see <a href="#cap">the cap</a>)</th><td>Memory bound with a loud stderr notice instead of unbounded buffering.</td></tr>
+</tbody>
+</table>
+<p>Everything else is parity by construction, enforced by a differential test that fails the build
+if hay and ripgrep ever disagree on <em>which lines match</em>.</p>
+</section>
+
+<!-- ─────────────────────────────── exits ─────────────────────────────── -->
+<section id="exits">
+<h2>Exit codes</h2>
+<table>
+<thead><tr><th scope="col">code</th><th scope="col">meaning</th></tr></thead>
+<tbody>
+<tr><th scope="row"><code>0</code></th><td>Results were found (or help/version/type-list printed).</td></tr>
+<tr><th scope="row"><code>1</code></th><td>The search ran fine and found nothing. Not an error.</td></tr>
+<tr><th scope="row"><code>2</code></th><td>Something is wrong or incomplete: bad flags, unreadable paths, the candidate cap truncated results. The reason is always on stderr.</td></tr>
+</tbody>
+</table>
+<div class="callout">
+<p><strong>The rule this repo lives by:</strong> a serious defect is a quiet wrong answer, never a
+crash. Exit&nbsp;2 exists so “here are some results” can never silently mean “here are all the
+results”. Scripts should treat 2 as “retry narrower”, not as success.</p>
+</div>
+</section>
+
+<!-- ─────────────────────────────── cap ─────────────────────────────── -->
+<section id="cap">
+<h2>The candidate cap</h2>
+<p>hay buffers up to <strong>20,000 matching lines</strong> to score them. A pattern broader than
+that (say, <code>-e e</code> on the Linux kernel) ranks only the strongest 20,000 candidates — and
+says so on stderr while still exiting&nbsp;2, because the printed list is <em>not</em> every match
+in the tree. For exhaustive counting or completeness checks on very broad patterns, use
+<code>rg</code>. That is not a limitation hay apologises for; it is the trade that makes ranking
+affordable, stated where you can see it.</p>
+</section>
+
+<!-- ─────────────────────────────── agents ────────────────────────────── -->
+<section id="agents">
+<h2>Recipes for agent loops</h2>
+<p>Claude Code, Codex CLI, pi, Aider, Cursor — they all read search results the same way: first
+page, act on it. That is exactly the surface hay improves, so wiring it into an agent is one
+paragraph of instructions plus the right defaults.</p>
+
+<div class="callout">
+<p><strong>The universal snippet</strong> — paste into <code>AGENTS.md</code> / <code>CLAUDE.md</code>.
+Codex CLI, Claude Code, and pi read <code>AGENTS.md</code>; Claude Code additionally reads
+<code>CLAUDE.md</code>; Aider wants it in <code>CONVENTIONS.md</code>; Cursor takes rules files.</p>
+</div>
+<div class="codewrap"><pre><code>## Code search
+
+Use `hay` instead of `rg` for concept and symbol searches:
+
+    hay -F -m 10 "&lt;symbol&gt;" src/
+
+- always `-F` when searching identifiers (they are literals, not regexes)
+- exit 0 = results ranked best-first; 1 = no match; 2 = INCOMPLETE — read stderr,
+  then narrow (add -g/-t) rather than trusting the output wholesale
+- need exhaustive lists or match counts? fall back to `rg`
+- structured: `hay --json -F "sym" . | jq 'select(.type=="match")'</code></pre><button class="copy" type="button">copy</button></div>
+
+<table>
+<thead><tr><th scope="col">agent</th><th scope="col">instructions live in</th><th scope="col">notes</th></tr></thead>
+<tbody>
+<tr><th scope="row">Claude Code</th><td><code>CLAUDE.md</code> or <code>AGENTS.md</code></td><td>snippet works verbatim; Claude narrows well on exit 2 if told to read stderr</td></tr>
+<tr><th scope="row">Codex CLI</th><td><code>AGENTS.md</code> (repo root, then <code>~/.codex/AGENTS.md</code>)</td><td>same snippet; state the `-F` default explicitly and it holds</td></tr>
+<tr><th scope="row">pi</th><td><code>AGENTS.md</code> (project root)</td><td>pi reads it before acting; the jq recipe fits its bash-tool loop directly</td></tr>
+<tr><th scope="row">Cursor / Aider / others</th><td>their rules file (<code>.cursor/rules</code>, <code>CONVENTIONS.md</code>)</td><td>any agent that shells out to grep can run the same commands</td></tr>
+</tbody>
+</table>
+
+<h3>Find the definition, read it</h3>
+<div class="codewrap"><pre><code># fixed-string, top hit only — the common agent case
+hay -F -m 1 "$symbol" "$root"</code></pre><button class="copy" type="button">copy</button></div>
+<h3>Structured consumption</h3>
+<div class="codewrap"><pre><code># every match as TSV: path, line number, trimmed text
+hay --json -F "$symbol" "$root" \
+| jq -r 'select(.type=="match")
+         | [.data.path.text, .data.line_number,
+            (.data.lines.text | gsub("\\n$";"") | .[0:160])] | @tsv'</code></pre><button class="copy" type="button">copy</button></div>
+<h3>Context without reordering surprises</h3>
+<div class="codewrap"><pre><code>hay -C 3 -m 10 -F "$symbol" "$root"   # blocks stay grouped, gaps show as --</code></pre><button class="copy" type="button">copy</button></div>
+<h3>Honesty check on a big tree</h3>
+<div class="codewrap"><pre><code>hay -m 0 -F "$symbol" "$root" 2&gt;err.log || true
+grep -q "candidate cap" err.log &amp;&amp; echo "truncated — switch to rg for exhaustiveness"</code></pre><button class="copy" type="button">copy</button></div>
+<h3>Install on an agent's machine</h3>
+<div class="codewrap"><pre><code>curl -fsSL https://raw.githubusercontent.com/mneves75/hay/main/install.sh | sh   # inspect first!
+# inspect-first form:
+git clone https://github.com/mneves75/hay.git &amp;&amp; cd hay &amp;&amp; ./install.sh</code></pre><button class="copy" type="button">copy</button></div>
+</section>
+
+<!-- ─────────────────────────────── faq ─────────────────────────────── -->
+<section id="faq">
+<h2>FAQ</h2>
+<p><strong>Is it faster than ripgrep?</strong> Roughly comparable on typical queries; ranking adds
+work, measured honestly on the <a href="benchmark.html">benchmark page</a>. Read the timing
+chart there — ratios, not absolutes, survive machine noise.</p>
+<p><strong>Why did my test file rank low?</strong> The path prior downgrades tests deliberately:
+in agent transcripts, tests are rarely the answer to “where is X defined”. Overriding is a
+one-flag matter (<code>--no-path</code>), and the ablation switches exist precisely so you never
+have to trust the prior.</p>
+<p><strong>Can I use it as a drop-in in scripts?</strong> Yes, wherever scripts consume
+<code>path:line:text</code> and tolerate rank order plus the three declined flags above. Where
+scripts need exhaustiveness guarantees, keep <code>rg</code>.</p>
+<p><strong>Does the ranking ever change which lines match?</strong> Never. That is invariant #1,
+policed by a differential test against ripgrep on every change to walking, matching, or output.</p>
+<p><strong>Where do the numbers on the website come from?</strong> <code>BENCHMARK.md</code> /
+<code>benchmark.html</code>: public corpora, ground truth from a parser (ast-grep), paired
+bootstrap intervals cross-checked by Fisher randomization. The honest headline is also there: the
+task favours hay by construction, so read margins, and weigh them against the behavioural
+evaluation described in <code>README.md</code>, whose ground truth nobody designed around the
+tool.</p>
+</section>
+
+<!-- ─────────────────────────────── kit ─────────────────────────────── -->
+<section id="kit">
+<h2>The measurement kit</h2>
+<p>hay ships inside a repository that is mostly instrument: <code>measure-mrr.ts</code> turns local
+agent transcripts into a behavioural test collection (queries paired with the files the agent
+opened next), <code>benchmark.ts</code> runs the public-corpus comparison, and
+<code>BENCHMARK_FEYNMAN.md</code> explains both from zero. Developer-facing commands live in
+<code>HOWTO.md</code>; the negative result that started it all is the top of
+<code>README.md</code>. One rule for visitors: <code>grep-hygiene.ts</code> is the falsified metric,
+kept reproducible — do not extend it, do not quote it.</p>
+</section>
+
+<footer>
+Generated content lives beside the source: <code>MANUAL.html</code> documents hay
+<span id="ver"></span>. Facts pinned to behaviour: exit codes, JSON shapes and the explain format
+are asserted by <code>hay/tests/cli.rs</code>.
+</footer>
+
+</main>
+</div>
+
+<script type="module">
+// ── theme: auto → dark → light → auto; persisted; falls back to OS via light-dark() ──
+const root = document.documentElement, btn = document.getElementById("theme-toggle");
+const next = { auto: "dark", dark: "light", light: "auto" };
+const saved = localStorage.getItem("hay-manual-theme");
+if (saved === "dark" || saved === "light") root.dataset.theme = saved;
+btn.textContent = saved ?? "auto";
+btn.addEventListener("click", () => {
+  const n = next[localStorage.getItem("hay-manual-theme") ?? "auto"];
+  if (n === "auto") delete root.dataset.theme; else root.dataset.theme = n;
+  localStorage.setItem("hay-manual-theme", n);
+  btn.textContent = n;
+});
+
+// ── scrollspy: aria-current drives TOC highlight; IO because scroll handlers jank ──
+const links = [...document.querySelectorAll("#toc a")];
+const spy = new IntersectionObserver((entries) => {
+  for (const e of entries) if (e.isIntersecting) {
+    links.forEach((a) => a.setAttribute("aria-current", String(a.hash === `#${e.target.id}`)));
+  }
+}, { rootMargin: "-20% 0px -70% 0px" });
+document.querySelectorAll("main section[id]").forEach((s) => spy.observe(s));
+
+// ── copy buttons: clipboard API, inline confirmation, no toast library ──
+for (const b of document.querySelectorAll(".copy")) {
+  b.addEventListener("click", async () => {
+    await navigator.clipboard.writeText(b.previousElementSibling.querySelector("code").textContent);
+    b.textContent = "copied"; b.dataset.done = "";
+    setTimeout(() => { delete b.dataset.done; b.textContent = "copy"; }, 1400);
+  });
+}
+
+// ── live search: hide non-matching sections, mark hits, report counts ──
+const q = document.getElementById("q"), meta = document.getElementById("search-meta");
+const sections = [...document.querySelectorAll("main section[id]")];
+const plain = (el) => el.textContent.toLowerCase();
+q.addEventListener("input", () => {
+  const needle = q.value.trim().toLowerCase();
+  document.body.classList.toggle("searching", !!needle);
+  let hits = 0;
+  for (const s of sections) {
+    const hit = !needle || plain(s).includes(needle);
+    s.classList.toggle("hit", hit);
+    if (needle && hit) hits++;
+    // strip previous marks, then mark the first occurrence per heading-ish element
+    for (const m of s.querySelectorAll("mark")) m.replaceWith(...m.childNodes);
+    if (needle && hit && hits <= 50) {
+      const walker = document.createTreeWalker(s, NodeFilter.SHOW_TEXT);
+      const targets = [];
+      for (let n; (n = walker.nextNode());) {
+        if (n.parentElement.closest("pre, button")) continue;
+        const i = n.data.toLowerCase().indexOf(needle);
+        if (i >= 0) targets.push([n, i]);
+      }
+      // splitText twice isolates the match as its own node; swap it for <mark>.
+      for (const [n, i] of targets.slice(0, 8)) {
+        const mid = n.splitText(i).splitText(needle.length);
+        const el = document.createElement("mark");
+        el.textContent = mid.data;
+        mid.replaceWith(el);
+      }
+    }
+  }
+  meta.textContent = needle ? `${hits} section${hits === 1 ? "" : "s"} match “${q.value.trim()}”` : "";
+});
+
+// ── "/" focuses search from anywhere; Escape clears ──
+addEventListener("keydown", (e) => {
+  if (e.key === "/" && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)) { e.preventDefault(); q.focus(); }
+  if (e.key === "Escape" && document.activeElement === q) { q.value = ""; q.dispatchEvent(new Event("input")); q.blur(); }
+});
+
+// ── version stamp from the built binary, when served over http from a checkout ──
+// fetch() cannot read file:// URLs, so the stamp simply stays empty when opened from disk.
+if (location.protocol !== "file:") {
+  fetch("hay/Cargo.toml").then((r) => r.ok ? r.text() : "").then((t) => {
+    const v = t.match(/^version = "(.+)"$/m);
+    if (v) document.getElementById("ver").textContent = `v${v[1]}`;
+  }).catch(() => {});
+}
+</script>
+</body>
+</html>

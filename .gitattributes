@@ -1,0 +1,2 @@
+# This TypeScript source historically used NUL sentinels; always review it as text.
+explainer-html.ts diff
