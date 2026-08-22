@@ -153,6 +153,12 @@ destination is public. Use `=label` for repo identity and `--redact-names` for i
   nDCG@10 +0.1301. Gate AS WRITTEN (median across repos — computed for the first time ever):
   0.3810 / 0.5916 → **FAIL** against 0.50 / 0.80. Zero repos worse than rg. Evidence:
   `evidence/2026-08-20-paired-bootstrap-after-taxonomy.json`.
+- **GitHub Pages is LIVE and gh-pages is load-bearing**: https://mneves75.github.io/hay/ serves
+  from the `gh-pages` branch root — landing + `MANUAL.html` + `benchmark.html` + designed HTML
+  edition of BENCHMARK_FEYNMAN + the Remotion benchmark film. Deleting that branch deletes the
+  site (owner once asked; explained, kept). Film source: `site/video-src/`. Release **v0.1.0**:
+  tag + GH Release with an aarch64-apple-darwin tarball; `install.sh` is the supported install
+  path. README links live HTML editions; repo homepage field points at the landing page.
 - **External validity exists now**: SWE-Explore-Bench (public, agent-shaped, 8 languages), 97
   seeded instances, identical mechanically-derived queries to both retrievers: dMRR +0.2709
   [0.1920, 0.3529], dTop10 +26.8 pts, both tests p=0.0001. `evidence/swe-explore.json`; the
