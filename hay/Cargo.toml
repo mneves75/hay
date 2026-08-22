@@ -1,0 +1,32 @@
+[package]
+name = "hay"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "A ranked grep for coding agents: ripgrep's engine, with the priors grep lacks."
+license = "MIT"
+readme = "../README.md"
+repository = "https://github.com/mneves75/hay"
+keywords = ["grep", "search", "ripgrep", "ranking", "agents"]
+categories = ["command-line-utilities", "text-processing"]
+
+[dependencies]
+ignore = "0.4"
+grep-regex = "0.1"
+grep-searcher = "0.1"
+grep-matcher = "0.1"
+# Hand-rolled JSON escaping is where a control character in a source line silently becomes
+# unparseable output. This is the same crate ripgrep uses for `--json`.
+serde_json = "1"
+lexopt = "0.3"
+
+[profile.release]
+opt-level = 3
+lto = true
+strip = true
+
+[dev-dependencies]
+assert_cmd = "2.2.2"
+predicates = "3.1.4"
+serde_json = "1"
+tempfile = "3.27.0"

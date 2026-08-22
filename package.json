@@ -1,0 +1,13 @@
+{
+  "name": "hay",
+  "private": true,
+  "packageManager": "bun@1.4.0",
+  "description": "Dev-only: type definitions and tsc for the typecheck gate. The tools themselves are runtime-dependency-free and run under bun, which strips types without checking them — which is how a dead property access (`a.results` on an object that has `scanned`) shipped in four versions of the harness.",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "1.3.14",
+    "typescript": "7.0.2"
+  }
+}

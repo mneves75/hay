@@ -1,0 +1,33 @@
+{
+  "pairsTotal": 952,
+  "misses": 398,
+  "regressions": 226,
+  "population": 466,
+  "categories": {
+    "truncated": 0,
+    "invisible-asymmetric": 0,
+    "generic-flood": 36,
+    "answer-penalized-class": 146,
+    "definition-lang-gap": 98,
+    "both-lose": 145,
+    "reordering-regression": 41,
+    "uncategorized": 0
+  },
+  "langGapExtensions": {
+    "sql": 3,
+    "example": 1,
+    "css": 4,
+    "yaml": 3,
+    "md": 21,
+    "html": 7,
+    "(none)": 4,
+    "mts": 1,
+    "sh": 5,
+    "json": 2,
+    "swift": 106,
+    "toml": 2,
+    "mdc": 1,
+    "yml": 7,
+    "png": 1
+  }
+}

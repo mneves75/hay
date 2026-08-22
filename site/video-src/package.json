@@ -1,0 +1,30 @@
+{
+  "name": "hay-video",
+  "version": "1.0.0",
+  "description": "Remotion source for the hay public benchmark film",
+  "repository": "https://github.com/mneves75/hay",
+  "license": "MIT",
+  "private": true,
+  "packageManager": "pnpm@11.22.0",
+  "dependencies": {
+    "@remotion/cli": "4.0.515",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "remotion": "4.0.515"
+  },
+  "devDependencies": {
+    "@remotion/eslint-config-flat": "4.0.515",
+    "@types/react": "19.2.18",
+    "@types/web": "0.0.354",
+    "eslint": "10.9.0",
+    "prettier": "3.9.6",
+    "typescript": "5.9.3"
+  },
+  "scripts": {
+    "dev": "remotion studio",
+    "build": "remotion bundle",
+    "upgrade": "remotion upgrade",
+    "lint": "eslint src && tsc",
+    "render": "remotion render HayBenchmark out/hay-benchmark.mp4"
+  }
+}

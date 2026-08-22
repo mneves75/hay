@@ -1,0 +1,5 @@
+# Remotion 4.0.515 still pins typescript-eslint 8.21; the current release supports ESLint 10.
+overrides:
+  typescript-eslint: 8.67.0
+allowBuilds:
+  esbuild: true

@@ -1,0 +1,482 @@
+[
+  {
+    "repo": "runtime-monorepo",
+    "scan": {
+      "oversizedRecords": 0,
+      "nonUtf8Paths": 0
+    },
+    "files": {
+      "code": 13633,
+      "prose": 1268,
+      "suspectProse": 90,
+      "other": 881
+    },
+    "addressability": {
+      "namesFound": 39279,
+      "namesSampled": 120,
+      "lowConfidence": false,
+      "medianHits": 4,
+      "p90Hits": 30,
+      "shareOver100Hits": 0.058333333333333334,
+      "medianWords": 3,
+      "shareUnder3Words": 0.30833333333333335,
+      "worst": [
+        {
+          "name": "name-01",
+          "hits": 1799,
+          "files": 249
+        },
+        {
+          "name": "name-02",
+          "hits": 1138,
+          "files": 509
+        },
+        {
+          "name": "name-03",
+          "hits": 769,
+          "files": 332
+        },
+        {
+          "name": "name-04",
+          "hits": 660,
+          "files": 63
+        },
+        {
+          "name": "name-05",
+          "hits": 521,
+          "files": 258
+        }
+      ]
+    },
+    "sludge": {
+      "generic": {
+        "queries": 14,
+        "totalHits": 378634,
+        "proseShare": 0.04360411373516377,
+        "suspectShare": 0.00521347792327155
+      },
+      "repoSpecific": {
+        "queries": 10,
+        "totalHits": 50580,
+        "proseShare": 0.028054567022538553,
+        "suspectShare": 0.004092526690391459
+      },
+      "worst": [
+        {
+          "query": "update",
+          "hits": 29692,
+          "proseShare": 0.12747541425299744,
+          "suspectShare": 0.0035026269702276708
+        },
+        {
+          "query": "handler",
+          "hits": 5742,
+          "proseShare": 0.11233019853709508,
+          "suspectShare": 0.014803204458376872
+        },
+        {
+          "query": "name-06",
+          "hits": 3029,
+          "proseShare": 0.08319577418289864,
+          "suspectShare": 0.012545394519643446
+        },
+        {
+          "query": "validate",
+          "hits": 2452,
+          "proseShare": 0.06973898858075041,
+          "suspectShare": 0.0065252854812398045
+        },
+        {
+          "query": "auth",
+          "hits": 13578,
+          "proseShare": 0.06009721608484313,
+          "suspectShare": 0.008248637501841214
+        }
+      ]
+    }
+  },
+  {
+    "repo": "editor-app",
+    "scan": {
+      "oversizedRecords": 0,
+      "nonUtf8Paths": 0
+    },
+    "files": {
+      "code": 330,
+      "prose": 9,
+      "suspectProse": 1,
+      "other": 88
+    },
+    "addressability": {
+      "namesFound": 970,
+      "namesSampled": 120,
+      "lowConfidence": false,
+      "medianHits": 9,
+      "p90Hits": 28,
+      "shareOver100Hits": 0.016666666666666666,
+      "medianWords": 2,
+      "shareUnder3Words": 0.6833333333333333,
+      "worst": [
+        {
+          "name": "name-01",
+          "hits": 156,
+          "files": 26
+        },
+        {
+          "name": "name-02",
+          "hits": 141,
+          "files": 30
+        },
+        {
+          "name": "name-03",
+          "hits": 82,
+          "files": 13
+        },
+        {
+          "name": "name-04",
+          "hits": 80,
+          "files": 13
+        },
+        {
+          "name": "name-05",
+          "hits": 46,
+          "files": 24
+        }
+      ]
+    },
+    "sludge": {
+      "generic": {
+        "queries": 14,
+        "totalHits": 6177,
+        "proseShare": 0.03189250445199935,
+        "suspectShare": 0.02153148777723814
+      },
+      "repoSpecific": {
+        "queries": 10,
+        "totalHits": 2066,
+        "proseShare": 0.05179090029041626,
+        "suspectShare": 0.023233301064859633
+      },
+      "worst": [
+        {
+          "query": "name-06",
+          "hits": 324,
+          "proseShare": 0.18518518518518517,
+          "suspectShare": 0.10802469135802469
+        },
+        {
+          "query": "validate",
+          "hits": 50,
+          "proseShare": 0.14,
+          "suspectShare": 0.1
+        },
+        {
+          "query": "user",
+          "hits": 462,
+          "proseShare": 0.13636363636363635,
+          "suspectShare": 0.12554112554112554
+        },
+        {
+          "query": "name-05",
+          "hits": 46,
+          "proseShare": 0.13043478260869565,
+          "suspectShare": 0
+        },
+        {
+          "query": "auth",
+          "hits": 129,
+          "proseShare": 0.12403100775193798,
+          "suspectShare": 0.08527131782945736
+        }
+      ]
+    }
+  },
+  {
+    "repo": "platform-workspace",
+    "scan": {
+      "oversizedRecords": 0,
+      "nonUtf8Paths": 0
+    },
+    "files": {
+      "code": 1667,
+      "prose": 2167,
+      "suspectProse": 462,
+      "other": 1926
+    },
+    "addressability": {
+      "namesFound": 6493,
+      "namesSampled": 120,
+      "lowConfidence": false,
+      "medianHits": 5,
+      "p90Hits": 24,
+      "shareOver100Hits": 0.03333333333333333,
+      "medianWords": 3,
+      "shareUnder3Words": 0.38333333333333336,
+      "worst": [
+        {
+          "name": "name-01",
+          "hits": 486,
+          "files": 149
+        },
+        {
+          "name": "name-02",
+          "hits": 279,
+          "files": 53
+        },
+        {
+          "name": "name-03",
+          "hits": 194,
+          "files": 50
+        },
+        {
+          "name": "name-04",
+          "hits": 112,
+          "files": 9
+        },
+        {
+          "name": "name-05",
+          "hits": 76,
+          "files": 19
+        }
+      ]
+    },
+    "sludge": {
+      "generic": {
+        "queries": 14,
+        "totalHits": 109921,
+        "proseShare": 0.14601395547711538,
+        "suspectShare": 0.06829450241537104
+      },
+      "repoSpecific": {
+        "queries": 10,
+        "totalHits": 2270,
+        "proseShare": 0.2365638766519824,
+        "suspectShare": 0.10969162995594714
+      },
+      "worst": [
+        {
+          "query": "name-01",
+          "hits": 659,
+          "proseShare": 0.5311077389984825,
+          "suspectShare": 0.25948406676783003
+        },
+        {
+          "query": "name-06",
+          "hits": 37,
+          "proseShare": 0.35135135135135137,
+          "suspectShare": 0.02702702702702703
+        },
+        {
+          "query": "name-07",
+          "hits": 44,
+          "proseShare": 0.3409090909090909,
+          "suspectShare": 0
+        },
+        {
+          "query": "config",
+          "hits": 3648,
+          "proseShare": 0.3300438596491228,
+          "suspectShare": 0.15021929824561403
+        },
+        {
+          "query": "auth",
+          "hits": 3843,
+          "proseShare": 0.3198022378350247,
+          "suspectShare": 0.1384335154826958
+        }
+      ]
+    }
+  },
+  {
+    "repo": "product-app",
+    "scan": {
+      "oversizedRecords": 0,
+      "nonUtf8Paths": 0
+    },
+    "files": {
+      "code": 2761,
+      "prose": 1135,
+      "suspectProse": 647,
+      "other": 1047
+    },
+    "addressability": {
+      "namesFound": 3771,
+      "namesSampled": 120,
+      "lowConfidence": false,
+      "medianHits": 12,
+      "p90Hits": 88,
+      "shareOver100Hits": 0.09166666666666666,
+      "medianWords": 3,
+      "shareUnder3Words": 0.30833333333333335,
+      "worst": [
+        {
+          "name": "name-01",
+          "hits": 608,
+          "files": 147
+        },
+        {
+          "name": "name-02",
+          "hits": 372,
+          "files": 92
+        },
+        {
+          "name": "name-03",
+          "hits": 288,
+          "files": 70
+        },
+        {
+          "name": "name-04",
+          "hits": 212,
+          "files": 168
+        },
+        {
+          "name": "name-05",
+          "hits": 195,
+          "files": 74
+        }
+      ]
+    },
+    "sludge": {
+      "generic": {
+        "queries": 14,
+        "totalHits": 141505,
+        "proseShare": 0.2697643192820042,
+        "suspectShare": 0.13102010529663263
+      },
+      "repoSpecific": {
+        "queries": 10,
+        "totalHits": 3378,
+        "proseShare": 0.152753108348135,
+        "suspectShare": 0.06423919478981646
+      },
+      "worst": [
+        {
+          "query": "service",
+          "hits": 1896,
+          "proseShare": 0.6845991561181435,
+          "suspectShare": 0.3982067510548523
+        },
+        {
+          "query": "name-04",
+          "hits": 568,
+          "proseShare": 0.545774647887324,
+          "suspectShare": 0.20422535211267606
+        },
+        {
+          "query": "client",
+          "hits": 6175,
+          "proseShare": 0.4756275303643725,
+          "suspectShare": 0.26299595141700405
+        },
+        {
+          "query": "auth",
+          "hits": 18014,
+          "proseShare": 0.43194182302653494,
+          "suspectShare": 0.21350061063617187
+        },
+        {
+          "query": "config",
+          "hits": 5698,
+          "proseShare": 0.378027378027378,
+          "suspectShare": 0.19726219726219726
+        }
+      ]
+    }
+  },
+  {
+    "repo": "docs-heavy-site",
+    "scan": {
+      "oversizedRecords": 3,
+      "nonUtf8Paths": 0
+    },
+    "files": {
+      "code": 346,
+      "prose": 1045,
+      "suspectProse": 42,
+      "other": 132
+    },
+    "addressability": {
+      "namesFound": 784,
+      "namesSampled": 120,
+      "lowConfidence": false,
+      "medianHits": 5,
+      "p90Hits": 33,
+      "shareOver100Hits": 0.041666666666666664,
+      "medianWords": 2,
+      "shareUnder3Words": 0.6083333333333333,
+      "worst": [
+        {
+          "name": "config",
+          "hits": 825,
+          "files": 213
+        },
+        {
+          "name": "name-01",
+          "hits": 788,
+          "files": 152
+        },
+        {
+          "name": "name-02",
+          "hits": 142,
+          "files": 7
+        },
+        {
+          "name": "name-03",
+          "hits": 130,
+          "files": 22
+        },
+        {
+          "name": "name-04",
+          "hits": 109,
+          "files": 26
+        }
+      ]
+    },
+    "sludge": {
+      "generic": {
+        "queries": 14,
+        "totalHits": 51608,
+        "proseShare": 0.9231514493876918,
+        "suspectShare": 0.03718415749496202
+      },
+      "repoSpecific": {
+        "queries": 9,
+        "totalHits": 9269,
+        "proseShare": 0.7558528428093646,
+        "suspectShare": 0.02934512892437156
+      },
+      "worst": [
+        {
+          "query": "name-01",
+          "hits": 873,
+          "proseShare": 0.993127147766323,
+          "suspectShare": 0.004581901489117984
+        },
+        {
+          "query": "service",
+          "hits": 390,
+          "proseShare": 0.9692307692307692,
+          "suspectShare": 0.11025641025641025
+        },
+        {
+          "query": "handler",
+          "hits": 1441,
+          "proseShare": 0.9597501734906315,
+          "suspectShare": 0.006939625260235947
+        },
+        {
+          "query": "request",
+          "hits": 3777,
+          "proseShare": 0.9563145353455124,
+          "suspectShare": 0.03071220545406407
+        },
+        {
+          "query": "state",
+          "hits": 5438,
+          "proseShare": 0.9492460463405664,
+          "suspectShare": 0.022618609783008458
+        }
+      ]
+    }
+  }
+]
