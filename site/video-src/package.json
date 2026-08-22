@@ -18,7 +18,7 @@
     "@types/web": "0.0.354",
     "eslint": "10.9.0",
     "prettier": "3.9.6",
-    "typescript": "5.9.3"
+    "typescript": "6.0.3"
   },
   "scripts": {
     "dev": "remotion studio",
