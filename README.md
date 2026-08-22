@@ -3,7 +3,7 @@
 **A ranked grep for coding agents, built from a negative result.** `hay` uses ripgrep's search
 engine and returns the same matches in a better order: likely declarations first, stale prose and
 buried files later. It is stateless, deterministic, and currently fails its own pre-registered ship
-gate. See the [manual](MANUAL.html) for the command surface and [HOWTO.md](HOWTO.md) for setup.
+gate. See the [manual](https://mneves75.github.io/hay/MANUAL.html) for the command surface and [HOWTO.md](HOWTO.md) for setup.
 
 ```bash
 git clone https://github.com/mneves75/hay.git
@@ -109,7 +109,7 @@ If the constraint is the retriever, fix the retriever. [`hay`](HOWTO.md#3-hay) i
 and ripgrep's walk with the priors ripgrep deliberately lacks: it returns **exactly** the matches
 `rg` returns, reordered so the line that declares the thing comes first. No index, no daemon, no
 state — you type `hay` instead of `rg`. Every flag, output format and exit code is documented in
-the [manual](MANUAL.html) — an offline, self-contained page with search.
+the [manual](https://mneves75.github.io/hay/MANUAL.html) — an offline, self-contained page with search.
 
 ```bash
 cargo install --path hay
@@ -165,7 +165,7 @@ line of Rust existed, precisely so it could not be moved afterwards. It has not 
 
 ## Measured against every other tool
 
-[BENCHMARK.md](BENCHMARK.md) compares `hay` with `ripgrep`, `ugrep`, `ag`, `ack`, BSD `grep`,
+[BENCHMARK.md](https://mneves75.github.io/hay/benchmark.html) compares `hay` with `ripgrep`, `ugrep`, `ag`, `ack`, BSD `grep`,
 `git grep`, `ast-grep` and `codespelunker` over the Linux kernel, openclaw, ripgrep's own source,
 Alamofire (Swift) and this repository — ground truth from a parser, absolute differences with
 bootstrap intervals, and a capability matrix for the things speed does not capture. Regenerate it
@@ -174,7 +174,7 @@ with `bun benchmark.ts`. Two of those entrants are recent admissions against int
 reports claimed "first on all corpora" without it; the Swift corpus exists because the error
 taxonomy showed the behavioural misses concentrating in a language no public corpus covered.
 
-[BENCHMARK_FEYNMAN.md](BENCHMARK_FEYNMAN.md) explains the whole thing from nothing — what MRR is
+[BENCHMARK_FEYNMAN.md](https://mneves75.github.io/hay/BENCHMARK_FEYNMAN.html) explains the whole thing from nothing — what MRR is
 and why it's a reciprocal, what a bootstrap interval actually does, why "the interval spans zero"
 is the only reading skill you need, and where the benchmark is wrong. Written for someone who
 knows nothing about information retrieval and would rather keep it that way.
@@ -297,7 +297,7 @@ reports the answer-in-top-10 rate beside it, which is a proportion and immune to
 nDCG@10, which is graded by position and uses every judgment rather than the first. All three move
 together.
 
-nDCG is reported here and deliberately *not* in [BENCHMARK.md](BENCHMARK.md), because the two
+nDCG is reported here and deliberately *not* in [BENCHMARK.md](https://mneves75.github.io/hay/benchmark.html), because the two
 evaluations differ in exactly the way that decides it. The benchmark's ground truth is one
 declaring file per symbol — single-positive and binary — where nDCG and MRR degenerate into the
 same hit-or-miss signal, the standing criticism of code-retrieval benchmarks built that way.
