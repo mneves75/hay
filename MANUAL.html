@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -184,10 +184,13 @@ headings, flag names, and body text.</p>
 <!-- ─────────────────────────────── start ─────────────────────────────── -->
 <section id="start">
 <h2>Start here</h2>
-<p>Install from source (Rust edition 2024, MSRV 1.85):</p>
-<div class="codewrap"><pre><code>git clone https://github.com/mneves75/hay.git &amp;&amp; cd hay
-cargo install --path hay</code></pre><button class="copy" type="button">copy</button></div>
-<p>Then search exactly like you would with ripgrep:</p>
+<p>Install from source — one line, or inspect first (Rust edition 2024, MSRV 1.88):</p>
+<div class="codewrap"><pre><code>curl -fsSL https://raw.githubusercontent.com/mneves75/hay/main/install.sh | bash
+
+# inspect-first form:
+git clone https://github.com/mneves75/hay.git &amp;&amp; cd hay &amp;&amp; ./install.sh</code></pre><button class="copy" type="button">copy</button></div>
+<p>The script gates on the toolchain version, clones, builds release, installs via
+<code>cargo install</code>, and smoke-tests. Then search exactly like you would with ripgrep:</p>
 <div class="codewrap"><pre><code>hay validateSession src/          # ranked results, best first
 hay -t ts -w fetchUser            # TypeScript only, whole words
 hay -C 3 -m 20 'parseConfig'      # context, capped result count</code></pre><button class="copy" type="button">copy</button></div>
@@ -261,10 +264,10 @@ all work as you expect.</p>
 <summary>Picking the pattern</summary>
 <div class="body"><table>
 <tbody>
-<tr><th scope="row"><code>-e, --regexp</code></td><td>Add a pattern; repeat for the union of all patterns.</td></tr>
-<tr><th scope="row"><code>-i, --ignore-case</code></td><td>Case-insensitive matching.</td></tr>
-<tr><th scope="row"><code>-w, --word-regexp</code></td><td>Match whole words only.</td></tr>
-<tr><th scope="row"><code>-F, --fixed-strings</code></td><td>Treat the pattern as a literal string — no regex metacharacters. Agents searching identifiers should default to this.</td></tr>
+<tr><th scope="row"><code>-e, --regexp</code></th><td>Add a pattern; repeat for the union of all patterns.</td></tr>
+<tr><th scope="row"><code>-i, --ignore-case</code></th><td>Case-insensitive matching.</td></tr>
+<tr><th scope="row"><code>-w, --word-regexp</code></th><td>Match whole words only.</td></tr>
+<tr><th scope="row"><code>-F, --fixed-strings</code></th><td>Treat the pattern as a literal string — no regex metacharacters. Agents searching identifiers should default to this.</td></tr>
 </tbody>
 </table></div>
 </details>
@@ -273,11 +276,11 @@ all work as you expect.</p>
 <summary>Narrowing the tree</summary>
 <div class="body"><table>
 <tbody>
-<tr><th scope="row"><code>-g, --glob</code></td><td>Include/exclude files by glob; repeatable. Leading <code>!</code> excludes.</td></tr>
-<tr><th scope="row"><code>-t, --type</code></td><td>Only search a named file type (<code>ts</code>, <code>rust</code>, …); repeatable. <code>--type-list</code> prints them all.</td></tr>
-<tr><th scope="row"><code>-T, --type-not</code></td><td>Never search a named file type; repeatable.</td></tr>
-<tr><th scope="row"><code>--hidden</code></td><td>Also search hidden files and directories.</td></tr>
-<tr><th scope="row"><code>--no-ignore</code></td><td>Do not respect <code>.gitignore</code>. Like ripgrep, ignore rules only apply inside a git repository.</td></tr>
+<tr><th scope="row"><code>-g, --glob</code></th><td>Include/exclude files by glob; repeatable. Leading <code>!</code> excludes.</td></tr>
+<tr><th scope="row"><code>-t, --type</code></th><td>Only search a named file type (<code>ts</code>, <code>rust</code>, …); repeatable. <code>--type-list</code> prints them all.</td></tr>
+<tr><th scope="row"><code>-T, --type-not</code></th><td>Never search a named file type; repeatable.</td></tr>
+<tr><th scope="row"><code>--hidden</code></th><td>Also search hidden files and directories.</td></tr>
+<tr><th scope="row"><code>--no-ignore</code></th><td>Do not respect <code>.gitignore</code>. Like ripgrep, ignore rules only apply inside a git repository.</td></tr>
 </tbody>
 </table></div>
 </details>
@@ -286,14 +289,14 @@ all work as you expect.</p>
 <summary>Shaping the output</summary>
 <div class="body"><table>
 <tbody>
-<tr><th scope="row"><code>-l, --files-with-matches</code></td><td>Print only file paths, best-ranked file first. Wins over <code>--json</code>: under both flags you get plain paths, because hay’s JSON contract has no files-only message (see <a href="#output">Output</a>).</td></tr>
-<tr><th scope="row"><code>-n / --no-line-number</code></td><td>Line numbers are on by default; this turns them off.</td></tr>
-<tr><th scope="row"><code>-A/-B/-C &lt;N&gt;</code></td><td>After/before/either-side context lines. Partial overrides behave like ripgrep 14+: <code>-C1 -A2</code> means <code>-B1 -A2</code>. Context never reorders results and never duplicates a line inside one window block; a real gap between windows is marked <code>--</code>.</td></tr>
-<tr><th scope="row"><code>-m, --max-count &lt;N&gt;</code></td><td>Stop after N <em>ranked results</em> (default 50; <code>0</code> = no limit). Unlike ripgrep, where <code>-m</code> bounds matches per file, this bounds the total output — see <a href="#cap">the cap</a>.</td></tr>
-<tr><th scope="row"><code>--json</code></td><td>Ripgrep-shaped JSON Lines: <code>match</code> and <code>context</code> messages only. No <code>begin</code>/<code>end</code>/<code>summary</code> — those are file-scoped and meaningless once output is rank-ordered.</td></tr>
-<tr><th scope="row"><code>--explain</code></td><td>Prefix each result with its score and per-signal breakdown (see <a href="#explain">Explain</a>).</td></tr>
-<tr><th scope="row"><code>--type-list</code></td><td>Print known file types and exit.</td></tr>
-<tr><th scope="row"><code>-h, -V</code></td><td>Help and version.</td></tr>
+<tr><th scope="row"><code>-l, --files-with-matches</code></th><td>Print only file paths, best-ranked file first. Wins over <code>--json</code>: under both flags you get plain paths, because hay’s JSON contract has no files-only message (see <a href="#output">Output</a>).</td></tr>
+<tr><th scope="row"><code>-n / --no-line-number</code></th><td>Line numbers are on by default; this turns them off.</td></tr>
+<tr><th scope="row"><code>-A/-B/-C &lt;N&gt;</code></th><td>After/before/either-side context lines. Partial overrides behave like ripgrep 14+: <code>-C1 -A2</code> means <code>-B1 -A2</code>. Context never reorders results and never duplicates a line inside one window block; a real gap between windows is marked <code>--</code>.</td></tr>
+<tr><th scope="row"><code>-m, --max-count &lt;N&gt;</code></th><td>Stop after N <em>ranked results</em> (default 50; <code>0</code> = no limit). Unlike ripgrep, where <code>-m</code> bounds matches per file, this bounds the total output — see <a href="#cap">the cap</a>.</td></tr>
+<tr><th scope="row"><code>--json</code></th><td>Ripgrep-shaped JSON Lines: <code>match</code> and <code>context</code> messages only. No <code>begin</code>/<code>end</code>/<code>summary</code> — those are file-scoped and meaningless once output is rank-ordered.</td></tr>
+<tr><th scope="row"><code>--explain</code></th><td>Prefix each result with its score and per-signal breakdown (see <a href="#explain">Explain</a>).</td></tr>
+<tr><th scope="row"><code>--type-list</code></th><td>Print known file types and exit.</td></tr>
+<tr><th scope="row"><code>-h, -V</code></th><td>Help and version.</td></tr>
 </tbody>
 </table></div>
 </details>
@@ -304,9 +307,9 @@ all work as you expect.</p>
 the flag are mutually meaningless. Each refusal says why and names the ripgrep equivalent:</p>
 <table>
 <tbody>
-<tr><th scope="row"><code>-v</code></td><td>Inverting the match leaves nothing to rank: every non-matching line would score identically. Use <code>rg -v</code>.</td></tr>
-<tr><th scope="row"><code>-c</code></td><td>hay ranks lines, it does not count them. Use <code>rg -c</code>.</td></tr>
-<tr><th scope="row"><code>-o</code></td><td>Only-matching prints substrings, not lines — no line, nothing to rank. Use <code>rg -o</code>.</td></tr>
+<tr><th scope="row"><code>-v</code></th><td>Inverting the match leaves nothing to rank: every non-matching line would score identically. Use <code>rg -v</code>.</td></tr>
+<tr><th scope="row"><code>-c</code></th><td>hay ranks lines, it does not count them. Use <code>rg -c</code>.</td></tr>
+<tr><th scope="row"><code>-o</code></th><td>Only-matching prints substrings, not lines — no line, nothing to rank. Use <code>rg -o</code>.</td></tr>
 </tbody>
 </table></div>
 </details>
@@ -350,8 +353,8 @@ cleanly (recipe below).</li>
 <thead><tr><th scope="col">field</th><th scope="col">meaning</th></tr></thead>
 <tbody>
 <tr><th scope="row">total</th><td>Sum of the weighted signals. Higher ranks first; equal totals tie-break by path.</td></tr>
-<tr><th scope="row"><code>def</code></td><td>Definition signal: <code>+6.0</code> when the line declares the query, <code>+0.0</code> otherwise.</td></tr>
-<tr><th scope="row"><code>path</code></td><td>Path-class prior for the file’s directory class (source up, tests down, buried furthest down).</td></tr>
+<tr><th scope="row"><code>def</code></th><td>Definition signal: <code>+6.0</code> when the line declares the query, <code>+0.0</code> otherwise.</td></tr>
+<tr><th scope="row"><code>path</code></th><td>Path-class prior for the file’s directory class (source up, tests down, buried furthest down).</td></tr>
 <tr><th scope="row"><code>tf</code></th><td>Damped term frequency within the line.</td></tr>
 </tbody>
 </table>
@@ -370,10 +373,10 @@ weights are optimal.</p>
 <thead><tr><th scope="col">difference</th><th scope="col">why</th></tr></thead>
 <tbody>
 <tr><th scope="row">Rank-ordered results</th><td>The entire product. Path order is shelf order; agents need answer order.</td></tr>
-<tr><th scope="row"><code>-m</code> bounds total results, not matches-per-file</td><td>An agent wants “the twenty best lines”, not “twenty per file”.</td></tr>
-<tr><th scope="row"><code>--json</code> emits only <code>match</code>/<code>context</code></td><td><code>begin</code>/<code>end</code>/<code>summary</code> assume a file-scoped stream; rank order interleaves files.</td></tr>
-<tr><th scope="row"><code>-l</code> wins over <code>--json</code></td><td>Plain paths beat a bare <code>begin</code> with no <code>end</code>.</td></tr>
-<tr><th scope="row">A 20,000-candidate cap (see <a href="#cap">the cap</a>)</td><td>Memory bound with a loud stderr notice instead of unbounded buffering.</td></tr>
+<tr><th scope="row"><code>-m</code> bounds total results, not matches-per-file</th><td>An agent wants “the twenty best lines”, not “twenty per file”.</td></tr>
+<tr><th scope="row"><code>--json</code> emits only <code>match</code>/<code>context</code></th><td><code>begin</code>/<code>end</code>/<code>summary</code> assume a file-scoped stream; rank order interleaves files.</td></tr>
+<tr><th scope="row"><code>-l</code> wins over <code>--json</code></th><td>Plain paths beat a bare <code>begin</code> with no <code>end</code>.</td></tr>
+<tr><th scope="row">A 20,000-candidate cap (see <a href="#cap">the cap</a>)</th><td>Memory bound with a loud stderr notice instead of unbounded buffering.</td></tr>
 </tbody>
 </table>
 <p>Everything else is parity by construction, enforced by a differential test that fails the build
@@ -412,6 +415,37 @@ affordable, stated where you can see it.</p>
 <!-- ─────────────────────────────── agents ────────────────────────────── -->
 <section id="agents">
 <h2>Recipes for agent loops</h2>
+<p>Claude Code, Codex CLI, pi, Aider, Cursor — they all read search results the same way: first
+page, act on it. That is exactly the surface hay improves, so wiring it into an agent is one
+paragraph of instructions plus the right defaults.</p>
+
+<div class="callout">
+<p><strong>The universal snippet</strong> — paste into <code>AGENTS.md</code> / <code>CLAUDE.md</code>.
+Codex CLI, Claude Code, and pi read <code>AGENTS.md</code>; Claude Code additionally reads
+<code>CLAUDE.md</code>; Aider wants it in <code>CONVENTIONS.md</code>; Cursor takes rules files.</p>
+</div>
+<div class="codewrap"><pre><code>## Code search
+
+Use `hay` instead of `rg` for concept and symbol searches:
+
+    hay -F -m 10 "&lt;symbol&gt;" src/
+
+- always `-F` when searching identifiers (they are literals, not regexes)
+- exit 0 = results ranked best-first; 1 = no match; 2 = INCOMPLETE — read stderr,
+  then narrow (add -g/-t) rather than trusting the output wholesale
+- need exhaustive lists or match counts? fall back to `rg`
+- structured: `hay --json -F "sym" . | jq 'select(.type=="match")'</code></pre><button class="copy" type="button">copy</button></div>
+
+<table>
+<thead><tr><th scope="col">agent</th><th scope="col">instructions live in</th><th scope="col">notes</th></tr></thead>
+<tbody>
+<tr><th scope="row">Claude Code</th><td><code>CLAUDE.md</code> or <code>AGENTS.md</code></td><td>snippet works verbatim; Claude narrows well on exit 2 if told to read stderr</td></tr>
+<tr><th scope="row">Codex CLI</th><td><code>AGENTS.md</code> (repo root, then <code>~/.codex/AGENTS.md</code>)</td><td>same snippet; state the `-F` default explicitly and it holds</td></tr>
+<tr><th scope="row">pi</th><td><code>AGENTS.md</code> (project root)</td><td>pi reads it before acting; the jq recipe fits its bash-tool loop directly</td></tr>
+<tr><th scope="row">Cursor / Aider / others</th><td>their rules file (<code>.cursor/rules</code>, <code>CONVENTIONS.md</code>)</td><td>any agent that shells out to grep can run the same commands</td></tr>
+</tbody>
+</table>
+
 <h3>Find the definition, read it</h3>
 <div class="codewrap"><pre><code># fixed-string, top hit only — the common agent case
 hay -F -m 1 "$symbol" "$root"</code></pre><button class="copy" type="button">copy</button></div>
@@ -426,6 +460,10 @@ hay --json -F "$symbol" "$root" \
 <h3>Honesty check on a big tree</h3>
 <div class="codewrap"><pre><code>hay -m 0 -F "$symbol" "$root" 2&gt;err.log || true
 grep -q "candidate cap" err.log &amp;&amp; echo "truncated — switch to rg for exhaustiveness"</code></pre><button class="copy" type="button">copy</button></div>
+<h3>Install on an agent's machine</h3>
+<div class="codewrap"><pre><code>curl -fsSL https://raw.githubusercontent.com/mneves75/hay/main/install.sh | bash   # inspect first!
+# inspect-first form:
+git clone https://github.com/mneves75/hay.git &amp;&amp; cd hay &amp;&amp; ./install.sh</code></pre><button class="copy" type="button">copy</button></div>
 </section>
 
 <!-- ─────────────────────────────── faq ─────────────────────────────── -->

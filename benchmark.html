@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -431,8 +431,8 @@ and “exactly once” because a symbol declared in three places has no single r
 <p>Averaging raw positions is wrong, because the gap between 1st and 2nd is enormous and the gap
 between 50th and 51st is nothing. So flip it — score by <strong>1 divided by the position</strong>:</p>
 <table class="rr">
-<thead><tr><th>position</th><td>1</td><td>2</td><td>4</td><td>10</td><td>100</td><td>never</td></tr></thead>
-<tbody><tr><th>score</th><td>1.00</td><td>0.50</td><td>0.25</td><td>0.10</td><td>0.01</td><td>0.00</td></tr></tbody>
+<thead><tr><th scope="col">position</th><th scope="col">1</th><th scope="col">2</th><th scope="col">4</th><th scope="col">10</th><th scope="col">100</th><th scope="col">never</th></tr></thead>
+<tbody><tr><th scope="row">score</th><td>1.00</td><td>0.50</td><td>0.25</td><td>0.10</td><td>0.01</td><td>0.00</td></tr></tbody>
 </table>
 <p>Average that across queries and you have MRR — mean reciprocal rank. It falls exactly the way
 the experience falls.</p>
