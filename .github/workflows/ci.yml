@@ -50,12 +50,20 @@ jobs:
 
       # The differential test is the correctness property `hay` lives or dies by: identical
       # matches to ripgrep, only reordered. Three real defects surfaced here and nowhere else.
+      # It runs on all three OSes — Windows under Git Bash — because a parity claim that has
+      # never executed on a platform is a claim, not a gate.
       - name: Install ripgrep
-        if: runner.os != 'Windows'
-        run: command -v rg || (if [ "$RUNNER_OS" = "Linux" ]; then sudo apt-get update && sudo apt-get install -y ripgrep; else brew install ripgrep; fi)
+        shell: bash
+        run: |
+          command -v rg && exit 0
+          case "$RUNNER_OS" in
+            Linux) sudo apt-get update && sudo apt-get install -y ripgrep ;;
+            macOS) brew install ripgrep ;;
+            Windows) choco install ripgrep -y --no-progress ;;
+          esac
       - name: Differential test vs ripgrep
-        if: runner.os != 'Windows'
         working-directory: .
+        shell: bash
         run: ./hay/differential-test.sh
 
   msrv:
