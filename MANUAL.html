@@ -420,9 +420,11 @@ page, act on it. That is exactly the surface hay improves, so wiring it into an 
 paragraph of instructions plus the right defaults.</p>
 
 <div class="callout">
-<p><strong>The universal snippet</strong> — paste into <code>AGENTS.md</code> / <code>CLAUDE.md</code>.
-Codex CLI, Claude Code, and pi read <code>AGENTS.md</code>; Claude Code additionally reads
-<code>CLAUDE.md</code>; Aider wants it in <code>CONVENTIONS.md</code>; Cursor takes rules files.</p>
+<p><strong>The universal snippet</strong> — paste into <code>AGENTS.md</code>. Codex CLI and pi read
+it natively. Claude Code reads only <code>CLAUDE.md</code> — point it at the same source with a
+one-line <code>CLAUDE.md</code> containing <code>@AGENTS.md</code>, or
+<code>ln -s AGENTS.md CLAUDE.md</code> (both are Anthropic's documented patterns). Aider and Cursor
+need their own wiring — see "Make hay the default" below.</p>
 </div>
 <div class="codewrap"><pre><code>## Code search
 
@@ -439,12 +441,59 @@ Use `hay` instead of `rg` for concept and symbol searches:
 <table>
 <thead><tr><th scope="col">agent</th><th scope="col">instructions live in</th><th scope="col">notes</th></tr></thead>
 <tbody>
-<tr><th scope="row">Claude Code</th><td><code>CLAUDE.md</code> or <code>AGENTS.md</code></td><td>snippet works verbatim; Claude narrows well on exit 2 if told to read stderr</td></tr>
+<tr><th scope="row">Claude Code</th><td><code>CLAUDE.md</code> (share one source via <code>@AGENTS.md</code> or a symlink — it does not read <code>AGENTS.md</code> itself)</td><td>snippet works verbatim; Claude narrows well on exit 2 if told to read stderr</td></tr>
 <tr><th scope="row">Codex CLI</th><td><code>AGENTS.md</code> (repo root, then <code>~/.codex/AGENTS.md</code>)</td><td>same snippet; state the `-F` default explicitly and it holds</td></tr>
 <tr><th scope="row">pi</th><td><code>AGENTS.md</code> (project root)</td><td>pi reads it before acting; the jq recipe fits its bash-tool loop directly</td></tr>
-<tr><th scope="row">Cursor / Aider / others</th><td>their rules file (<code>.cursor/rules</code>, <code>CONVENTIONS.md</code>)</td><td>any agent that shells out to grep can run the same commands</td></tr>
+<tr><th scope="row">Cursor / Aider / others</th><td><code>.cursor/rules/*.mdc</code>; <code>CONVENTIONS.md</code> via <code>--read</code></td><td>neither loads prose automatically — wiring below; any agent that shells out can run the same commands</td></tr>
 </tbody>
 </table>
+
+<h3>Make hay the default, not just available</h3>
+<p>The reliable way to make an agent reach for hay <em>first</em> is an instruction-level default:
+a rule that names hay as the default and <code>rg</code> as the explicit fallback. Agents follow
+tool rules far more reliably than they discover tools. Strengthen the universal snippet's first
+line to a default:</p>
+<div class="codewrap"><pre><code>## Code search — defaults
+
+`hay` is the DEFAULT search tool in this repo. Reach for it first for every
+"where is X / what defines X / how does X work" search:
+
+    hay -F -m 10 "&lt;symbol&gt;" .
+
+Use `rg` only when the task needs every match, an exact count, `-v`, or
+path-ordered output — and say so when you switch.</code></pre><button class="copy" type="button">copy</button></div>
+<ul>
+<li><strong>Claude Code</strong> — put the rule in <code>CLAUDE.md</code> (or keep it in
+<code>AGENTS.md</code> and add a <code>CLAUDE.md</code> containing just <code>@AGENTS.md</code> —
+Claude Code does not read <code>AGENTS.md</code> directly). Pre-approve the binary so the default
+costs no permission prompts: <code>/permissions</code> → allow <code>Bash(hay:*)</code>. Claude
+Code's built-in <code>Grep</code> tool is ripgrep internally and cannot be rewired; the rule should
+therefore say "prefer running <code>hay</code> in the shell over the Grep tool for concept
+searches", which Claude honors.</li>
+<li><strong>Codex CLI</strong> — the same rule in the repo's <code>AGENTS.md</code> holds per project;
+for every project, put it in <code>~/.codex/AGENTS.md</code>. State the <code>rg</code> fallback
+explicitly or Codex will treat hay as a synonym and lose the exhaustiveness distinction.</li>
+<li><strong>pi</strong> — the repo <code>AGENTS.md</code> is read natively; nothing else needed.</li>
+<li><strong>Aider</strong> — a <code>CONVENTIONS.md</code> file is inert on its own: load it with
+<code>aider --read CONVENTIONS.md</code>, or persist it in <code>.aider.conf.yml</code> as
+<code>read: [CONVENTIONS.md]</code>.</li>
+<li><strong>Cursor</strong> — rules are <code>.mdc</code> files under <code>.cursor/rules/</code>
+with a rule type; make this one always-on (<code>alwaysApply: true</code> in the frontmatter, or
+the "Always" type in the UI), otherwise it may be absent exactly when the agent picks its
+search tool.</li>
+<li><strong>Verify it took</strong> — ask the agent "where is <code>&lt;some symbol&gt;</code> defined?"
+and check the transcript ran <code>hay</code>. A default that was never observed firing is a
+claim, not a configuration.</li>
+</ul>
+<div class="callout warn">
+<p><strong>Do not shim or alias <code>rg</code> → <code>hay</code>.</strong> It is tempting and it is
+wrong twice over. Agents and editor tooling call <code>rg</code> expecting exact ripgrep semantics —
+file-grouped order, <code>-v</code>/<code>-c</code>/<code>-o</code>, <code>begin</code>/<code>end</code>
+JSON events — and hay deliberately declines or reshapes all of those. And a shim converts every
+exhaustive search (renames, security sweeps, error-string hunts) into a ranked, capped one
+without telling anyone — exactly the quiet wrong answer this tool's exit codes exist to prevent.
+The default belongs in instructions, where the agent knows which tool it chose and why.</p>
+</div>
 
 <h3>Find the definition, read it</h3>
 <div class="codewrap"><pre><code># fixed-string, top hit only — the common agent case

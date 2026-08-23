@@ -32,6 +32,17 @@ release engineering, versioned together with the binary as always.
   exists; byte-identical without it. `--corpus` and `--seed` are now first-class benchmark flags
   (seed default unchanged).
 
+### Manual
+
+- New "Make hay the default, not just available" recipe: instruction-level defaults per agent
+  (Claude Code permissions syntax, Codex global `AGENTS.md`, pi native, Aider `--read`, Cursor
+  `.mdc` with `alwaysApply`), a verify-it-took check, and a loud warning against shimming
+  `rg` → `hay` — a shim silently turns exhaustive searches into ranked capped ones, the exact
+  quiet-wrong-answer class hay's exit codes exist to prevent.
+- Corrected a 0.1.0-era error the review caught: Claude Code does **not** read `AGENTS.md`
+  (unshipped as of Aug 2026); the manual now shows Anthropic's documented `@AGENTS.md`-import
+  and symlink patterns instead of listing the files as interchangeable.
+
 ### Release engineering
 
 - `release.yml`: tag-triggered builds for macOS (arm64/x86_64), Linux (x86_64/arm64) and
