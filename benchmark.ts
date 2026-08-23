@@ -18,13 +18,14 @@
  * weaker evidence than the behavioural result, which was not designed around the outcome.
  *
  * Usage:
- *   bun benchmark.ts [--corpora DIR] [--sample N] [--out FILE] [--quick] [--skip-perf]
+ *   bun benchmark.ts [--corpora DIR] [--corpus NAME] [--sample N] [--seed N] [--out FILE] [--quick] [--skip-perf]
+ *   bun benchmark.ts --docs-track [--corpus NAME] [--sample N] [--seed N]
  *   bun benchmark.ts --selftest
  */
 
-import { existsSync } from "node:fs";
-import { homedir } from "node:os";
-import { basename, join } from "node:path";
+import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { homedir, tmpdir } from "node:os";
+import { join } from "node:path";
 
 import { bootstrapCI, mean, median, mulberry32, randomizationP, type Interval } from "./measure-mrr.ts";
 
@@ -174,7 +175,7 @@ export function astLang(lang: string): string {
  *
  * `--no-config` belongs here too: an inherited `RIPGREP_CONFIG_PATH` was instrument error 7.
  */
-const RG_PARITY = ["--no-config", "--no-ignore-dot", "--no-ignore-global", "--no-ignore-exclude"];
+export const RG_PARITY = ["--no-config", "--no-ignore-dot", "--no-ignore-global", "--no-ignore-exclude"];
 
 export const TOOLS: Tool[] = [
   {
@@ -294,6 +295,98 @@ export const TOOLS: Tool[] = [
 
 export type Query = { symbol: string; answer: string; occurrences: number };
 
+export const DOC_SHAPES = [
+  "flagShaped", "hyphenated", "snakeCase", "upperCase", "camelCase", "pascalCase", "plainWord",
+] as const;
+export type DocShape = typeof DOC_SHAPES[number];
+export type DocFeatures = Record<DocShape, boolean>;
+export type DocsQuery = {
+  token: string;
+  answer: string;
+  /** Number of distinct parity-visible files containing the token, not matching lines. */
+  occurrences: number;
+  features: DocFeatures;
+};
+
+/**
+ * One bucket per token, in a fixed precedence that keeps the named shapes interpretable.
+ *
+ * Double-hyphen flags win because `--x` is the pre-registration's named flag shape; the same
+ * tokenizer also admits single-leading-hyphen tokens, which form the separate hyphenated bucket.
+ * All-caps wins before underscores so `UPPER_CASE` remains uppercase rather than snake case;
+ * the case shapes follow the separator shapes, with an unshaped word as fallback. PascalCase is
+ * its own bucket: review caught `AuthenticationInterceptor` classified as a plain word, which
+ * silently merged the most code-shaped doc queries into the least code-shaped bucket.
+ */
+export function docFeatures(token: string): DocFeatures {
+  let shape: DocShape;
+  if (/^--/.test(token)) shape = "flagShaped";
+  else if (/[A-Z]/.test(token) && token === token.toUpperCase()) shape = "upperCase";
+  else if (token.includes("_")) shape = "snakeCase";
+  else if (token.includes("-")) shape = "hyphenated";
+  else if (/^[a-z][A-Za-z0-9]*[A-Z][A-Za-z0-9]*$/.test(token)) shape = "camelCase";
+  else if (/^[A-Z][A-Za-z0-9]*[a-z]/.test(token)) shape = "pascalCase";
+  else shape = "plainWord";
+  return Object.fromEntries(DOC_SHAPES.map((s) => [s, s === shape])) as DocFeatures;
+}
+
+const HEADING_TOKEN = /--?[A-Za-z][A-Za-z0-9_-]{2,}|[A-Za-z_][A-Za-z0-9_]{2,}/g;
+
+/** Run ripgrep as part of ground-truth derivation, refusing an incomplete exit as evidence. */
+async function rgLines(root: string, args: string[], purpose: string): Promise<string[]> {
+  const rg = Bun.which("rg");
+  if (!rg) throw new Error("ripgrep is required to build docs ground truth; install it");
+  const proc = Bun.spawn([rg, ...args], { cwd: root, stdout: "pipe", stderr: "pipe" });
+  const [text, error, code] = await Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+    proc.exited,
+  ]);
+  if (code > 1) throw new Error(`${purpose} failed (rg exit ${code}): ${error.trim() || "no diagnostic"}`);
+  return text.split("\n").filter(Boolean);
+}
+
+/**
+ * Mechanical public ground truth for documentation retrieval.
+ *
+ * The heading walk and the distinct-file occurrence search both copy RG_PARITY, the same
+ * visibility contract used by the ranked runs. The `*.md` glob narrows only which visible files
+ * may supply an answer heading; qualification still searches the whole visible corpus.
+ */
+export async function docsGroundTruth(root: string, corpus: Corpus): Promise<DocsQuery[]> {
+  const markdown = (await rgLines(
+    root,
+    [...RG_PARITY, "--files", "-g", "*.md", "."],
+    `${corpus.name} markdown enumeration`,
+  )).map(normalizePath).sort();
+  const headingFiles = new Map<string, Set<string>>();
+  for (const file of markdown) {
+    const text = await Bun.file(join(root, file)).text();
+    for (const line of text.split("\n")) {
+      // CommonMark allows up to three leading spaces before an ATX heading; ignoring them would
+      // treat `# Topic` and `  ## Topic` as heading files of different tokens.
+      if (!/^ {0,3}#{1,6}\s/.test(line)) continue;
+      for (const token of line.match(HEADING_TOKEN) ?? []) {
+        headingFiles.set(token, (headingFiles.get(token) ?? new Set()).add(file));
+      }
+    }
+  }
+
+  const queries: DocsQuery[] = [];
+  for (const token of [...headingFiles.keys()].sort()) {
+    const answers = headingFiles.get(token)!;
+    if (answers.size !== 1) continue;
+    const files = new Set((await rgLines(
+      root,
+      [...RG_PARITY, "-F", "-l", "-e", token, "."],
+      `${corpus.name} docs occurrence search for ${JSON.stringify(token)}`,
+    )).map(normalizePath));
+    if (files.size < 3) continue;
+    queries.push({ token, answer: [...answers][0]!, occurrences: files.size, features: docFeatures(token) });
+  }
+  return queries;
+}
+
 /**
  * Symbols declared exactly once in the corpus, according to a parser.
  *
@@ -376,7 +469,7 @@ export function parsePinned(prior: { corpora?: { corpus: string; symbols?: unkno
   );
 }
 
-export type RunResult = { rank: number | null; scanned: number; timedOut: boolean };
+export type RunResult = { rank: number | null; scanned: number; timedOut: boolean; truncated: boolean };
 
 /**
  * Rank of the first result line that lands in the declaring file.
@@ -384,14 +477,14 @@ export type RunResult = { rank: number | null; scanned: number; timedOut: boolea
  * Streams and stops early, then kills the child. Without that, measuring a slow tool over the
  * kernel would cost a full scan per query instead of the time to the answer.
  */
-async function rankOf(tool: Tool, root: string, q: Query, lang: string): Promise<RunResult> {
+export async function rankOf(tool: Tool, root: string, q: Query, lang: string): Promise<RunResult> {
   const bin = resolveBin(tool);
-  if (!bin) return { rank: null, scanned: 0, timedOut: false };
+  if (!bin) return { rank: null, scanned: 0, timedOut: false, truncated: false };
   const proc = Bun.spawn([bin, ...tool.args(q.symbol, lang)], {
     cwd: root, stdout: "pipe", stderr: "ignore",
   });
   const dec = new TextDecoder();
-  let buf = "", scanned = 0, rank: number | null = null, timedOut = false;
+  let buf = "", scanned = 0, rank: number | null = null, timedOut = false, truncated = false;
   // Set INSIDE the callback: killing the child closes stdout as an ordinary EOF, so the loop below
   // ends normally and the `catch` never runs. Without this the report counts zero timeouts no
   // matter how many searches hit the cap, and a timeout is indistinguishable from "not found".
@@ -411,14 +504,14 @@ async function rankOf(tool: Tool, root: string, q: Query, lang: string): Promise
         if (path === null) continue;
         scanned++;
         if (path === q.answer) { rank = scanned; break outer; }
-        if (scanned >= RANK_CAP) break outer;
+        if (scanned >= RANK_CAP) { truncated = true; break outer; }
       }
     }
   } catch { timedOut = true; }
   clearTimeout(timer);
   proc.kill();
   await proc.exited.catch(() => {});
-  return { rank, scanned, timedOut };
+  return { rank, scanned, timedOut, truncated };
 }
 
 export type Timing = { medianMs: number | null; minMs: number | null; peakRssMb: number | null; timedOut: boolean };
@@ -529,6 +622,141 @@ async function countFiles(root: string): Promise<{ onDisk: number; rgVisible: nu
   };
 }
 
+// ── docs track ────────────────────────────────────────────────────────────────
+
+type DocsTool = "hay" | "rg";
+export type DocsQueryRecord = DocsQuery & { tools: Record<DocsTool, RunResult> };
+export type DocsAggregate = {
+  tools: Record<DocsTool, { mrr: number; top10: number }>;
+  delta: { mrr: Interval; randomizationP: number };
+  featureSplits: {
+    feature: DocShape;
+    n: number;
+    mrr: Record<DocsTool, number>;
+    deltaMrr: number;
+  }[];
+  truncations: Record<DocsTool, number>;
+};
+export type DocsCorpusReport = DocsAggregate & {
+  corpus: string;
+  lang: string;
+  eligibleQueries: number;
+  queries: DocsQueryRecord[];
+};
+export type DocsTrackPayload = {
+  generatedBy: string;
+  task: string;
+  groundTruth: string;
+  meta: {
+    date: string;
+    seed: number;
+    sample: number;
+    rankCap: number;
+    versions: Record<DocsTool, string>;
+  };
+  corpora: DocsCorpusReport[];
+};
+
+const reciprocalRank = (r: RunResult): number => r.rank ? 1 / r.rank : 0;
+
+/** One summarizer owns the paired unit, feature counts, and this track's line-cap accounting. */
+export function summarizeDocs(records: DocsQueryRecord[]): DocsAggregate {
+  const rr = (tool: DocsTool, rows = records) => rows.map((q) => reciprocalRank(q.tools[tool]));
+  const toolSummary = (tool: DocsTool) => ({
+    mrr: mean(rr(tool)),
+    top10: records.filter((q) => {
+      const rank = q.tools[tool].rank;
+      return rank !== null && rank <= 10;
+    }).length / (records.length || 1),
+  });
+  const diffs = records.map((q) => [reciprocalRank(q.tools.hay) - reciprocalRank(q.tools.rg)]);
+  return {
+    tools: { hay: toolSummary("hay"), rg: toolSummary("rg") },
+    delta: { mrr: bootstrapCI(diffs), randomizationP: randomizationP(diffs) },
+    featureSplits: DOC_SHAPES.map((feature) => {
+      const rows = records.filter((q) => q.features[feature]);
+      const hay = mean(rr("hay", rows));
+      const rg = mean(rr("rg", rows));
+      return { feature, n: rows.length, mrr: { hay, rg }, deltaMrr: hay - rg };
+    }),
+    truncations: {
+      hay: records.filter((q) => q.tools.hay.truncated).length,
+      rg: records.filter((q) => q.tools.rg.truncated).length,
+    },
+  };
+}
+
+async function versionsFor(tools: Tool[]): Promise<Record<string, string>> {
+  const versions: Record<string, string> = {};
+  for (const tool of tools) {
+    const bin = resolveBin(tool);
+    if (!bin) { versions[tool.id] = "not installed"; continue; }
+    const proc = Bun.spawn([bin, "--version"], { stdout: "pipe", stderr: "ignore" });
+    versions[tool.id] = (await new Response(proc.stdout).text()).split("\n")[0]!.trim();
+    await proc.exited.catch(() => {});
+  }
+  return versions;
+}
+
+async function runDocsTrack(
+  corpora: Corpus[], corporaDir: string, sampleSize: number, seed: number, out: string,
+): Promise<DocsTrackPayload> {
+  const tools = TOOLS.filter((tool): tool is Tool & { id: DocsTool } => tool.id === "hay" || tool.id === "rg");
+  if (tools.length !== 2) throw new Error("docs track requires exactly the existing hay and rg tool definitions");
+  for (const tool of tools) {
+    if (!resolveBin(tool)) throw new Error(`docs track requires ${tool.id}; build or install it first`);
+  }
+  const reports: DocsCorpusReport[] = [];
+  for (const corpus of corpora) {
+    const root = corpus.dir === "." ? process.cwd() : `${corporaDir}/${corpus.dir}`;
+    if (!existsSync(root)) {
+      console.error(`skipping ${corpus.name}: ${root} is absent${corpus.clone ? ` (git clone --depth 1 ${corpus.clone})` : ""}`);
+      continue;
+    }
+    console.error(`\n=== ${corpus.name} docs track ===`);
+    const eligible = await docsGroundTruth(root, corpus);
+    const selected = sample(eligible, sampleSize, seed);
+    console.error(`  ${eligible.length} eligible docs queries; sampled ${selected.length}`);
+    const queries: DocsQueryRecord[] = [];
+    for (const query of selected) {
+      const rankQuery: Query = { symbol: query.token, answer: query.answer, occurrences: query.occurrences };
+      const results = {} as Record<DocsTool, RunResult>;
+      for (const tool of tools) results[tool.id] = await rankOf(tool, root, rankQuery, corpus.lang);
+      queries.push({ ...query, tools: results });
+    }
+    const aggregate = summarizeDocs(queries);
+    console.error(
+      `  hay MRR ${aggregate.tools.hay.mrr.toFixed(3)}; rg MRR ${aggregate.tools.rg.mrr.toFixed(3)}; ` +
+      `delta ${aggregate.delta.mrr.mean >= 0 ? "+" : ""}${aggregate.delta.mrr.mean.toFixed(3)}`,
+    );
+    reports.push({
+      corpus: corpus.name,
+      lang: corpus.lang,
+      eligibleQueries: eligible.length,
+      queries,
+      ...aggregate,
+    });
+  }
+
+  const rawVersions = await versionsFor(tools);
+  const payload: DocsTrackPayload = {
+    generatedBy: "benchmark.ts --docs-track",
+    task: "documentation retrieval: rank of the first result line in the uniquely headed markdown file",
+    groundTruth: "identifier-like token in an ATX heading of exactly one markdown file and present in at least three parity-visible files",
+    meta: {
+      date: new Date().toISOString().slice(0, 10),
+      seed,
+      sample: sampleSize,
+      rankCap: RANK_CAP,
+      versions: { hay: rawVersions["hay"]!, rg: rawVersions["rg"]! },
+    },
+    corpora: reports,
+  };
+  await Bun.write(out, JSON.stringify(payload, null, 2));
+  console.error(`\nwrote ${out}`);
+  return payload;
+}
+
 // ── main ──────────────────────────────────────────────────────────────────────
 
 if (import.meta.main) {
@@ -583,6 +811,59 @@ if (import.meta.main) {
     }
     if (JSON.stringify(sample([1, 2, 3, 4, 5], 3, 7)) === JSON.stringify(sample([1, 2, 3, 4, 5], 3, 8)))
       throw new Error("different seeds should give different samples");
+    // Docs ground truth is deliberately parser-free. The fixture pins all three gates together:
+    // ATX-only headings, exactly one heading file, and at least three distinct matching files.
+    const fixture = mkdtempSync(join(tmpdir(), "hay-docs-track-"));
+    try {
+      await Bun.write(join(fixture, "answer.md"), [
+        "# UniqueToken --long-flag -short-flag snake_case UPPER_CASE camelCase plainword SharedToken NoiseOnly",
+        "body",
+      ].join("\n"));
+      await Bun.write(join(fixture, "shared.md"), "## SharedToken\n");
+      // Indented up to three spaces is still an ATX heading per CommonMark; ignoring that would
+      // both miss answers and wrongly grant uniqueness (review finding).
+      await Bun.write(join(fixture, "indent.md"), "  ## IndentedTok\n");
+      const repeated = "UniqueToken --long-flag -short-flag snake_case UPPER_CASE camelCase plainword SharedToken IndentedTok";
+      await Bun.write(join(fixture, "use-a.ts"), repeated);
+      await Bun.write(join(fixture, "use-b.rs"), repeated);
+      const derived = await docsGroundTruth(fixture, { name: "fixture", dir: ".", lang: "rust", patterns: [] });
+      const byToken = new Map(derived.map((q) => [q.token, q]));
+      for (const token of ["UniqueToken", "--long-flag", "-short-flag", "snake_case", "UPPER_CASE", "camelCase", "plainword"]) {
+        eq(byToken.get(token)?.answer, "answer.md", `${token} has its one heading file as answer`);
+        eq(byToken.get(token)?.occurrences, 3, `${token} occurs in three distinct files`);
+      }
+      eq(byToken.has("SharedToken"), false, "a token headed in two markdown files is excluded");
+      eq(byToken.has("NoiseOnly"), false, "a token present in fewer than three files is excluded");
+      eq(byToken.get("IndentedTok")?.answer, "indent.md", "an indented ATX heading still anchors its file");
+      const shape = (token: string) => DOC_SHAPES.find((s) => docFeatures(token)[s]);
+      eq(shape("--long-flag"), "flagShaped", "flag precedence");
+      eq(shape("UPPER_CASE"), "upperCase", "uppercase precedes snake case");
+      eq(shape("snake_case"), "snakeCase", "snake case");
+      eq(shape("-short-flag"), "hyphenated", "single-leading-hyphen token");
+      eq(shape("camelCase"), "camelCase", "camel case");
+      eq(shape("UniqueToken"), "pascalCase", "PascalCase is not a plain word (review finding)");
+      eq(shape("plainword"), "plainWord", "plain word");
+
+      // The docs track reuses rankOf's result-line cap. A synthetic search emits the answer only
+      // after the cap so this stays fast, deterministic, and independent of ast-grep or a clone.
+      const bun = Bun.which("bun");
+      if (!bun) throw new Error("selftest requires bun");
+      const capTool: Tool = {
+        id: "cap-fixture", label: "cap fixture", bin: bun,
+        args: () => ["-e", `for (let i = 0; i < ${RANK_CAP}; i++) console.log('noise.ts:' + i + ':x'); console.log('answer.md:1:x')`],
+        parse: plain, scope: "fixture", ranked: false,
+      };
+      const capped = await rankOf(capTool, fixture, { symbol: "plainword", answer: "answer.md", occurrences: 3 }, "rust");
+      eq(capped, { rank: null, scanned: RANK_CAP, timedOut: false, truncated: true }, "docs result-line cap is explicit");
+      const complete: RunResult = { rank: 1, scanned: 1, timedOut: false, truncated: false };
+      const summary = summarizeDocs([{
+        token: "plainword", answer: "answer.md", occurrences: 3, features: docFeatures("plainword"),
+        tools: { hay: capped, rg: complete },
+      }]);
+      eq(summary.truncations, { hay: 1, rg: 0 }, "docs truncations are counted per tool");
+    } finally {
+      rmSync(fixture, { recursive: true, force: true });
+    }
     console.log("selftest ok");
     process.exit(0);
   }
@@ -591,7 +872,22 @@ if (import.meta.main) {
   const corporaDir = flag("--corpora", join(cacheHome, "hay", "corpora"))!;
   const quick = argv.includes("--quick");
   const sampleSize = Number(flag("--sample", quick ? "15" : "60"));
+  const seed = Number(flag("--seed", "20260820"));
+  if (!Number.isInteger(sampleSize) || sampleSize < 1) throw new Error("--sample must be a positive integer");
+  if (!Number.isInteger(seed)) throw new Error("--seed must be an integer");
   const reps = quick ? 1 : 3;
+  const corpusName = flag("--corpus", "")!;
+  const selectedCorpora = corpusName ? CORPORA.filter((c) => c.name === corpusName) : CORPORA;
+  if (corpusName && selectedCorpora.length === 0)
+    throw new Error(`unknown corpus ${JSON.stringify(corpusName)}; choose ${CORPORA.map((c) => c.name).join(", ")}`);
+  const docsTrack = argv.includes("--docs-track");
+  const out = flag("--out", docsTrack ? "evidence/docs-track.json" : "evidence/benchmark.json")!;
+
+  if (docsTrack) {
+    const payload = await runDocsTrack(selectedCorpora, corporaDir, sampleSize, seed, out);
+    if (argv.includes("--json")) console.log(JSON.stringify(payload, null, 2));
+    process.exit(0);
+  }
 
   // --queries-from evidence/benchmark.json: reuse the exact symbols a previous run asked, so a
   // before/after comparison is paired at the query level instead of hoping two independent
@@ -599,16 +895,7 @@ if (import.meta.main) {
   // loudly — silently shrinking n would quietly widen every interval that follows.
   const priorPath = flag("--queries-from", "");
   const pinned = priorPath ? parsePinned(await Bun.file(priorPath).json()) : new Map<string, string[]>();
-  const out = flag("--out", "evidence/benchmark.json")!;
-
-  const versions: Record<string, string> = {};
-  for (const t of TOOLS) {
-    const bin = resolveBin(t);
-    if (!bin) { versions[t.id] = "not installed"; continue; }
-    const p = Bun.spawn([bin, "--version"], { stdout: "pipe", stderr: "ignore" });
-    versions[t.id] = (await new Response(p.stdout).text()).split("\n")[0]!.trim();
-    await p.exited.catch(() => {});
-  }
+  const versions = await versionsFor(TOOLS);
 
   // Machine load belongs in the artifact: these timings self-load, so a busy machine shifts the
   // whole floor and would otherwise read as a change in the code. `uptime` is the whole source —
@@ -618,7 +905,7 @@ if (import.meta.main) {
   const loadLine = new TextDecoder().decode(upt.stdout).trim();
 
   const reports: CorpusReport[] = [];
-  for (const c of CORPORA) {
+  for (const c of selectedCorpora) {
     const root = c.dir === "." ? process.cwd() : `${corporaDir}/${c.dir}`;
     if (!existsSync(root)) {
       console.error(`skipping ${c.name}: ${root} is absent${c.clone ? ` (git clone --depth 1 ${c.clone})` : ""}`);
@@ -647,7 +934,7 @@ if (import.meta.main) {
       }
       console.error(`  pinned sample from ${priorPath}: ${queries.length} queries` + (dropped ? ` (${dropped} skipped: no longer declared exactly once)` : ""));
     } else {
-      const candidates = sample([...truth.keys()].filter((s) => s.length >= 5), sampleSize * 4, 20260820);
+      const candidates = sample([...truth.keys()].filter((s) => s.length >= 5), sampleSize * 4, seed);
       for (const symbol of candidates) {
         if (queries.length >= sampleSize) break;
         const n = await occurrences(root, symbol);

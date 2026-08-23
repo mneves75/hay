@@ -63,6 +63,48 @@ and the places this benchmark is wrong.
 | `cs` | cs version 1.4.0 |
 | `ast-grep` | ast-grep 0.45.1 |
 
+## Documentation track
+
+A public development set for documentation retrieval: identifier-like tokens from ATX
+headings that occur in exactly one markdown file's headings and in at least three
+parity-visible files. Ranks use the same 1000-result-line cap as the code
+track; cap truncations are reported as `hay / rg`, never absorbed into another metric.
+
+| corpus | n | MRR hay | MRR rg | Δ MRR (95% CI) | bootstrap p | randomization p | both tests | cap truncations (hay / rg) |
+|---|---:|---:|---:|---|---:|---:|---|---:|
+| ripgrep | 30 | 0.059 | 0.499 | -0.440 [-0.586, -0.298] | <0.001 | <0.001 | ✓ agree — detected | 5 / 3 |
+| alamofire | 30 | 0.062 | 0.402 | -0.340 [-0.471, -0.217] | <0.001 | <0.001 | ✓ agree — detected | 2 / 0 |
+| hay | 30 | 0.095 | 0.117 | -0.023 [-0.078, 0.019] | 0.352 | 0.479 | ✓ agree — not detected | 0 / 0 |
+
+### Query-shape splits
+
+Mutually exclusive precedence: flag-shaped → uppercase → snake case → hyphenated → camel
+case → pascal case → plain word.
+
+| corpus | feature | n | MRR hay | MRR rg | Δ MRR |
+|---|---|---:|---:|---:|---:|
+| ripgrep | `flagShaped` | 0 | 0.000 | 0.000 | +0.000 |
+| ripgrep | `hyphenated` | 1 | 0.125 | 0.013 | +0.112 |
+| ripgrep | `snakeCase` | 0 | 0.000 | 0.000 | +0.000 |
+| ripgrep | `upperCase` | 1 | 0.100 | 0.250 | -0.150 |
+| ripgrep | `camelCase` | 0 | 0.000 | 0.000 | +0.000 |
+| ripgrep | `pascalCase` | 8 | 0.092 | 0.875 | -0.783 |
+| ripgrep | `plainWord` | 20 | 0.040 | 0.385 | -0.345 |
+| alamofire | `flagShaped` | 0 | 0.000 | 0.000 | +0.000 |
+| alamofire | `hyphenated` | 0 | 0.000 | 0.000 | +0.000 |
+| alamofire | `snakeCase` | 0 | 0.000 | 0.000 | +0.000 |
+| alamofire | `upperCase` | 0 | 0.000 | 0.000 | +0.000 |
+| alamofire | `camelCase` | 0 | 0.000 | 0.000 | +0.000 |
+| alamofire | `pascalCase` | 27 | 0.068 | 0.433 | -0.365 |
+| alamofire | `plainWord` | 3 | 0.005 | 0.118 | -0.113 |
+| hay | `flagShaped` | 0 | 0.000 | 0.000 | +0.000 |
+| hay | `hyphenated` | 0 | 0.000 | 0.000 | +0.000 |
+| hay | `snakeCase` | 0 | 0.000 | 0.000 | +0.000 |
+| hay | `upperCase` | 0 | 0.000 | 0.000 | +0.000 |
+| hay | `camelCase` | 0 | 0.000 | 0.000 | +0.000 |
+| hay | `pascalCase` | 6 | 0.074 | 0.096 | -0.022 |
+| hay | `plainWord` | 24 | 0.100 | 0.123 | -0.023 |
+
 ## linux
 
 C · 95,661 files on disk · 95,660 visible after gitignore · 95,776 tracked by git · 559,944 symbols declared exactly once · **30 queries**

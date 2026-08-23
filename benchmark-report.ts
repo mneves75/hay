@@ -34,6 +34,33 @@ type Payload = {
   corpora: CorpusReport[];
 };
 
+const DOC_SHAPES = ["flagShaped", "hyphenated", "snakeCase", "upperCase", "camelCase", "pascalCase", "plainWord"] as const;
+type DocShape = typeof DOC_SHAPES[number];
+type DocsTool = "hay" | "rg";
+type DocsRunResult = { rank: number | null; scanned: number; timedOut: boolean; truncated: boolean };
+type DocsQueryRecord = {
+  token: string; answer: string; occurrences: number;
+  features: Record<DocShape, boolean>;
+  tools: Record<DocsTool, DocsRunResult>;
+};
+type DocsCorpusReport = {
+  corpus: string; lang: string; eligibleQueries: number; queries: DocsQueryRecord[];
+  tools: Record<DocsTool, { mrr: number; top10: number }>;
+  delta: { mrr: Interval; randomizationP: number };
+  featureSplits: {
+    feature: DocShape; n: number; mrr: Record<DocsTool, number>; deltaMrr: number;
+  }[];
+  truncations: Record<DocsTool, number>;
+};
+type DocsPayload = {
+  generatedBy: string; task: string; groundTruth: string;
+  meta: {
+    date: string; seed: number; sample: number; rankCap: number;
+    versions: Record<DocsTool, string>;
+  };
+  corpora: DocsCorpusReport[];
+};
+
 // ── formatting ────────────────────────────────────────────────────────────────
 
 export const pct = (x: number) => `${(x * 100).toFixed(0)}%`;
@@ -148,6 +175,105 @@ export function validatePayload(d: Payload): Payload {
         if (t.minMs !== null) num(t.minMs, `${c.corpus}.${r.query}.${tool}.minMs`);
         if (t.peakRssMb !== null) num(t.peakRssMb, `${c.corpus}.${r.query}.${tool}.peakRssMb`);
       }
+    }
+  }
+  return d;
+}
+
+/** The optional docs artifact is a second trust boundary, never an escape hatch around the first. */
+export function validateDocsPayload(d: DocsPayload): DocsPayload {
+  const bad = (path: string, value: unknown, expected: string): never => {
+    throw new Error(`docs evidence looks tampered: ${path} = ${JSON.stringify(value)} (expected ${expected})`);
+  };
+  const finite = (value: unknown, path: string): number => {
+    if (typeof value !== "number" || !Number.isFinite(value)) bad(path, value, "finite number");
+    return value as number;
+  };
+  const string = (value: unknown, path: string): string => {
+    if (typeof value !== "string") bad(path, value, "string");
+    return value as string;
+  };
+  const boolean = (value: unknown, path: string): boolean => {
+    if (typeof value !== "boolean") bad(path, value, "boolean");
+    return value as boolean;
+  };
+  string(d.generatedBy, "generatedBy");
+  string(d.task, "task");
+  string(d.groundTruth, "groundTruth");
+  string(d.meta.date, "meta.date");
+  finite(d.meta.seed, "meta.seed");
+  finite(d.meta.sample, "meta.sample");
+  finite(d.meta.rankCap, "meta.rankCap");
+  for (const tool of ["hay", "rg"] as const) string(d.meta.versions[tool], `meta.versions.${tool}`);
+  for (const corpus of d.corpora) {
+    string(corpus.corpus, "corpus");
+    string(corpus.lang, `${corpus.corpus}.lang`);
+    finite(corpus.eligibleQueries, `${corpus.corpus}.eligibleQueries`);
+    for (const query of corpus.queries) {
+      string(query.token, `${corpus.corpus}.query.token`);
+      const answer = string(query.answer, `${corpus.corpus}.${query.token}.answer`);
+      if (answer.startsWith("/") || /^[A-Za-z]:[\\/]/.test(answer))
+        bad(`${corpus.corpus}.${query.token}.answer`, answer, "relative path");
+      finite(query.occurrences, `${corpus.corpus}.${query.token}.occurrences`);
+      for (const feature of DOC_SHAPES)
+        boolean(query.features[feature], `${corpus.corpus}.${query.token}.features.${feature}`);
+      if (DOC_SHAPES.filter((feature) => query.features[feature]).length !== 1)
+        bad(`${corpus.corpus}.${query.token}.features`, query.features, "exactly one true feature");
+      for (const tool of ["hay", "rg"] as const) {
+        const result = query.tools[tool];
+        if (result.rank !== null) finite(result.rank, `${corpus.corpus}.${query.token}.${tool}.rank`);
+        finite(result.scanned, `${corpus.corpus}.${query.token}.${tool}.scanned`);
+        boolean(result.timedOut, `${corpus.corpus}.${query.token}.${tool}.timedOut`);
+        boolean(result.truncated, `${corpus.corpus}.${query.token}.${tool}.truncated`);
+      }
+    }
+    for (const tool of ["hay", "rg"] as const) {
+      finite(corpus.tools[tool].mrr, `${corpus.corpus}.tools.${tool}.mrr`);
+      finite(corpus.tools[tool].top10, `${corpus.corpus}.tools.${tool}.top10`);
+      finite(corpus.truncations[tool], `${corpus.corpus}.truncations.${tool}`);
+    }
+    for (const key of ["mean", "lo", "hi", "p", "n"] as const)
+      finite(corpus.delta.mrr[key], `${corpus.corpus}.delta.mrr.${key}`);
+    finite(corpus.delta.randomizationP, `${corpus.corpus}.delta.randomizationP`);
+    if (corpus.featureSplits.length !== DOC_SHAPES.length)
+      bad(`${corpus.corpus}.featureSplits.length`, corpus.featureSplits.length, String(DOC_SHAPES.length));
+    for (const split of corpus.featureSplits) {
+      if (!DOC_SHAPES.includes(split.feature)) bad(`${corpus.corpus}.feature`, split.feature, "known docs feature");
+      finite(split.n, `${corpus.corpus}.${split.feature}.n`);
+      finite(split.mrr.hay, `${corpus.corpus}.${split.feature}.mrr.hay`);
+      finite(split.mrr.rg, `${corpus.corpus}.${split.feature}.mrr.rg`);
+      finite(split.deltaMrr, `${corpus.corpus}.${split.feature}.deltaMrr`);
+    }
+
+    // Finite is not the same as true: a summary can be finite and still disagree with its own
+    // per-query rows (review finding). Everything deterministic is recomputed from `queries`;
+    // only the bootstrap interval bounds and p-values are trusted as stored, because they need
+    // the replicate stream. The interval's n and mean ARE deterministic and are checked.
+    const rr = (r: DocsRunResult) => r.rank ? 1 / r.rank : 0;
+    const meanOf = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
+    const close = (a: number, b: number) => Math.abs(a - b) <= 1e-9;
+    const check = (stored: number, computed: number, path: string) => {
+      if (!close(stored, computed)) bad(path, stored, `recomputed ${computed}`);
+    };
+    for (const tool of ["hay", "rg"] as const) {
+      check(corpus.tools[tool].mrr, meanOf(corpus.queries.map((q) => rr(q.tools[tool]))), `${corpus.corpus}.tools.${tool}.mrr`);
+      check(
+        corpus.tools[tool].top10,
+        corpus.queries.filter((q) => q.tools[tool].rank !== null && q.tools[tool].rank! <= 10).length / (corpus.queries.length || 1),
+        `${corpus.corpus}.tools.${tool}.top10`,
+      );
+      check(corpus.truncations[tool], corpus.queries.filter((q) => q.tools[tool].truncated).length, `${corpus.corpus}.truncations.${tool}`);
+    }
+    check(corpus.delta.mrr.mean, meanOf(corpus.queries.map((q) => rr(q.tools.hay) - rr(q.tools.rg))), `${corpus.corpus}.delta.mrr.mean`);
+    check(corpus.delta.mrr.n, corpus.queries.length, `${corpus.corpus}.delta.mrr.n`);
+    for (const split of corpus.featureSplits) {
+      const rows = corpus.queries.filter((q) => q.features[split.feature]);
+      check(split.n, rows.length, `${corpus.corpus}.${split.feature}.n`);
+      const hay = meanOf(rows.map((q) => rr(q.tools.hay)));
+      const rg = meanOf(rows.map((q) => rr(q.tools.rg)));
+      check(split.mrr.hay, hay, `${corpus.corpus}.${split.feature}.mrr.hay`);
+      check(split.mrr.rg, rg, `${corpus.corpus}.${split.feature}.mrr.rg`);
+      check(split.deltaMrr, hay - rg, `${corpus.corpus}.${split.feature}.deltaMrr`);
     }
   }
   return d;
@@ -456,9 +582,55 @@ ${g.join("\n")}
 <text x="0" y="${H - 4}" class="legend">geometric mean over ${minSamples} timed queries per tool · lower is faster</text></svg>`;
 }
 
+const statP = (value: number): string => value < 0.001 ? "<0.001" : value.toFixed(3);
+const signed = (value: number): string => `${value >= 0 ? "+" : ""}${value.toFixed(3)}`;
+
+/** The same conservative rule as the code tables, made explicit as an agreement marker. */
+export function docsAgreement(c: DocsCorpusReport): string {
+  const intervalSaysDifference = significant(c.delta.mrr);
+  const randomizationSaysDifference = c.delta.randomizationP < 0.05;
+  if (detected({ tool: "hay", vsRipgrep: c.delta.mrr, vsRipgrepRandP: c.delta.randomizationP }))
+    return "✓ agree — detected";
+  if (intervalSaysDifference !== randomizationSaysDifference) return "⚠ disagree";
+  return "✓ agree — not detected";
+}
+
+function docsHtml(d: DocsPayload): string {
+  const summary = d.corpora.map((c) => {
+    const marker = thin({ queries: c.queries.length }) ? "— too few queries" : docsAgreement(c);
+    const sig = !thin({ queries: c.queries.length }) && marker === "✓ agree — detected";
+    return `<tr>
+  <th scope="row">${esc(c.corpus)}</th><td class="n">${c.queries.length}</td>
+  <td class="n">${num(c.tools.hay.mrr)}</td><td class="n">${num(c.tools.rg.mrr)}</td>
+  <td class="d ${c.delta.mrr.mean >= 0 ? "up" : "down"}${sig ? " sig" : ""}">${esc(delta(c.delta.mrr))}</td>
+  <td class="n">${esc(statP(c.delta.mrr.p))}</td><td class="n">${esc(statP(c.delta.randomizationP))}</td>
+  <td>${esc(marker)}</td><td class="n">${c.truncations.hay} / ${c.truncations.rg}</td>
+</tr>`;
+  }).join("\n");
+  const features = d.corpora.flatMap((c) => c.featureSplits.map((split) => `<tr>
+  <th scope="row">${esc(c.corpus)}</th><td><code>${esc(split.feature)}</code></td><td class="n">${split.n}</td>
+  <td class="n">${num(split.mrr.hay)}</td><td class="n">${num(split.mrr.rg)}</td><td class="d ${split.deltaMrr >= 0 ? "up" : "down"}">${signed(split.deltaMrr)}</td>
+</tr>`)).join("\n");
+  return `<section class="corpus" id="docs-track">
+<h2>Documentation track</h2>
+<p>A public development set for documentation retrieval: identifier-like tokens from ATX headings
+that occur in exactly one markdown file’s headings and in at least three parity-visible files.
+Ranks use the same ${d.meta.rankCap}-result-line cap as the code track; cap truncations are reported
+as <code>hay / rg</code>, never absorbed into another metric.</p>
+<div class="scroll"><table>
+<thead><tr><th scope="col">corpus</th><th scope="col" class="n">n</th><th scope="col" class="n">MRR hay</th><th scope="col" class="n">MRR rg</th><th scope="col">Δ MRR (95% CI)</th><th scope="col" class="n">bootstrap p</th><th scope="col" class="n">randomization p</th><th scope="col">both tests</th><th scope="col" class="n">cap truncations</th></tr></thead>
+<tbody>${summary}</tbody></table></div>
+<h4>Query-shape splits</h4>
+<p class="meta">Mutually exclusive precedence: flag-shaped → uppercase → snake case → hyphenated → camel case → pascal case → plain word.</p>
+<div class="scroll"><table>
+<thead><tr><th scope="col">corpus</th><th scope="col">feature</th><th scope="col" class="n">n</th><th scope="col" class="n">MRR hay</th><th scope="col" class="n">MRR rg</th><th scope="col">Δ MRR</th></tr></thead>
+<tbody>${features}</tbody></table></div>
+</section>`;
+}
+
 // ── markdown ──────────────────────────────────────────────────────────────────
 
-export function markdown(d: Payload): string {
+export function markdown(d: Payload, docs?: DocsPayload): string {
   const L: string[] = [];
   const p = (s = "") => L.push(s);
 
@@ -518,6 +690,35 @@ export function markdown(d: Payload): string {
   p("|---|---|");
   for (const [id, v] of Object.entries(d.versions)) p(`| \`${id}\` | ${v} |`);
   p();
+
+  if (docs) {
+    p("## Documentation track");
+    p();
+    p("A public development set for documentation retrieval: identifier-like tokens from ATX");
+    p("headings that occur in exactly one markdown file's headings and in at least three");
+    p(`parity-visible files. Ranks use the same ${docs.meta.rankCap}-result-line cap as the code`);
+    p("track; cap truncations are reported as `hay / rg`, never absorbed into another metric.");
+    p();
+    p("| corpus | n | MRR hay | MRR rg | Δ MRR (95% CI) | bootstrap p | randomization p | both tests | cap truncations (hay / rg) |");
+    p("|---|---:|---:|---:|---|---:|---:|---|---:|");
+    for (const c of docs.corpora) {
+      const marker = thin({ queries: c.queries.length }) ? "— too few queries" : docsAgreement(c);
+      p(`| ${c.corpus} | ${c.queries.length} | ${num(c.tools.hay.mrr)} | ${num(c.tools.rg.mrr)} | ${delta(c.delta.mrr)} | ${statP(c.delta.mrr.p)} | ${statP(c.delta.randomizationP)} | ${marker} | ${c.truncations.hay} / ${c.truncations.rg} |`);
+    }
+    p();
+    p("### Query-shape splits");
+    p();
+    p("Mutually exclusive precedence: flag-shaped → uppercase → snake case → hyphenated → camel");
+    p("case → pascal case → plain word.");
+    p();
+    p("| corpus | feature | n | MRR hay | MRR rg | Δ MRR |");
+    p("|---|---|---:|---:|---:|---:|");
+    for (const c of docs.corpora) {
+      for (const split of c.featureSplits)
+        p(`| ${c.corpus} | \`${split.feature}\` | ${split.n} | ${num(split.mrr.hay)} | ${num(split.mrr.rg)} | ${signed(split.deltaMrr)} |`);
+    }
+    p();
+  }
 
   for (const c of d.corpora) {
     p(`## ${c.corpus}`);
@@ -619,7 +820,7 @@ export function markdown(d: Payload): string {
 
 // ── html ──────────────────────────────────────────────────────────────────────
 
-export function html(d: Payload): string {
+export function html(d: Payload, docs?: DocsPayload): string {
   const maxMrr = Math.max(...d.corpora.flatMap((c) => c.tools.map((t) => t.mrr)), 0.001);
   const bar = (v: number) =>
     `<span class="bar" aria-hidden="true"><span style="width:${((v / maxMrr) * 100).toFixed(1)}%"></span></span>`;
@@ -848,7 +1049,7 @@ table.rr th{font-family:"IBM Plex Mono",monospace;font-size:.72rem;text-transfor
 </header>
 
 <nav class="toc" aria-label="sections">
-  <a href="#results">results</a><a href="#from-zero">from zero</a><a href="#method">method</a><a href="#data">per-corpus data</a><a href="#limits">limits</a><a href="#reproduce">reproduce</a>
+  <a href="#results">results</a><a href="#from-zero">from zero</a><a href="#method">method</a><a href="#data">per-corpus data</a><a href="#limits">limits</a><a href="#reproduce">reproduce</a>${docs ? '<a href="#docs-track">docs track</a>' : ""}
 </nav>
 
 <div class="caution">
@@ -899,7 +1100,7 @@ ${FEYNMAN}
   <li><strong>Invocation</strong> — absolute paths only. On this machine <code>grep</code> is a shell function resolving to ugrep, so calling tools by name would have measured the wrong program.</li>
 </ul>
 
-${d.corpora.map(corpusSection).join("\n")}
+${docs ? `${docsHtml(docs)}\n\n` : ""}${d.corpora.map(corpusSection).join("\n")}
 
 <h2 id="data">What each tool is</h2>
 <div class="scroll"><table>
@@ -1036,6 +1237,66 @@ if (import.meta.main) {
         mkCorpus("absent", 28, { hay: { available: false, vs: [0.9, 0.8, 1.0] } }),
       ],
     };
+    const docsFeatures: Record<DocShape, boolean> = {
+      flagShaped: false, hyphenated: false, snakeCase: false,
+      upperCase: false, camelCase: false, pascalCase: false, plainWord: true,
+    };
+    const mkDocsCorpus = (name: string, n: number, interval: Interval, randomizationP: number): DocsCorpusReport => ({
+      corpus: name, lang: "rust", eligibleQueries: n,
+      queries: Array.from({ length: n }, (_, i) => ({
+        token: `plainword${i}`, answer: "docs/answer.md", occurrences: 3, features: docsFeatures,
+        tools: {
+          hay: { rank: 2, scanned: 2, timedOut: false, truncated: false },
+          rg: { rank: 4, scanned: 4, timedOut: false, truncated: false },
+        },
+      })),
+      tools: { hay: { mrr: 0.5, top10: 1 }, rg: { mrr: 0.25, top10: 1 } },
+      delta: { mrr: interval, randomizationP },
+      featureSplits: DOC_SHAPES.map((feature) => ({
+        feature, n: feature === "plainWord" ? n : 0,
+        mrr: { hay: feature === "plainWord" ? 0.5 : 0, rg: feature === "plainWord" ? 0.25 : 0 },
+        deltaMrr: feature === "plainWord" ? 0.25 : 0,
+      })),
+      truncations: { hay: 0, rg: 0 },
+    });
+    const docsPayload: DocsPayload = {
+      generatedBy: "benchmark.ts --docs-track", task: "docs", groundTruth: "headings",
+      meta: { date: "2026-08-23", seed: 7, sample: 12, rankCap: 1000, versions: { hay: "hay 1", rg: "rg 1" } },
+      corpora: [
+        mkDocsCorpus("agree", 12, { mean: 0.25, lo: 0.1, hi: 0.4, p: 0.002, n: 12 }, 0.003),
+        mkDocsCorpus("disagree", 11, { mean: 0.25, lo: 0.01, hi: 0.4, p: 0.02, n: 11 }, 0.08),
+      ],
+    };
+    validateDocsPayload(docsPayload);
+    eq(docsAgreement(docsPayload.corpora[0]!), "✓ agree — detected", "docs tests agree marker");
+    eq(docsAgreement(docsPayload.corpora[1]!), "⚠ disagree", "docs tests disagree marker");
+    const docsMd = markdown(payload, docsPayload);
+    const docsPage = html(payload, docsPayload);
+    for (const rendered of [docsMd, docsPage]) {
+      if (!rendered.includes("Documentation track")) throw new Error("docs section did not render");
+      if (!rendered.includes("✓ agree — detected") || !rendered.includes("⚠ disagree"))
+        throw new Error("docs agreement markers did not render");
+      if (!rendered.includes("plainWord")) throw new Error("docs feature splits did not render");
+    }
+    // Optional means truly absent: passing no docs payload and passing undefined must produce the
+    // same bytes, and neither renderer may leave an empty heading behind.
+    eq(markdown(payload), markdown(payload, undefined), "markdown is byte-identical when docs are absent");
+    eq(html(payload), html(payload, undefined), "html is byte-identical when docs are absent");
+    if (markdown(payload).includes("Documentation track") || html(payload).includes("Documentation track"))
+      throw new Error("absent docs payload left a rendered section");
+    const nonfiniteDocs = structuredClone(docsPayload);
+    nonfiniteDocs.corpora[0]!.tools.hay.mrr = Number.NaN;
+    try { validateDocsPayload(nonfiniteDocs); throw new Error("docs validator let NaN through"); }
+    catch (e) { if (!String(e).includes("tampered")) throw e; }
+    // Finite-but-false: a summary that disagrees with its own per-query rows must also refuse.
+    const inconsistentDocs = structuredClone(docsPayload);
+    inconsistentDocs.corpora[0]!.tools.hay.mrr = 0.9;
+    try { validateDocsPayload(inconsistentDocs); throw new Error("docs validator let an inconsistent aggregate through"); }
+    catch (e) { if (!String(e).includes("tampered")) throw e; }
+    const inconsistentSplit = structuredClone(docsPayload);
+    inconsistentSplit.corpora[0]!.featureSplits[0]!.n = 5;
+    try { validateDocsPayload(inconsistentSplit); throw new Error("docs validator let an inconsistent split through"); }
+    catch (e) { if (!String(e).includes("tampered")) throw e; }
     // Thin corpus and unavailable tools must vanish from summary charts, or the picture would
     // assert more than the tables do.
     eq(deltaRows(payload).map((r) => `${r.corpus}:${r.tool}`), ["real:hay", "real:ast-grep", "real:cs"], "delta rows drop thin/absent");
@@ -1077,6 +1338,10 @@ if (import.meta.main) {
 
   const inPath = flag("--in", "evidence/benchmark.json");
   const d = validatePayload(await Bun.file(inPath).json()) as Payload;
+  const docsPath = flag("--docs-in", "evidence/docs-track.json");
+  const docs = await Bun.file(docsPath).exists()
+    ? validateDocsPayload(await Bun.file(docsPath).json() as DocsPayload)
+    : undefined;
 
   // Load samples are collected alongside the run; without them the timing caveat cannot be stated
   // truthfully, so it is simply omitted rather than guessed.
@@ -1086,7 +1351,7 @@ if (import.meta.main) {
     if (xs.length) d.load = { min: xs[0]!, median: xs[Math.floor(xs.length / 2)]!, max: xs[xs.length - 1]!, samples: xs.length };
   }
 
-  await Bun.write(flag("--md", "BENCHMARK.md"), markdown(d));
-  await Bun.write(flag("--html", "benchmark.html"), html(d));
+  await Bun.write(flag("--md", "BENCHMARK.md"), markdown(d, docs));
+  await Bun.write(flag("--html", "benchmark.html"), html(d, docs));
   console.error(`wrote ${flag("--md", "BENCHMARK.md")} and ${flag("--html", "benchmark.html")}`);
 }

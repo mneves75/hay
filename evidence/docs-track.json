@@ -1,0 +1,2825 @@
+{
+  "generatedBy": "benchmark.ts --docs-track",
+  "task": "documentation retrieval: rank of the first result line in the uniquely headed markdown file",
+  "groundTruth": "identifier-like token in an ATX heading of exactly one markdown file and present in at least three parity-visible files",
+  "meta": {
+    "date": "2026-08-23",
+    "seed": 20260820,
+    "sample": 30,
+    "rankCap": 1000,
+    "versions": {
+      "hay": "hay 0.1.2",
+      "rg": "ripgrep 15.2.0"
+    }
+  },
+  "corpora": [
+    {
+      "corpus": "ripgrep",
+      "lang": "rust",
+      "eligibleQueries": 87,
+      "queries": [
+        {
+          "token": "User",
+          "answer": "GUIDE.md",
+          "occurrences": 13,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 42,
+              "scanned": 42,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 1,
+              "scanned": 1,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "type",
+          "answer": "GUIDE.md",
+          "occurrences": 56,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 18,
+              "scanned": 18,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 4,
+              "scanned": 4,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "com",
+          "answer": "crates/globset/README.md",
+          "occurrences": 141,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            },
+            "rg": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            }
+          }
+        },
+        {
+          "token": "links",
+          "answer": "README.md",
+          "occurrences": 21,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 110,
+              "scanned": 110,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 4,
+              "scanned": 4,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "include",
+          "answer": "GUIDE.md",
+          "occurrences": 70,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 8,
+              "scanned": 8,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 2,
+              "scanned": 2,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Why",
+          "answer": "README.md",
+          "occurrences": 4,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 14,
+              "scanned": 14,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 1,
+              "scanned": 1,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "all",
+          "answer": "GUIDE.md",
+          "occurrences": 146,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 12,
+              "scanned": 12,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 16,
+              "scanned": 16,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "options",
+          "answer": "GUIDE.md",
+          "occurrences": 25,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 103,
+              "scanned": 103,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 1,
+              "scanned": 1,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Recursive",
+          "answer": "GUIDE.md",
+          "occurrences": 4,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 31,
+              "scanned": 31,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 2,
+              "scanned": 2,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "match",
+          "answer": "crates/globset/README.md",
+          "occurrences": 112,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            },
+            "rg": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            }
+          }
+        },
+        {
+          "token": "FAQ",
+          "answer": "FAQ.md",
+          "occurrences": 4,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": true,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 10,
+              "scanned": 10,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 4,
+              "scanned": 4,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "rust",
+          "answer": "crates/globset/README.md",
+          "occurrences": 36,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 109,
+              "scanned": 109,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 170,
+              "scanned": 170,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Add",
+          "answer": "GUIDE.md",
+          "occurrences": 33,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 181,
+              "scanned": 181,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 2,
+              "scanned": 2,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "files",
+          "answer": "GUIDE.md",
+          "occurrences": 60,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 22,
+              "scanned": 22,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 5,
+              "scanned": 5,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "everything",
+          "answer": "README.md",
+          "occurrences": 24,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 42,
+              "scanned": 42,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 7,
+              "scanned": 7,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Release",
+          "answer": "RELEASE-CHECKLIST.md",
+          "occurrences": 5,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 14,
+              "scanned": 14,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 1,
+              "scanned": 1,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "exclude",
+          "answer": "GUIDE.md",
+          "occurrences": 25,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 150,
+              "scanned": 150,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 1,
+              "scanned": 1,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "than",
+          "answer": "README.md",
+          "occurrences": 45,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 151,
+              "scanned": 151,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 18,
+              "scanned": 18,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "tests",
+          "answer": "README.md",
+          "occurrences": 55,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 129,
+              "scanned": 129,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 3,
+              "scanned": 3,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "let",
+          "answer": "GUIDE.md",
+          "occurrences": 111,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            },
+            "rg": {
+              "rank": 7,
+              "scanned": 7,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "patterns",
+          "answer": "GUIDE.md",
+          "occurrences": 27,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 213,
+              "scanned": 213,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 1,
+              "scanned": 1,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "show",
+          "answer": "GUIDE.md",
+          "occurrences": 37,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 3,
+              "scanned": 3,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 2,
+              "scanned": 2,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "shouldn",
+          "answer": "README.md",
+          "occurrences": 15,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 19,
+              "scanned": 19,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 1,
+              "scanned": 1,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "preprocessor",
+          "answer": "GUIDE.md",
+          "occurrences": 7,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 39,
+              "scanned": 39,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 1,
+              "scanned": 1,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "File",
+          "answer": "GUIDE.md",
+          "occurrences": 27,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 189,
+              "scanned": 189,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 1,
+              "scanned": 1,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "lines",
+          "answer": "GUIDE.md",
+          "occurrences": 74,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            },
+            "rg": {
+              "rank": 4,
+              "scanned": 4,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Don",
+          "answer": "GUIDE.md",
+          "occurrences": 10,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 37,
+              "scanned": 37,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 1,
+              "scanned": 1,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "with",
+          "answer": "crates/globset/README.md",
+          "occurrences": 113,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            },
+            "rg": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            }
+          }
+        },
+        {
+          "token": "-lang",
+          "answer": "crates/globset/README.md",
+          "occurrences": 7,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": true,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 8,
+              "scanned": 8,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 79,
+              "scanned": 79,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Guide",
+          "answer": "GUIDE.md",
+          "occurrences": 3,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 2,
+              "scanned": 2,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 1,
+              "scanned": 1,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        }
+      ],
+      "tools": {
+        "hay": {
+          "mrr": 0.0586745479074588,
+          "top10": 0.16666666666666666
+        },
+        "rg": {
+          "mrr": 0.49852145851308177,
+          "top10": 0.7666666666666667
+        }
+      },
+      "delta": {
+        "mrr": {
+          "mean": -0.439846910605623,
+          "lo": -0.5859866936554388,
+          "hi": -0.298296220496631,
+          "p": 0.00019998000199980003,
+          "n": 30
+        },
+        "randomizationP": 0.00009999000099990002
+      },
+      "featureSplits": [
+        {
+          "feature": "flagShaped",
+          "n": 0,
+          "mrr": {
+            "hay": 0,
+            "rg": 0
+          },
+          "deltaMrr": 0
+        },
+        {
+          "feature": "hyphenated",
+          "n": 1,
+          "mrr": {
+            "hay": 0.125,
+            "rg": 0.012658227848101266
+          },
+          "deltaMrr": 0.11234177215189874
+        },
+        {
+          "feature": "snakeCase",
+          "n": 0,
+          "mrr": {
+            "hay": 0,
+            "rg": 0
+          },
+          "deltaMrr": 0
+        },
+        {
+          "feature": "upperCase",
+          "n": 1,
+          "mrr": {
+            "hay": 0.1,
+            "rg": 0.25
+          },
+          "deltaMrr": -0.15
+        },
+        {
+          "feature": "camelCase",
+          "n": 0,
+          "mrr": {
+            "hay": 0,
+            "rg": 0
+          },
+          "deltaMrr": 0
+        },
+        {
+          "feature": "pascalCase",
+          "n": 8,
+          "mrr": {
+            "hay": 0.09209595317241014,
+            "rg": 0.875
+          },
+          "deltaMrr": -0.7829040468275899
+        },
+        {
+          "feature": "plainWord",
+          "n": 20,
+          "mrr": {
+            "hay": 0.03992344059222416,
+            "rg": 0.3846492763772176
+          },
+          "deltaMrr": -0.3447258357849934
+        }
+      ],
+      "truncations": {
+        "hay": 5,
+        "rg": 3
+      }
+    },
+    {
+      "corpus": "alamofire",
+      "lang": "swift",
+      "eligibleQueries": 168,
+      "queries": [
+        {
+          "token": "Key",
+          "answer": "Documentation/Usage.md",
+          "occurrences": 363,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 56,
+              "scanned": 56,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 74,
+              "scanned": 74,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "AuthenticationInterceptor",
+          "answer": "Documentation/AdvancedUsage.md",
+          "occurrences": 307,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 758,
+              "scanned": 758,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 29,
+              "scanned": 29,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Credentials",
+          "answer": "Documentation/AdvancedUsage.md",
+          "occurrences": 5,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 9,
+              "scanned": 9,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 1,
+              "scanned": 1,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Default",
+          "answer": "Documentation/Alamofire 4.0 Migration Guide.md",
+          "occurrences": 383,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 14,
+              "scanned": 14,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 64,
+              "scanned": 64,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "License",
+          "answer": "README.md",
+          "occurrences": 14,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 15,
+              "scanned": 15,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 2,
+              "scanned": 2,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "RequestAdapter",
+          "answer": "Documentation/AdvancedUsage.md",
+          "occurrences": 349,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 13,
+              "scanned": 13,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 10,
+              "scanned": 10,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Destination",
+          "answer": "Documentation/Usage.md",
+          "occurrences": 351,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 30,
+              "scanned": 30,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 5,
+              "scanned": 5,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Radars",
+          "answer": "README.md",
+          "occurrences": 4,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 7,
+              "scanned": 7,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 1,
+              "scanned": 1,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Concurrency",
+          "answer": "Documentation/AdvancedUsage.md",
+          "occurrences": 10,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 39,
+              "scanned": 39,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 29,
+              "scanned": 29,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Lifetime",
+          "answer": "Documentation/AdvancedUsage.md",
+          "occurrences": 8,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 32,
+              "scanned": 32,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 1,
+              "scanned": 1,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Retrying",
+          "answer": "Documentation/AdvancedUsage.md",
+          "occurrences": 18,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 51,
+              "scanned": 51,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 3,
+              "scanned": 3,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "ServerTrustManager",
+          "answer": "Documentation/AdvancedUsage.md",
+          "occurrences": 342,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 26,
+              "scanned": 26,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 2,
+              "scanned": 2,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Multiple",
+          "answer": "Documentation/AdvancedUsage.md",
+          "occurrences": 19,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 52,
+              "scanned": 52,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 18,
+              "scanned": 18,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Property",
+          "answer": "Documentation/Alamofire 4.0 Migration Guide.md",
+          "occurrences": 333,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 937,
+              "scanned": 937,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 9,
+              "scanned": 9,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "All",
+          "answer": "Documentation/AdvancedUsage.md",
+          "occurrences": 376,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 637,
+              "scanned": 637,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 153,
+              "scanned": 153,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Properties",
+          "answer": "Documentation/Usage.md",
+          "occurrences": 33,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 70,
+              "scanned": 70,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 1,
+              "scanned": 1,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Array",
+          "answer": "Documentation/Usage.md",
+          "occurrences": 355,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            },
+            "rg": {
+              "rank": 4,
+              "scanned": 4,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Policies",
+          "answer": "Documentation/Alamofire 2.0 Migration Guide.md",
+          "occurrences": 3,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 15,
+              "scanned": 15,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 1,
+              "scanned": 1,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Setting",
+          "answer": "Documentation/Usage.md",
+          "occurrences": 13,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 47,
+              "scanned": 47,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 29,
+              "scanned": 29,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Disclosure",
+          "answer": "README.md",
+          "occurrences": 3,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 3,
+              "scanned": 3,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 1,
+              "scanned": 1,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "from",
+          "answer": "Documentation/Usage.md",
+          "occurrences": 184,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 674,
+              "scanned": 674,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 107,
+              "scanned": 107,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Tasks",
+          "answer": "Documentation/Alamofire 2.0 Migration Guide.md",
+          "occurrences": 16,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 68,
+              "scanned": 68,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 6,
+              "scanned": 6,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Origin",
+          "answer": "CONTRIBUTING.md",
+          "occurrences": 4,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 3,
+              "scanned": 3,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 1,
+              "scanned": 1,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Credits",
+          "answer": "README.md",
+          "occurrences": 3,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 5,
+              "scanned": 5,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 1,
+              "scanned": 1,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Subclasses",
+          "answer": "Documentation/Alamofire 4.0 Migration Guide.md",
+          "occurrences": 5,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 6,
+              "scanned": 6,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 1,
+              "scanned": 1,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Handler",
+          "answer": "Documentation/Usage.md",
+          "occurrences": 370,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            },
+            "rg": {
+              "rank": 195,
+              "scanned": 195,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "request",
+          "answer": "Documentation/Alamofire 4.0 Migration Guide.md",
+          "occurrences": 216,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 691,
+              "scanned": 691,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 84,
+              "scanned": 84,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "origin",
+          "answer": "README.md",
+          "occurrences": 46,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 85,
+              "scanned": 85,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 3,
+              "scanned": 3,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Certificates",
+          "answer": "Documentation/AdvancedUsage.md",
+          "occurrences": 342,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 661,
+              "scanned": 661,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 6,
+              "scanned": 6,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Manual",
+          "answer": "Documentation/Usage.md",
+          "occurrences": 13,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 44,
+              "scanned": 44,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 6,
+              "scanned": 6,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        }
+      ],
+      "tools": {
+        "hay": {
+          "mrr": 0.0615842821752786,
+          "top10": 0.2
+        },
+        "rg": {
+          "mrr": 0.4016278277282274,
+          "top10": 0.6666666666666666
+        }
+      },
+      "delta": {
+        "mrr": {
+          "mean": -0.340043545552949,
+          "lo": -0.47086899248311975,
+          "hi": -0.21732646186785193,
+          "p": 0.00019998000199980003,
+          "n": 30
+        },
+        "randomizationP": 0.00009999000099990002
+      },
+      "featureSplits": [
+        {
+          "feature": "flagShaped",
+          "n": 0,
+          "mrr": {
+            "hay": 0,
+            "rg": 0
+          },
+          "deltaMrr": 0
+        },
+        {
+          "feature": "hyphenated",
+          "n": 0,
+          "mrr": {
+            "hay": 0,
+            "rg": 0
+          },
+          "deltaMrr": 0
+        },
+        {
+          "feature": "snakeCase",
+          "n": 0,
+          "mrr": {
+            "hay": 0,
+            "rg": 0
+          },
+          "deltaMrr": 0
+        },
+        {
+          "feature": "upperCase",
+          "n": 0,
+          "mrr": {
+            "hay": 0,
+            "rg": 0
+          },
+          "deltaMrr": 0
+        },
+        {
+          "feature": "camelCase",
+          "n": 0,
+          "mrr": {
+            "hay": 0,
+            "rg": 0
+          },
+          "deltaMrr": 0
+        },
+        {
+          "feature": "pascalCase",
+          "n": 27,
+          "mrr": {
+            "hay": 0.0678827000684403,
+            "rg": 0.43312040526726675
+          },
+          "deltaMrr": -0.3652377051988265
+        },
+        {
+          "feature": "plainWord",
+          "n": 3,
+          "mrr": {
+            "hay": 0.004898521136823283,
+            "rg": 0.11819462987687286
+          },
+          "deltaMrr": -0.11329610874004958
+        }
+      ],
+      "truncations": {
+        "hay": 2,
+        "rg": 0
+      }
+    },
+    {
+      "corpus": "hay",
+      "lang": "rust",
+      "eligibleQueries": 310,
+      "queries": [
+        {
+          "token": "Docs",
+          "answer": "docs/method/issues/11-cycle-2-plan.md",
+          "occurrences": 4,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 61,
+              "scanned": 61,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 61,
+              "scanned": 61,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "model",
+          "answer": "DESIGN-hay.md",
+          "occurrences": 8,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 11,
+              "scanned": 11,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 10,
+              "scanned": 10,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Use",
+          "answer": "HOWTO.md",
+          "occurrences": 14,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 15,
+              "scanned": 15,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 16,
+              "scanned": 16,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "sentence",
+          "answer": "BENCHMARK_FEYNMAN.md",
+          "occurrences": 12,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 10,
+              "scanned": 10,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 6,
+              "scanned": 6,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "helps",
+          "answer": "HOWTO.md",
+          "occurrences": 3,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 3,
+              "scanned": 3,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 1,
+              "scanned": 1,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Reproduce",
+          "answer": "BENCHMARK.md",
+          "occurrences": 7,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 7,
+              "scanned": 7,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 6,
+              "scanned": 6,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "page",
+          "answer": "memory/2026-08-22.md",
+          "occurrences": 25,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 104,
+              "scanned": 104,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 105,
+              "scanned": 105,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "fitting",
+          "answer": "docs/method/issues/11-cycle-2-plan.md",
+          "occurrences": 6,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 2,
+              "scanned": 2,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 5,
+              "scanned": 5,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "times",
+          "answer": "memory/2026-08-19.md",
+          "occurrences": 15,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 30,
+              "scanned": 30,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 28,
+              "scanned": 28,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "more",
+          "answer": "BENCHMARK_FEYNMAN.md",
+          "occurrences": 24,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 35,
+              "scanned": 35,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 49,
+              "scanned": 49,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "now",
+          "answer": "MEMORY.md",
+          "occurrences": 33,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 95,
+              "scanned": 95,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 62,
+              "scanned": 62,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "else",
+          "answer": "FOR_YOU_KNOW.md",
+          "occurrences": 29,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 78,
+              "scanned": 78,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 42,
+              "scanned": 42,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "claims",
+          "answer": "docs/method/issues/11-cycle-2-plan.md",
+          "occurrences": 7,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 7,
+              "scanned": 7,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 6,
+              "scanned": 6,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "hand",
+          "answer": "AGENTS.md",
+          "occurrences": 30,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 67,
+              "scanned": 67,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 9,
+              "scanned": 9,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "matters",
+          "answer": "DESIGN-hay.md",
+          "occurrences": 11,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 7,
+              "scanned": 7,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 16,
+              "scanned": 16,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Three",
+          "answer": "README.md",
+          "occurrences": 13,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 13,
+              "scanned": 13,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 5,
+              "scanned": 5,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "treated",
+          "answer": "memory/2026-08-22.md",
+          "occurrences": 4,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 3,
+              "scanned": 3,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 3,
+              "scanned": 3,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Version",
+          "answer": "memory/2026-08-22.md",
+          "occurrences": 10,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 10,
+              "scanned": 10,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 12,
+              "scanned": 12,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "benchmarked",
+          "answer": "BENCHMARK.md",
+          "occurrences": 4,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 6,
+              "scanned": 6,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 6,
+              "scanned": 6,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "version",
+          "answer": "BENCHMARK_FEYNMAN.md",
+          "occurrences": 36,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 139,
+              "scanned": 139,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 62,
+              "scanned": 62,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "your",
+          "answer": "HOWTO.md",
+          "occurrences": 17,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 8,
+              "scanned": 8,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 18,
+              "scanned": 18,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "reference",
+          "answer": "memory/2026-08-20.md",
+          "occurrences": 20,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 26,
+              "scanned": 26,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 32,
+              "scanned": 32,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "make",
+          "answer": "AGENTS.md",
+          "occurrences": 24,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 28,
+              "scanned": 28,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 9,
+              "scanned": 9,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "show",
+          "answer": "docs/method/issues/04-probe-real-repos.md",
+          "occurrences": 20,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 57,
+              "scanned": 57,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 47,
+              "scanned": 47,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "break",
+          "answer": "AGENTS.md",
+          "occurrences": 25,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 46,
+              "scanned": 46,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 13,
+              "scanned": 13,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "like",
+          "answer": "memory/2026-08-22.md",
+          "occurrences": 25,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 130,
+              "scanned": 130,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 68,
+              "scanned": 68,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "For",
+          "answer": "FOR_YOU_KNOW.md",
+          "occurrences": 13,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 24,
+              "scanned": 24,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 20,
+              "scanned": 20,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "ways",
+          "answer": "BENCHMARK_FEYNMAN.md",
+          "occurrences": 17,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 14,
+              "scanned": 14,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 19,
+              "scanned": 19,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "result",
+          "answer": "README.md",
+          "occurrences": 31,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 260,
+              "scanned": 260,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 185,
+              "scanned": 185,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "falsified",
+          "answer": "HOWTO.md",
+          "occurrences": 4,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 7,
+              "scanned": 7,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 7,
+              "scanned": 7,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        }
+      ],
+      "tools": {
+        "hay": {
+          "mrr": 0.09452444295486323,
+          "top10": 0.36666666666666664
+        },
+        "rg": {
+          "mrr": 0.1173089360931244,
+          "top10": 0.4
+        }
+      },
+      "delta": {
+        "mrr": {
+          "mean": -0.02278449313826115,
+          "lo": -0.07821714016282823,
+          "hi": 0.019244749900195424,
+          "p": 0.35236476352364765,
+          "n": 30
+        },
+        "randomizationP": 0.4794520547945205
+      },
+      "featureSplits": [
+        {
+          "feature": "flagShaped",
+          "n": 0,
+          "mrr": {
+            "hay": 0,
+            "rg": 0
+          },
+          "deltaMrr": 0
+        },
+        {
+          "feature": "hyphenated",
+          "n": 0,
+          "mrr": {
+            "hay": 0,
+            "rg": 0
+          },
+          "deltaMrr": 0
+        },
+        {
+          "feature": "snakeCase",
+          "n": 0,
+          "mrr": {
+            "hay": 0,
+            "rg": 0
+          },
+          "deltaMrr": 0
+        },
+        {
+          "feature": "upperCase",
+          "n": 0,
+          "mrr": {
+            "hay": 0,
+            "rg": 0
+          },
+          "deltaMrr": 0
+        },
+        {
+          "feature": "camelCase",
+          "n": 0,
+          "mrr": {
+            "hay": 0,
+            "rg": 0
+          },
+          "deltaMrr": 0
+        },
+        {
+          "feature": "pascalCase",
+          "n": 6,
+          "mrr": {
+            "hay": 0.07408449928941732,
+            "rg": 0.09648224043715847
+          },
+          "deltaMrr": -0.02239774114774115
+        },
+        {
+          "feature": "plainWord",
+          "n": 24,
+          "mrr": {
+            "hay": 0.09963442887122471,
+            "rg": 0.12251561000711587
+          },
+          "deltaMrr": -0.02288118113589116
+        }
+      ],
+      "truncations": {
+        "hay": 0,
+        "rg": 0
+      }
+    }
+  ]
+}
