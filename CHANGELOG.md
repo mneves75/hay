@@ -28,6 +28,12 @@ release engineering, versioned together with the binary as always.
 - The docs evidence validator recomputes every deterministic aggregate (MRR, top-10,
   truncations, splits, the paired mean and n) from the per-query rows — finite-but-false
   summaries now refuse to render, not just non-finite ones.
+- A corpus-side doc prior (damp the prose penalty when a query's own match stream is
+  prose-dominated) was pre-registered, fully implemented, measured on the registered grid, and
+  **refused**: doc-answerable queries have prose match shares of 0.01–0.18 — the doc answer is
+  a needle in a code haystack, so no result-set threshold separates them from code queries.
+  Negative result and probe counts in `docs/method/issues/11-cycle-2-plan.md`; the binary is
+  unchanged.
 - `BENCHMARK.md`/`benchmark.html` render the documentation-track section when its evidence
   exists; byte-identical without it. `--corpus` and `--seed` are now first-class benchmark flags
   (seed default unchanged).

@@ -90,6 +90,25 @@ Ablation switch `--no-docprior` (a contribution you cannot switch off is a belie
 knobs `HAY_DOCPRIOR_THRESHOLD` / `HAY_DOCPRIOR_DAMP` (env), refusing invalid values loudly
 (invariant 5); defaults are baked constants once chosen.
 
+> **P2′ result (2026-08-23): NEGATIVE — the signal is inert and does not ship.** The full
+> mechanism was implemented (prose_damp in scoring, post-walk share over the complete match
+> stream, `--no-docprior`, env knobs, 37+13 tests green, differential 0 differing) and the
+> registered grid run. hay's docs-track numbers did not move on either selection corpus at any
+> grid point, because the conditioning feature is false in the world: **doc-answerable queries
+> do not have prose-dominated result sets.** Probed directly on the sampled queries —
+> ripgrep corpus: `User` 3/13 prose files, `type` 7/56, `include` 7/70; alamofire prose
+> *line*-share 0.01–0.18 (`AuthenticationInterceptor` 9/768, `RequestAdapter` 35/913). The doc
+> answer is a needle in a code haystack — that is *why* hay buries it, and it means no
+> result-set share threshold can separate doc queries from code queries. Lowering T below the
+> registered grid would be fitting the knob to the noise floor, exactly what pre-registration
+> exists to forbid. The implementation is preserved in a git stash for a future signal with a
+> different conditioning feature (candidates: term is heading-anchored in the corpus — a
+> pre-computed doc-anchor set; or an explicit agent-side hint flag like `--docs`).
+> Incidental finding worth keeping: rg's docs-track MRR fluctuates across identical runs
+> (alamofire 0.275–0.402 over four runs) because ripgrep's parallel output order is
+> nondeterministic — the honest measurand for an agent, but a real noise floor under every rg
+> point estimate in both tracks; report-level repetition is the fix if it ever matters.
+
 **Selection procedure, fixed in advance:** grid T ∈ {0.5, 0.7} × D ∈ {0.25, 0.5}, plus off.
 Chosen by docs-track ΔMRR (after − before, same seed = same queries) summed over the ripgrep and
 alamofire corpora, **subject to** code-track ΔMRR ≥ −0.01 on every locally available corpus
