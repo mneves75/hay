@@ -143,6 +143,11 @@ destination is public. Use `=label` for repo identity and `--redact-names` for i
   prose match shares of 0.01–0.18, so the conditioning feature separates nothing. Both cycle-2
   discipline outcomes happened in one day: P1's counts blocked a signal pre-implementation,
   P2′'s grid refused one post-implementation. Next conditioning candidates live in ticket 11.
+- **0.1.2 RELEASED** (2026-08-23, night): `v0.1.2-beta1` (prerelease) then `v0.1.2` — both built
+  by `release.yml`'s first-ever executions, green on all five targets, 10 assets each with
+  sha256s, drafted then human-published; arm-mac binary downloaded back and smoke-tested at each
+  stage. gh-pages updated (v0.1.2 chip, docs-track benchmark section, agent-default manual) and
+  live-verified. The Rosetta x86_64-mac version check worked as documented.
 - **0.1.2** (2026-08-23, cycle 2 opens): ticket 11 pre-registers the route to done. P1 shipped —
   `benchmark.ts --docs-track`, a public dev set for the prose bucket; the published run (after
   review caught PascalCase classified as plainWord) quantifies the indictment: hay
