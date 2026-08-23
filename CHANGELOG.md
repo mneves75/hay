@@ -6,6 +6,40 @@ history lives in git and `memory/`.
 
 ## [Unreleased]
 
+## [0.1.2] — 2026-08-23
+
+No ranking change — hay's source is untouched; this release is the measurement kit and the
+release engineering, versioned together with the binary as always.
+
+### Measurement kit: the documentation track
+
+- `benchmark.ts --docs-track`: a public, mechanical development set for documentation retrieval
+  — identifier-like tokens from ATX headings that appear in exactly one markdown file's headings
+  and in ≥ 3 parity-visible files; the answer is that file. Same rank unit, cap, tool argv, and
+  paired bootstrap + randomization as the code track; per-query shape features; own evidence
+  file (`evidence/docs-track.json`), validated fail-closed before rendering.
+- First published run (ripgrep, alamofire, this repo, n=30 each): hay loses to rg by
+  **−0.440 MRR** and **−0.340 MRR** on the two public corpora, both tests p ≈ 0.0001 — the
+  error-taxonomy's prose bucket, now quantified in public. The dominant doc-answerable shape is
+  **PascalCase type names documented in markdown** (27/30 on alamofire) — a fact only visible
+  after review caught PascalCase being classified as `plainWord`. Since PascalCase is also the
+  code track's type-query shape, the planned shape-conditional penalty is **not licensed** by
+  these counts; recorded in `docs/method/issues/11-cycle-2-plan.md` instead of shipped.
+- The docs evidence validator recomputes every deterministic aggregate (MRR, top-10,
+  truncations, splits, the paired mean and n) from the per-query rows — finite-but-false
+  summaries now refuse to render, not just non-finite ones.
+- `BENCHMARK.md`/`benchmark.html` render the documentation-track section when its evidence
+  exists; byte-identical without it. `--corpus` and `--seed` are now first-class benchmark flags
+  (seed default unchanged).
+
+### Release engineering
+
+- `release.yml`: tag-triggered builds for macOS (arm64/x86_64), Linux (x86_64/arm64) and
+  Windows, sha256s, binary-version-matches-tag guard, assets attached to a **draft** release —
+  publishing stays a human act.
+- CI now runs the differential test on Windows too (Git Bash + choco ripgrep): the parity
+  property had never executed there.
+
 ## [0.1.1] — 2026-08-23
 
 Repair release: the first public CI run on `main` failed, and everything here follows from

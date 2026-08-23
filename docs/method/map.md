@@ -51,6 +51,10 @@ skill + repo conventions that apply the standard. Must work on the user's own re
 - **Standing preference**: structural queries use `ast-grep`, never `rg`, unless plain text is the
   point (it sometimes *is* the point here — we are measuring what plain text does).
 
+> **Cycle 2 route (2026-08-23):** [ticket 11](issues/11-cycle-2-plan.md) is the pre-registered
+> plan — docs-track dev set first, query-conditional prior gated on its counts, then the
+> rankable-deep bucket, weight fitting, external validity, and the token-outcome measure.
+
 ## Decisions so far
 
 <!-- one line per closed ticket: gist + link. Zoom the ticket for the detail. -->

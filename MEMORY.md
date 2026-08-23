@@ -138,6 +138,14 @@ destination is public. Use `=label` for repo identity and `--redact-names` for i
 
 ## Current state
 
+- **0.1.2** (2026-08-23, cycle 2 opens): ticket 11 pre-registers the route to done. P1 shipped —
+  `benchmark.ts --docs-track`, a public dev set for the prose bucket; the published run (after
+  review caught PascalCase classified as plainWord) quantifies the indictment: hay
+  −0.440/−0.340 MRR vs rg on doc-answerable queries, both tests p ≈ 0.0001, and the dominant
+  doc-answerable shape is **PascalCase type names documented in markdown** (27/30 alamofire) —
+  which **blocks** the shape-conditional penalty, since that is also the code track's type-query
+  shape. Recorded, not shipped. P7 shipped — `release.yml` (5 targets, draft-only) and the differential
+  test now runs on Windows. No ranking change; hay source untouched.
 - `hay` **0.1.1** (2026-08-23): repair release driven entirely by the first public CI run, which
   failed on two real defects — the committed lockfile's `globset`/`ignore` require rustc 1.88, so
   the MSRV 1.85 claim was false (now 1.88 in manifest, CI job, installer gate, docs, site chip);
@@ -200,9 +208,10 @@ destination is public. Use `=label` for repo identity and `--redact-names` for i
 1. **The gate still fails, but the gap now has a theory** (issue 10): the two largest remaining
    buckets are answers in files hay's own path prior penalizes (31% — prose 78, tests 53) and
    answers both retrievers rank deep (31%, all rankable). The prose/test bucket is currently
-   *unaddressable without violating the firewall* — the public benchmark has no prose ground
-   truth to develop a query-conditional penalty on. Building such a development set is the
-   cycle-2 prerequisite.
+   *unaddressable without violating the firewall* — the public benchmark had no prose ground
+   truth to develop a query-conditional penalty on. **The dev set exists as of 0.1.2**
+   (`--docs-track`), and its first counts *blocked* the shape-conditional design; the open
+   question is now the conditioning feature, not the data (ticket 11).
 2. **Weights are hand-set.** Fitting them on the same 12 repos would overfit the only evaluation
    set that exists. The public benchmark now covers c/ts/rust/swift and is the development set.
 3. **External validity: one public result now exists** (SWE-Explore, above) for hay's ranking
