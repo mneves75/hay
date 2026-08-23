@@ -138,6 +138,17 @@ destination is public. Use `=label` for repo identity and `--redact-names` for i
 
 ## Current state
 
+- `hay` **0.1.1** (2026-08-23): repair release driven entirely by the first public CI run, which
+  failed on two real defects — the committed lockfile's `globset`/`ignore` require rustc 1.88, so
+  the MSRV 1.85 claim was false (now 1.88 in manifest, CI job, installer gate, docs, site chip);
+  and `benchmark-feynman.html` was stale vs its generator, caught by the staleness gate's first
+  execution. `install.sh` additionally fixed: pipe-to-`bash` not `sh` (pipefail), install dir
+  derived from `CARGO_INSTALL_ROOT`/`CARGO_HOME`/`~/.cargo` not `dirname(cargo)` (found by codex
+  P3 autoreview, verified end-to-end against live main). **CI is green on Linux/macOS/Windows for
+  the first time** (run 32662935816) — former blocker #5 is closed. Tags: `v0.1.1-beta1`
+  (pre-release, verified: tarball downloaded and smoke-tested, installer run live) then `v0.1.1`
+  (Release with aarch64 tarball + sha256). gh-pages updated to the release editions of
+  MANUAL/benchmark with the site's `.html` Feynman-link convention; live-verified 200 + content.
 - `hay` **0.1.0** (2026-08-22, pushed — history squashed at release per owner call; pre-release development under the old repo name): no ranking change — differential 10/10 identical vs
   ripgrep, 45 tests (34 unit + 11 CLI contract), clippy clean under `-D warnings`, and the
   behavioural gate numbers are byte-identical to the pre-squash confirmation run (median-repo MRR
@@ -198,8 +209,10 @@ destination is public. Use `=label` for repo identity and `--redact-names` for i
    effect. The grep-hygiene *metric* findings (docs predict nothing, etc.) still have none.
 4. **MRR is still a proxy.** The field's accepted outcome measures are tokens and tool calls per
    resolved task; nothing has been tested against those.
-5. **Cross-platform CI remains unverified.** The workflow did not execute while the repository was
-   private, so Linux and Windows claims require a successful public-repository run.
+5. ~~Cross-platform CI remains unverified.~~ **Closed 2026-08-23**: run 32662935816 is green on
+   all seven jobs (Linux/macOS/Windows matrix, MSRV, audits, selftests, film source). The first
+   two public runs failed on real defects (false MSRV claim, stale generated page) — the gates
+   earned their keep on execution one.
 
 ## The lesson this repo exists to remember
 

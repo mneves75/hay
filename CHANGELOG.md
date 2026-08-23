@@ -4,6 +4,8 @@ Versions track `hay`, the shipped binary. The measurement kit is versioned with 
 This changelog starts at 0.1.0: everything before was development under a different name, and its
 history lives in git and `memory/`.
 
+## [Unreleased]
+
 ## [0.1.1] — 2026-08-23
 
 Repair release: the first public CI run on `main` failed, and everything here follows from
