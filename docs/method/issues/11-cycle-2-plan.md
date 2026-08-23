@@ -70,6 +70,35 @@ developed on the docs track, **required not to regress the code track** beyond i
 then confirmed on the behavioural corpus in **one** run. Differential test must stay 0 differing
 (ranking-only change). Gate re-computed and reported wherever it lands.
 
+### P2′ — Corpus-side doc prior (pre-registered 2026-08-23, before implementation)
+
+The shape gate blocked P2; the replacement conditions on the query's own result set — a
+post-retrieval predictor in the query-performance-prediction lineage (clarity/coverage-style:
+judge the query by what it retrieved), computed from statistics hay already has.
+
+**Signal, exactly:** after the walk, `prose_share` = matches in `PathClass::Prose` files ÷ all
+matches, computed over the **full** match stream (`per_file`/`total`, which count every match
+even when the 20,000-candidate heap truncates — so the share is exact). If
+`prose_share ≥ T`, the final-scoring path weight for Prose files becomes `−1.5 × D`
+(damp factor); every other class, and retention prescoring, unchanged. Test files are NOT
+touched — that would be a separate signal with its own registration.
+
+**Mechanics:** damp applies at final scoring only. When the candidate cap fired, the damp adds
+bounded slack to prose candidates relative to their retention prescore — the same bounded-slack
+class as the TF cap, and only in the case hay already announces on stderr and marks exit 2.
+Ablation switch `--no-docprior` (a contribution you cannot switch off is a belief). Development
+knobs `HAY_DOCPRIOR_THRESHOLD` / `HAY_DOCPRIOR_DAMP` (env), refusing invalid values loudly
+(invariant 5); defaults are baked constants once chosen.
+
+**Selection procedure, fixed in advance:** grid T ∈ {0.5, 0.7} × D ∈ {0.25, 0.5}, plus off.
+Chosen by docs-track ΔMRR (after − before, same seed = same queries) summed over the ripgrep and
+alamofire corpora, **subject to** code-track ΔMRR ≥ −0.01 on every locally available corpus
+(paired via `--queries-from` on the committed evidence); if the top point fails the constraint,
+take the next best. Then exactly **one** behavioural confirmation run
+(`measure-mrr.ts --compare`) on the private corpus, and the pre-registered gate recomputed.
+If no grid point clears the constraint, or the behavioural run contradicts the public tracks,
+**the signal does not ship** and this section records the negative result.
+
 ### P3 — The rankable-but-deep 62%: filename/path-token boost, then further signals
 
 Same discipline per signal: enumerate what actually precedes the false positives, ablate, delete
