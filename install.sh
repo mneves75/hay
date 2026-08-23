@@ -44,7 +44,7 @@ cargo install --path "$dir/hay" --force
 
 if command -v hay >/dev/null 2>&1; then
   echo "==> installed: $(hay --version)"
-  hay -F hay . >/dev/null 2>&1 && echo "==> smoke test: search works." || true
+  if hay -F hay . >/dev/null 2>&1; then echo "==> smoke test: search works."; fi
   echo "Done. Try: hay -F validateSession src/"
 else
   echo "==> installed, but 'hay' is not on PATH." >&2
