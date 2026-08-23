@@ -4,6 +4,20 @@ Versions track `hay`, the shipped binary. The measurement kit is versioned with 
 This changelog starts at 0.1.0: everything before was development under a different name, and its
 history lives in git and `memory/`.
 
+## [0.1.1] — 2026-08-23
+
+Repair release: the first public CI run on `main` failed, and everything here follows from
+reading that failure instead of re-running it.
+
+- MSRV is now **1.88**: ripgrep's own `globset`/`ignore` crates declare `rust-version = "1.88"`,
+  so the previous 1.85 claim was false with the committed lockfile. Bumped in `Cargo.toml`, the
+  CI MSRV job, the installer gate, and the docs.
+- `install.sh`: the advertised one-liner now pipes to `bash` (the script uses `pipefail`, which
+  `sh` on Debian-family systems rejects), and the "installing to" message no longer appends a
+  second `/bin` to cargo's bin directory. CI shellcheck now covers `install.sh` too.
+- `benchmark-feynman.html` regenerated — the committed copy was missing the live-companions
+  paragraph `explainer-html.ts` emits, which CI's staleness gate caught on its first execution.
+
 ## [0.1.0] — 2026-08-22
 
 First numbered release of **hay** — a ranked grep for coding agents — and the measurement kit

@@ -71,7 +71,8 @@ jobs:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # v1
         with:
-          toolchain: "1.85"
+          # Keep in sync with `rust-version` in hay/Cargo.toml.
+          toolchain: "1.88"
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           workspaces: hay
@@ -123,7 +124,7 @@ jobs:
           bun benchmark-report.ts
           bun explainer-html.ts --in BENCHMARK_FEYNMAN.md --out benchmark-feynman.html
           git diff --exit-code -- BENCHMARK.md benchmark.html benchmark-feynman.html
-      - run: shellcheck benchmark-corpora.sh hay/differential-test.sh
+      - run: shellcheck benchmark-corpora.sh hay/differential-test.sh install.sh
 
   site:
     name: benchmark film source

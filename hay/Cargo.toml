@@ -1,8 +1,8 @@
 [package]
 name = "hay"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
-rust-version = "1.85"
+rust-version = "1.88"
 description = "A ranked grep for coding agents: ripgrep's engine, with the priors grep lacks."
 license = "MIT"
 readme = "../README.md"

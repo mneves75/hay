@@ -121,7 +121,7 @@ own crates and `lexopt` deliberately. Check what they already implement before w
 
 ## Style
 
-Rust edition 2024, MSRV 1.85, no `unsafe`, clippy clean under `-D warnings`. Comments explain why
+Rust edition 2024, MSRV 1.88 (pinned by the ripgrep crates' own `rust-version`), no `unsafe`, clippy clean under `-D warnings`. Comments explain why
 a non-obvious thing is the way it is — several encode a defect that already happened, so do not
 delete them as noise. TypeScript tools are dependency-free and run under `bun`.
 

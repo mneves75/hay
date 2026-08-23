@@ -184,8 +184,8 @@ headings, flag names, and body text.</p>
 <!-- ─────────────────────────────── start ─────────────────────────────── -->
 <section id="start">
 <h2>Start here</h2>
-<p>Install from source — one line, or inspect first (Rust edition 2024, MSRV 1.85):</p>
-<div class="codewrap"><pre><code>curl -fsSL https://raw.githubusercontent.com/mneves75/hay/main/install.sh | sh
+<p>Install from source — one line, or inspect first (Rust edition 2024, MSRV 1.88):</p>
+<div class="codewrap"><pre><code>curl -fsSL https://raw.githubusercontent.com/mneves75/hay/main/install.sh | bash
 
 # inspect-first form:
 git clone https://github.com/mneves75/hay.git &amp;&amp; cd hay &amp;&amp; ./install.sh</code></pre><button class="copy" type="button">copy</button></div>
@@ -461,7 +461,7 @@ hay --json -F "$symbol" "$root" \
 <div class="codewrap"><pre><code>hay -m 0 -F "$symbol" "$root" 2&gt;err.log || true
 grep -q "candidate cap" err.log &amp;&amp; echo "truncated — switch to rg for exhaustiveness"</code></pre><button class="copy" type="button">copy</button></div>
 <h3>Install on an agent's machine</h3>
-<div class="codewrap"><pre><code>curl -fsSL https://raw.githubusercontent.com/mneves75/hay/main/install.sh | sh   # inspect first!
+<div class="codewrap"><pre><code>curl -fsSL https://raw.githubusercontent.com/mneves75/hay/main/install.sh | bash   # inspect first!
 # inspect-first form:
 git clone https://github.com/mneves75/hay.git &amp;&amp; cd hay &amp;&amp; ./install.sh</code></pre><button class="copy" type="button">copy</button></div>
 </section>
