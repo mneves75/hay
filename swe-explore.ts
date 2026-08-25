@@ -31,7 +31,7 @@
 
 import { existsSync, mkdirSync, readdirSync, renameSync, rmSync } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { join, posix } from "node:path";
 
 import {
   ResultScan, bootstrapCI, mean, mulberry32, randomizationP, rankOfAnswer,
@@ -51,6 +51,45 @@ type Instance = {
 };
 
 type Issue = { instance_id: string; repo: string; base_commit: string; problem_statement: string };
+
+type ArchiveCoordinates = { cacheKey: string; repo: string; commit: string };
+
+/** Reject remote dataset fields before they can influence a cache path or archive URL. */
+export function safeArchiveCoordinates(
+  instanceId: string,
+  repo: string,
+  baseCommit: string,
+): ArchiveCoordinates | null {
+  const cacheKeyOk = /^[A-Za-z0-9][A-Za-z0-9._-]{0,199}$/.test(instanceId);
+  const parts = repo.split("/");
+  const ownerOk =
+    /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$/.test(parts[0] ?? "");
+  const repoName = parts[1] ?? "";
+  const repoOk =
+    /^[A-Za-z0-9._-]{1,100}$/.test(repoName) &&
+    repoName !== "." && repoName !== "..";
+  const commitOk = /^[0-9a-f]{40}$/i.test(baseCommit);
+  if (!cacheKeyOk || parts.length !== 2 || !ownerOk || !repoOk || !commitOk) {
+    return null;
+  }
+  return { cacheKey: instanceId, repo, commit: baseCommit };
+}
+
+/** Normalize a dataset-provided Git path without allowing it to name a host path. */
+export function safeRepoRelativePath(candidate: string): string | null {
+  if (
+    candidate.length === 0 ||
+    candidate.length > 4096 ||
+    candidate.includes("\0") ||
+    candidate.includes("\\") ||
+    posix.isAbsolute(candidate)
+  ) {
+    return null;
+  }
+  const normalized = posix.normalize(candidate);
+  if (normalized === "." || normalized === ".." || normalized.startsWith("../")) return null;
+  return normalized;
+}
 
 // ── language, from the gold files themselves ─────────────────────────────────
 
@@ -179,7 +218,13 @@ async function fetchIssues(dataset: string, cacheName: string): Promise<Map<stri
  * scores as the repository (review finding).
  */
 async function fetchRepo(issue: Issue, budgetMb: number): Promise<string | null> {
-  const dir = `${CACHE}/checkouts/${issue.instance_id}`;
+  const coordinates = safeArchiveCoordinates(
+    issue.instance_id,
+    issue.repo,
+    issue.base_commit,
+  );
+  if (!coordinates) return null;
+  const dir = join(CACHE, "checkouts", coordinates.cacheKey);
   if (existsSync(dir)) {
     const entries = readdirSync(dir);
     if (entries.length === 1) return `${dir}/${entries[0]}`;
@@ -188,7 +233,7 @@ async function fetchRepo(issue: Issue, budgetMb: number): Promise<string | null>
   rmSync(tmp, { recursive: true, force: true });
   mkdirSync(tmp, { recursive: true });
   const budget = budgetMb * 1024 * 1024;
-  const url = `https://github.com/${issue.repo}/archive/${issue.base_commit}.tar.gz`;
+  const url = `https://github.com/${coordinates.repo}/archive/${coordinates.commit}.tar.gz`;
   const tar = Bun.spawn(["tar", "-xz", "-C", tmp], { stdin: "pipe", stderr: "ignore" });
   let ok = false;
   try {
@@ -238,6 +283,51 @@ if (import.meta.main) {
     eq(instanceLanguage(["x.go"]), "go", "single gold file");
     eq(instanceLanguage(["README", "LICENSE"]), "other", "no extension, no vote");
     eq(instanceLanguage(["a.ts", "b.js"]), "js/ts", "ts and js pool");
+
+    // Remote archive coordinates must be harmless before cache cleanup or fetch construction.
+    const commit = "d16bfe05a744909de4b27f5875fe0d4ed41ce607";
+    eq(
+      safeArchiveCoordinates("astropy__astropy-12907", "astropy/astropy", commit),
+      { cacheKey: "astropy__astropy-12907", repo: "astropy/astropy", commit },
+      "live SWE-bench coordinate shape is accepted",
+    );
+    eq(
+      safeArchiveCoordinates("../../victim", "astropy/astropy", commit),
+      null,
+      "cache traversal is rejected",
+    );
+    eq(
+      safeArchiveCoordinates("safe", "astropy/../../victim", commit),
+      null,
+      "repo traversal is rejected",
+    );
+    eq(
+      safeArchiveCoordinates("safe", "astropy/astropy", "main"),
+      null,
+      "non-SHA commit is rejected",
+    );
+
+    eq(
+      safeRepoRelativePath("src/query/parser.ts"),
+      "src/query/parser.ts",
+      "repo-relative gold path is accepted",
+    );
+    eq(
+      safeRepoRelativePath("src/../parser.ts"),
+      "parser.ts",
+      "contained path is normalized",
+    );
+    eq(
+      safeRepoRelativePath("../../outside-secret"),
+      null,
+      "gold path traversal is rejected",
+    );
+    eq(safeRepoRelativePath("/etc/passwd"), null, "absolute gold path is rejected");
+    eq(
+      safeRepoRelativePath("src\\..\\outside-secret"),
+      null,
+      "platform-specific separator traversal is rejected",
+    );
 
     // The derivation rule, on hand-built issues. Backticks outrank prose identifiers.
     eq(
@@ -347,10 +437,15 @@ if (import.meta.main) {
     const root = await fetchRepo(issue, budgetMb);
     if (!root) { skippedRepo++; continue; }
 
-    const gold = new Set(inst.ground_truth.read_core_files.filter((f) => existsSync(`${root}/${f}`)));
+    const gold = new Set(
+      inst.ground_truth.read_core_files.flatMap((candidate) => {
+        const safe = safeRepoRelativePath(candidate);
+        return safe !== null && existsSync(join(root, safe)) ? [safe] : [];
+      }),
+    );
     if (gold.size === 0) { skippedNoGold++; continue; }
 
-    const lang = instanceLanguage(inst.ground_truth.read_core_files);
+    const lang = instanceLanguage([...gold]);
     const perQuery = { rg: [] as QueryResult[], hay: [] as QueryResult[] };
     for (const q of queries) {
       for (const retriever of ["rg", "hay"] as const) {
