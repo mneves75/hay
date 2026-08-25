@@ -120,6 +120,8 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun audit
       - run: bun run typecheck
+      - run: bun run lint:ast-grep
+      - run: bun run test:ast-grep
       # Each tool self-checks its pure functions; none of them needs agent transcripts to do it.
       - run: bun grep-hygiene.ts --selftest
       - run: bun harvest-queries.ts --selftest

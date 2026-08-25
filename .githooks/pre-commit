@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root=$(git rev-parse --show-toplevel)
+cd "$repo_root"
+
+# Structural safety rules are fast and must block locally, not only after a push.
+exec bun run lint:ast-grep

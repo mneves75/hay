@@ -1,0 +1,9 @@
+id: no-javascript-eval
+message: Explicit global eval executes code from a string; use a parser instead.
+severity: error
+language: JavaScript
+rule:
+  any:
+    - pattern: eval($$$ARGS)
+    - pattern: globalThis.eval($$$ARGS)
+    - pattern: window.eval($$$ARGS)

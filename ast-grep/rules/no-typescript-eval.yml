@@ -1,0 +1,9 @@
+id: no-typescript-eval
+message: Explicit global eval executes code from a string; use a typed parser instead.
+severity: error
+language: TypeScript
+rule:
+  any:
+    - pattern: eval($$$ARGS)
+    - pattern: globalThis.eval($$$ARGS)
+    - pattern: window.eval($$$ARGS)

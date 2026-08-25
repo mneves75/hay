@@ -1,0 +1,6 @@
+id: no-rust-unsafe-block
+valid:
+  - fn safe() { read(); }
+invalid:
+  - fn risky() { unsafe { read(); } }
+

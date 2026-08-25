@@ -1,0 +1,7 @@
+id: no-typescript-eval
+valid:
+  - predicate.eval(value)
+invalid:
+  - eval(source)
+  - globalThis.eval(source)
+  - window.eval(source)

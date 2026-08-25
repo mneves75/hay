@@ -1,0 +1,7 @@
+id: no-rust-unsafe-block
+message: Unsafe Rust is forbidden in this repository.
+severity: error
+language: Rust
+rule:
+  pattern: unsafe { $$$BODY }
+
