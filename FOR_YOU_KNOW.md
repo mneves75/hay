@@ -54,9 +54,10 @@ It immediately told the project it was wrong. That is what a good instrument doe
 
 ## `hay`, and why Rust
 
-If the reader is the problem, fix the reader. `hay` runs the same search `rg` would and reorders
-the output so the line that *declares* the thing, in source rather than in an archived plan, comes
-first. Same matches — never more, never fewer — different order.
+If the reader is the problem, fix the reader. `hay` runs the corresponding ripgrep-engine search
+under a deterministic traversal policy and reorders the output so the line that *declares* the
+thing, in source rather than in an archived plan, comes first. Complete searches preserve the
+equivalent ripgrep match set; only the order changes.
 
 Rust was chosen for two reasons, and speed is the less interesting one.
 
@@ -113,6 +114,21 @@ binary and diffing its output on exactly the queries that moved gave **zero diff
 cause was 1,795 and 179 files being committed to those repositories *while the measurement ran*.
 The instrument was fine; the corpus moved. The habit that caught it is the same one that caught the
 other nine: do not reason about the discrepancy, reproduce it.
+
+## The fail-closed hardening pass
+
+One later review found three more ways a plausible result could lie by omission. A search broader
+than the 20,000-candidate retention cap printed a warning but still exited **0**, even though
+thousands of matches had been dropped. JSON context records lacked their absolute byte offset,
+and valid zero-width regex matches such as `^` and `$` disappeared from `submatches`. Finally,
+a file that vanished between matching and context re-read quietly lost its requested context.
+
+All three now fail or report honestly: capped searches exit **2**, JSON preserves offsets and
+zero-width spans, and context re-reads use a capability anchored to the search root, rejecting
+outside-pointing replacements as incomplete. The differential suite grew from ten literal cases
+to seventeen traversal and matcher cases, while release archives gained provenance attestations.
+None of this changes ranking; it strengthens the sentence callers can safely infer from an exit
+code.
 
 ## Pitfalls, if you work here
 

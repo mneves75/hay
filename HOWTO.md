@@ -80,11 +80,12 @@ ln -sf "$PWD/hay/target/release/hay" ~/.local/bin/hay   # or wherever your PATH 
 
 `rg config` prints matches in **path order**, which is arbitrary. If a dead `plan-v3-FINAL.md`
 sorts before `src/config.ts`, the plan comes first. An agent reads the first page and acts on it.
-`hay` runs the identical search and reorders the output so the line that *declares* the thing, in
-source code rather than in an archived document, comes first.
+`hay` runs the corresponding ripgrep-engine search and reorders the output so the line that
+*declares* the thing, in source code rather than in an archived document, comes first.
 
-It returns **exactly the same matches as ripgrep** — never more, never fewer. Only the order
-changes. There is a test for this: [§6](#6-checking-it-still-works).
+For complete searches, it returns **exactly the same matches as an equivalently configured
+ripgrep invocation** — never more, never fewer. The differential test normalizes non-`.gitignore`
+ignore inputs and VCS exclusions on both sides: [§6](#6-checking-it-still-works).
 
 ### Basic use
 
@@ -153,19 +154,20 @@ hay --no-path config          # turn off one ranking signal, to see what it was 
 
 ### Where it differs from ripgrep
 
-Three deliberate divergences, all of them consequences of ranking:
+Important deliberate divergences:
 
 | | ripgrep | hay |
 |---|---|---|
 | result order | path order | rank order |
 | `-m N` | at most N matches **per file** | at most N results **in total** |
-| exhaustiveness | every match | the strongest 20,000 candidates |
+| exhaustiveness | every match | 20,000 candidates retained by prescore |
 | `--json` | `begin`, `match`, `context`, `end`, `summary` | `match` and `context` only |
+| additional ignore sources | honours global gitignore, `.git/info/exclude`, `.ignore`, and `.rgignore` | disables them for deterministic results; repository `.gitignore` still applies |
 
-A search matching more than 20,000 lines ranks only the strongest 20,000 candidates and says so on
-stderr, so `-m 0` prints everything `hay` ranked rather than every match in the tree. That cap is
-what keeps memory flat in match count; when you need exhaustiveness on a very broad pattern, use
-`rg`.
+A search matching more than 20,000 lines ranks only the 20,000 strongest-by-prescore candidates,
+says so on stderr, and exits 2 because the result is incomplete. `-m 0` prints everything `hay`
+ranked rather than every match in the tree. The cap keeps memory flat in match count; use `rg` for
+exhaustive broad searches.
 
 `begin`/`end`/`summary` are file-scoped messages, and rank-ordered output is not grouped by file,
 so there is no honest moment to emit them. Consumers that filter for `"type":"match"` — which is
@@ -184,9 +186,9 @@ ripgrep they mean *match* and *non-match*. A line that contains the pattern but 
 ranked page appears as context. That is the honest reading for a tool that shows the best N results
 rather than all of them.
 
-Exit codes follow ripgrep: **0** = found something, **1** = found nothing, **2** = something went
-wrong (bad path, unreadable file, broken pattern). A mistyped directory gives you exit 2 and an
-error, not a silent "no matches".
+Exit codes follow ripgrep: **0** = a complete search found something, **1** = a complete search
+found nothing, **2** = wrong or incomplete (bad path, unreadable file, broken pattern, candidate
+cap). A mistyped directory gives you exit 2 and an error, not a silent "no matches".
 
 ### Using it with a coding agent
 
@@ -429,7 +431,7 @@ the tickets under [`docs/method/issues/`](docs/method/issues/).
 
 ```bash
 cargo test --manifest-path hay/Cargo.toml     # unit tests + tests/cli.rs contract tests
-./hay/differential-test.sh                     # hay returns exactly rg's matches
+./hay/differential-test.sh                     # exact match set under normalized traversal
 bun install --frozen-lockfile
 bun audit
 bun run typecheck                              # bun strips types without checking
@@ -490,8 +492,9 @@ working directory.
 **`hay: <path>: no such file or directory` (exit 2)** — the path is wrong. This is deliberate: an
 earlier version exited 0 with no output, which is indistinguishable from "no matches".
 
-**`hay: N matches; ranked the 20000 strongest candidates`** — your pattern is very broad. `hay`
-caps how many candidates it holds in memory. Narrow the pattern for an exhaustive result.
+**`hay: N matches; ranked the 20000 strongest-by-prescore candidates` (exit 2)** — your pattern is
+very broad. `hay` capped its retained candidates, so the output is incomplete. Narrow the pattern
+or use `rg` for an exhaustive result.
 
 **`measure-mrr.ts` is slow** — it runs one search per query. A few minutes across twelve
 repositories is normal.

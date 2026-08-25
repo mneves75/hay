@@ -138,6 +138,15 @@ destination is public. Use `=label` for repo identity and `--redact-names` for i
 
 ## Current state
 
+- **0.1.3 hardening candidate** (2026-08-25): ranking and weights stay frozen. The candidate makes
+  candidate-cap truncation exit 2, restores JSON context offsets and zero-width submatches, and
+  capability-scopes context re-reads to the anchored search root. The differential matrix expands
+  from 10 to 17 cases; compile-time unsafe prohibition, tested ast-grep guards, archive
+  attestations, and validation of remote SWE-Explore cache/archive/path coordinates harden the
+  development, measurement, and release paths. Real-browser manual checks cover search/no-hit,
+  theme, navigation, mobile/desktop overflow, runtime errors, and network failures. Beta staging
+  still requires the gate and tag; production remains behind explicit confirmation.
+
 - **P2′ refused by its own measurement** (2026-08-23): the corpus-side doc prior was
   pre-registered, implemented (stashed, not shipped), and measured — doc-answerable queries have
   prose match shares of 0.01–0.18, so the conditioning feature separates nothing. Both cycle-2
@@ -209,9 +218,9 @@ destination is public. Use `=label` for repo identity and `--redact-names` for i
 - All **nine** TypeScript tools have passing selftests and run in CI. `benchmark.ts` and
   `benchmark-report.ts` shipped in 0.4.0 with selftests nothing executed, so the statistics behind
   the published intervals were unguarded for a release.
-- Committed and pushed to a **private** GitHub repo. Docs: `README.md` (the negative result, now
-  also introducing `hay`), `HOWTO.md` (how to run anything), `DESIGN-hay.md` (design + results +
-  review history), `CHANGELOG.md`, `SECURITY.md`, `docs/method/` (the wayfinder map and tickets).
+- The source repository is public at `mneves75/hay`; private behavioural corpora remain local and
+  gitignored. Docs: `README.md` (negative result + product), `HOWTO.md` (commands),
+  `DESIGN-hay.md` (design + reviews), `CHANGELOG.md`, `SECURITY.md`, and `docs/method/` (tickets).
 
 ## Blockers / open questions
 

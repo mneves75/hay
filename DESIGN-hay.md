@@ -217,8 +217,10 @@ statements, and keeping both is the point: significance is not sufficiency.
 
 ## Correctness property: same matches, different order
 
-`hay` must return exactly what ripgrep returns, only reordered. `hay/differential-test.sh` checks
-this over 10 queries per repository: **30/30 identical match sets**.
+Every complete `hay` search must return exactly what the corresponding ripgrep invocation
+returns, only reordered. `hay/differential-test.sh` normalizes non-`.gitignore` ignore sources and
+VCS exclusions on both sides, then checks 17 traversal and matcher cases per repository. It must
+always report zero differing match sets.
 
 This test found three defects that no unit test would have caught, because each one changed *which
 files were searched* rather than how a line scored:
@@ -294,12 +296,12 @@ the new surface (`--json`, `-C`, `-e`, `-t`) in place. Re-running them corrected
 been asserted and never tested: VCS metadata is excluded by default and under `--hidden` /
 `--no-ignore`, but **not** against an explicit `-g '.git/**'`, which searches it — as `rg` does with
 the same flag. The exclusion is a default, not a sandbox, and the earlier "unconditionally" was
-wrong. symlinks are not followed out
+wrong. Symlinks are not followed out
 of the tree (no `/etc/passwd` escape); catastrophic regexes do not hang (Rust's engine is
 linear-time by construction); oversized patterns are rejected; `.gitignore` and hidden files are
 excluded by default so secrets are not read unless `--hidden --no-ignore` is passed explicitly;
-binary content is suppressed; VCS metadata is never searched; non-ASCII input does not panic; exit
-codes are 0/1/2 as ripgrep defines them.
+binary content is suppressed; VCS metadata requires an explicit include glob; non-ASCII input
+does not panic; exit codes are 0/1/2 as ripgrep defines them.
 
 Memory is bounded by a capped heap plus a bounded channel. The original unbounded design peaked at
 135 MB on a broad query and grew with match count — attacker-influenced input, since the agent
@@ -310,9 +312,10 @@ in match count, which is the property that matters.
 Regex *compilation* is not bounded by `hay` and deliberately so: it inherits ripgrep's limits
 unchanged, since accepting a different pattern set than ripgrep would break the parity the tool is
 built on. Both allocate hundreds of megabytes on a pattern near the ceiling (367 MB `hay`, 368 MB
-ripgrep, same pattern) and both exit 2 past it. Two new probes were added for 0.2.0: `--json`
-output stays parseable when a matched source line contains JSON metacharacters, and `-C` re-reads
-only files the walk already yielded, so context cannot reach a path the search itself excluded.
+ripgrep, same pattern) and both exit 2 past it. JSON output stays parseable when a matched source
+line contains JSON metacharacters. Context re-reads use a filesystem capability anchored before
+the walk, so a replaced path may change bytes inside the tree but cannot follow a symlink or
+traversal outside the search root; a rejected re-read exits 2.
 
 **0.5.0 review — the property this design gives away.** Every probe above is about what `hay`
 reads. The one that had been missed is about what it *promotes*, and it is the only axis where

@@ -35,11 +35,12 @@ this tool is built for, and promoting attacker-chosen text to that page is a rea
 `hay` output as untrusted content regardless of rank, which is the correct posture for `rg` output
 too, and more obviously necessary here.
 
-Two smaller behaviours worth knowing, both shared with ripgrep. Matched lines are printed as they
-appear in the file, so a file containing terminal escape sequences can affect a terminal that
-renders them; and `-C` re-reads the file after the search, so a file replaced in that window shows
-the new content as context. Both require write access to the tree being searched, which is a
-stronger position than either issue.
+Two smaller behaviours are worth knowing. Matched lines are printed as they appear in the file,
+so terminal escape sequences can affect a terminal that renders them. `-C` re-reads context
+through a filesystem capability anchored before the walk: replacing a file inside the tree may
+change the context bytes, but a symlink or path replacement cannot escape the search root.
+A failed or rejected re-read exits 2 rather than returning partial context. Both attacks require
+write access to the searched tree.
 
 The pattern is attacker-influenced whenever an agent chooses it, so the memory `hay` itself adds is
 bounded rather than proportional to match count: a capped candidate heap plus a bounded channel.
@@ -54,8 +55,8 @@ in both tools (measured: 367 MB for `hay`, 368 MB for ripgrep, on the same patte
 2 beyond it.
 
 **The measurement kit** (`harvest-queries.ts`, `measure-mrr.ts`, `doc-authority.ts`,
-`grep-hygiene.ts`) reads your local coding-agent transcripts. Those contain real search terms, real
-file paths, and real project names from whatever you have worked on.
+`grep-hygiene.ts`) reads your local coding-agent transcripts. Those contain real search terms,
+real file paths, and real project names from whatever you have worked on.
 
 - Output goes to `corpus/`, which is gitignored. Keep it that way.
 - Use `path=label` to anonymise repository identity and `--redact-names` to pseudonymise
@@ -63,8 +64,23 @@ file paths, and real project names from whatever you have worked on.
 - The tools warn on stderr when a report would quote a security-sensitive identifier. Do not
   ignore that warning.
 
+`swe-explore.ts` is the one networked measurement tool. It reads fixed HTTPS endpoints on
+Hugging Face and GitHub, then invokes `tar` with an argument array rather than a shell. Remote
+instance IDs, GitHub owner/repository slugs, and 40-hex commit IDs are validated before they can
+name a cache path or archive URL. Ground-truth file names are normalized as Git paths; absolute
+paths, parent traversal, NULs, and platform-specific separators are rejected before a filesystem
+probe. Repository archive downloads have a byte budget and incomplete extractions are discarded.
+The tool never executes code from downloaded repositories.
+
 ## Supply chain
 
-`hay` depends on ripgrep's own crates (`ignore`, `grep-regex`, `grep-searcher`, `grep-matcher`) plus
-`serde_json`. CI runs Rust and Bun vulnerability audits, GitHub Actions are pinned by full commit
-SHA, and Dependabot proposes Cargo, Bun, and Actions updates weekly.
+`hay` depends on ripgrep's own crates (`ignore`, `grep-regex`, `grep-searcher`, `grep-matcher`),
+`serde_json`, and the Bytecode Alliance's `cap-std` for capability-scoped context reads. CI runs
+Rust and Bun vulnerability audits, GitHub Actions are pinned by full commit SHA, and Dependabot
+proposes Cargo, Bun, and Actions updates weekly. Release archives have SHA-256 checksums and
+GitHub artifact attestations bound to the tag workflow. Verify both before installing:
+
+```bash
+shasum -a 256 -c hay-vX.Y.Z-<target>.tar.gz.sha256
+gh attestation verify hay-vX.Y.Z-<target>.tar.gz -R mneves75/hay
+```

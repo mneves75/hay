@@ -1,9 +1,12 @@
 # hay
 
 **A ranked grep for coding agents, built from a negative result.** `hay` uses ripgrep's search
-engine and returns the same matches in a better order: likely declarations first, stale prose and
-buried files later. It is stateless, deterministic, and currently fails its own pre-registered ship
-gate. See the [manual](https://mneves75.github.io/hay/MANUAL.html) for the command surface and [HOWTO.md](HOWTO.md) for setup.
+engine and reorders the complete result set from an equivalently configured ripgrep search:
+likely declarations first, stale prose and buried files later. Broad searches that hit the
+bounded candidate cap exit 2 instead of claiming completeness. It is stateless, deterministic,
+and currently fails its pre-registered ship gate. See the
+[manual](https://mneves75.github.io/hay/MANUAL.html) for the command surface and
+[HOWTO.md](HOWTO.md) for setup.
 
 ```bash
 git clone https://github.com/mneves75/hay.git
@@ -106,10 +109,13 @@ means an agent issuing the same search twice genuinely gets a different first pa
 ## What came out of it — `hay`, a ranked grep
 
 If the constraint is the retriever, fix the retriever. [`hay`](HOWTO.md#3-hay) is ripgrep's engine
-and ripgrep's walk with the priors ripgrep deliberately lacks: it returns **exactly** the matches
-`rg` returns, reordered so the line that declares the thing comes first. No index, no daemon, no
-state — you type `hay` instead of `rg`. Every flag, output format and exit code is documented in
-the [manual](https://mneves75.github.io/hay/MANUAL.html) — an offline, self-contained page with search.
+and walk with the priors ripgrep deliberately lacks: every complete search returns **exactly**
+the matches from the corresponding normalized `rg` invocation, reordered so the likely
+declaration comes first. Above 20,000 candidates it exits 2 and identifies the incomplete
+prescore-retained set on stderr. No index, no daemon, no state — you type `hay` instead of `rg`.
+Every flag, output format, traversal difference, and exit code is documented in the
+[manual](https://mneves75.github.io/hay/MANUAL.html) — an offline, self-contained page with
+search.
 
 ```bash
 cargo install --path hay

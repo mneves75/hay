@@ -6,6 +6,38 @@ history lives in git and `memory/`.
 
 ## [Unreleased]
 
+## [0.1.3] — 2026-08-25
+
+No ranking change — this release hardens incomplete-search reporting, JSON compatibility, and
+release provenance without changing the three ranking signals or their weights.
+
+### hay correctness
+
+- Searches exceeding the 20,000-candidate retention cap now exit 2 instead of reporting success;
+  the warning and docs say that retention is by prescore rather than claiming the final strongest
+  matches survived.
+- JSON context messages now carry the correct `absolute_offset`, and JSON submatches preserve
+  valid zero-width regex spans such as `^` and `$`.
+- Context re-read failures now fail closed with exit 2 instead of silently omitting requested
+  context after a successful search. Re-reads are capability-scoped to the search root, so a
+  file replaced with an outside-pointing symlink cannot expose files beyond the searched tree.
+
+### Verification and release hardening
+
+- The differential suite now exercises 17 traversal and matcher cases per repository, including
+  regex, whole-word, glob, type, type exclusion, multiple patterns, and a bounded
+  `--no-ignore` fixture.
+- Rust forbids unsafe code at compile time. ast-grep structural rules run in CI and through the
+  repository pre-commit hook, with positive-control rule tests for unsafe blocks and direct
+  JavaScript/TypeScript `eval`.
+- Tag builds now create GitHub artifact attestations for every release archive in addition to the
+  existing SHA-256 checksums.
+- The public SWE-Explore harness now validates remote instance IDs, GitHub repository slugs,
+  commit SHAs, and gold-file paths before they can influence cache cleanup, archive URLs, or
+  filesystem probes; traversal and absolute-path attempts are covered by self-tests.
+- Browser E2E fixes the manual's false “Nothing matches” state, removes mobile page overflow from
+  wide tables, and replaces the missing favicon request with a self-contained icon.
+
 ## [0.1.2] — 2026-08-23
 
 No ranking change — hay's source is untouched; this release is the measurement kit and the

@@ -34,7 +34,7 @@ cargo build --release --manifest-path hay/Cargo.toml
 cargo test --manifest-path hay/Cargo.toml          # unit + tests/cli.rs contract tests
 cargo clippy --manifest-path hay/Cargo.toml --all-targets -- -D warnings
 cargo fmt --manifest-path hay/Cargo.toml --check
-./hay/differential-test.sh                          # hay returns exactly rg's matches
+./hay/differential-test.sh                          # exact match set under normalized traversal
 bun measure-mrr.ts --selftest                       # each TS tool has a selftest
 bun measure-mrr.ts --min-queries 60 --compare       # paired A/B with bootstrap intervals
 ./benchmark-corpora.sh                              # clone missing corpora, run, render, clean up
@@ -58,8 +58,9 @@ a line scored.
 
 ## Invariants — do not break these
 
-1. **`hay` returns exactly ripgrep's matches, only reordered.** `differential-test.sh` must stay
-   at 0 differing. If a change makes it impossible, the change is wrong.
+1. **`hay` returns exactly the corresponding ripgrep invocation's matches, only reordered.**
+   The harness normalizes non-`.gitignore` ignore inputs and VCS exclusions on both sides;
+   `differential-test.sh` must stay at 0 differing. If that becomes impossible, the change is wrong.
 2. **Rank order is the product.** Nothing may reorder results — not context windows, not block
    grouping, not deduplication. A fix that reorders is worse than the bug it replaces.
 3. **The pre-registered ship gate does not move.** Median MRR >= 0.50 and answer-in-top-10 >= 80%,
