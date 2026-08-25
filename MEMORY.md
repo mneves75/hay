@@ -138,14 +138,18 @@ destination is public. Use `=label` for repo identity and `--redact-names` for i
 
 ## Current state
 
-- **0.1.3 hardening candidate** (2026-08-25): ranking and weights stay frozen. The candidate makes
+- **0.1.3 PRODUCTION TAGGED; GITHUB RELEASE DRAFT** (2026-08-25): ranking and weights stay frozen. The release makes
   candidate-cap truncation exit 2, restores JSON context offsets and zero-width submatches, and
   capability-scopes context re-reads to the anchored search root. The differential matrix expands
   from 10 to 17 cases; compile-time unsafe prohibition, tested ast-grep guards, archive
   attestations, and validation of remote SWE-Explore cache/archive/path coordinates harden the
   development, measurement, and release paths. Real-browser manual checks cover search/no-hit,
-  theme, navigation, mobile/desktop overflow, runtime errors, and network failures. Beta staging
-  still requires the gate and tag; production remains behind explicit confirmation.
+  theme, navigation, mobile/desktop overflow, runtime errors, and network failures. `v0.1.3-beta1`
+  and annotated `v0.1.3` point to the same reviewed commit; both tag workflows passed all five
+  platform builds plus draft creation, with ten checksummed assets each. The arm64 macOS artifacts
+  were downloaded back, provenance-verified against the expected workflow/ref/commit, versioned,
+  and smoke-tested. The user deliberately left the GitHub Release draft and unpublished. The
+  pre-registered behavioural ranking gate still fails; this hardening tag does not claim otherwise.
 
 - **P2′ refused by its own measurement** (2026-08-23): the corpus-side doc prior was
   pre-registered, implemented (stashed, not shipped), and measured — doc-answerable queries have
