@@ -8,6 +8,7 @@
 <meta property="og:title" content="hay — the manual">
 <meta property="og:description" content="A ranked grep for coding agents: every flag, the JSON contract, exit codes, ranking signals, and recipes.">
 <meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%238a6d10'/%3E%3Cpath d='M18 14h8v14h12V14h8v36h-8V36H26v14h-8z' fill='%23fffdf6'/%3E%3C/svg%3E">
 <style>
 /* Theme via light-dark(): one value per custom property, resolved by color-scheme.
    The toggle sets data-theme for explicit choice; absence follows the OS. */
@@ -116,7 +117,7 @@ mark{background:var(--mark);color:inherit;padding:0 .1em;border-radius:2px}
 body.searching section:not(.hit){display:none}
 body.searching .toc-else{display:none}
 .noresults{display:none}
-body.searching .noresults{display:block}
+body.no-search-results .noresults{display:block}
 .explain-anatomy{display:block;width:100%;height:auto;font-size:13px}
 details.flaggroup{border:1px solid var(--rule);border-radius:4px;background:var(--panel);margin:0 0 .7rem}
 details.flaggroup summary{
@@ -137,6 +138,11 @@ footer{border-top:1px solid var(--rule);margin-top:3rem;padding-top:1.25rem;colo
     section[id] > *{animation:rise linear both;animation-timeline:view();animation-range:entry 0% entry 40%}
     @keyframes rise{from{opacity:.2;translate:0 14px}}
   }
+}
+@media (max-width:45rem){
+  table{table-layout:fixed}
+  th,td{overflow-wrap:anywhere;padding:.45rem .5rem}
+  tbody th[scope="row"]{white-space:normal}
 }
 @media print{.searchbar,nav.toc,#theme-toggle,.copy{display:none}body{background:#fff}section[id]{break-before:page}section:first-of-type{break-before:auto}}
 </style>
@@ -194,10 +200,11 @@ git clone https://github.com/mneves75/hay.git &amp;&amp; cd hay &amp;&amp; ./ins
 <div class="codewrap"><pre><code>hay validateSession src/          # ranked results, best first
 hay -t ts -w fetchUser            # TypeScript only, whole words
 hay -C 3 -m 20 'parseConfig'      # context, capped result count</code></pre><button class="copy" type="button">copy</button></div>
-<p>The deal hay offers is narrow and honest: it returns <strong>exactly ripgrep’s matches</strong> —
-never more, never fewer, verified continuously by a differential test against ripgrep itself — but
-<strong>ordered by likelihood of being the answer</strong> instead of by file path. If two orderings
-would ever differ in which lines match, that is a bug; the project treats it as such.</p>
+<p>The deal hay offers is narrow and honest: each complete search returns the exact match set
+from an equivalently configured ripgrep invocation, verified continuously by a differential test
+that normalizes traversal inputs on both sides — but <strong>ordered by likelihood of being the
+answer</strong> instead of by file path. If the corresponding orderings differ in which lines
+match, that is a bug; the project treats it as such.</p>
 <div class="callout">
 <p><strong>One-sentence mental model:</strong> ripgrep answers <em>“where does this string
 appear?”</em>; hay answers <em>“where is the thing I’m asking about — most likely first?”</em></p>
@@ -211,9 +218,12 @@ appear?”</em>; hay answers <em>“where is the thing I’m asking about — mo
 <em>declares</em> a thing is worth more than a line that merely mentions it.</strong> When an agent
 searches <code>validateSession</code>, the function definition is the answer; the forty call sites
 are supporting material; the dead planning document that mentions the name is noise.</p>
-<p>Mechanically, hay runs a ripgrep-grade search over your tree (same ignore rules, same walk,
-same match semantics), scores every matching line, keeps the strongest 20,000 candidates, sorts
-them, and prints. The scoring never changes <em>which</em> lines match — only their order.</p>
+<p>Mechanically, hay uses ripgrep’s matching and walking crates with a deterministic ignore
+policy: repository <code>.gitignore</code> rules apply, while global gitignore,
+<code>.git/info/exclude</code>, <code>.ignore</code>, and <code>.rgignore</code> do not. The
+differential harness disables those same non-<code>.gitignore</code> sources for ripgrep. hay then retains the
+20,000 strongest-by-prescore candidates, scores them, sorts them, and prints. Scoring never
+changes which retained lines match — only their order.</p>
 <p>If you want the full story — why ranking exists at all, what a bootstrap interval is, and the C
 bug the benchmark itself caught — read <a href="BENCHMARK_FEYNMAN.md">BENCHMARK_FEYNMAN.md</a>.
 It assumes no information-retrieval background.</p>
@@ -376,11 +386,13 @@ weights are optimal.</p>
 <tr><th scope="row"><code>-m</code> bounds total results, not matches-per-file</th><td>An agent wants “the twenty best lines”, not “twenty per file”.</td></tr>
 <tr><th scope="row"><code>--json</code> emits only <code>match</code>/<code>context</code></th><td><code>begin</code>/<code>end</code>/<code>summary</code> assume a file-scoped stream; rank order interleaves files.</td></tr>
 <tr><th scope="row"><code>-l</code> wins over <code>--json</code></th><td>Plain paths beat a bare <code>begin</code> with no <code>end</code>.</td></tr>
+<tr><th scope="row">Deterministic ignore inputs</th><td>Repository <code>.gitignore</code> rules apply; global gitignore, <code>.git/info/exclude</code>, <code>.ignore</code>, and <code>.rgignore</code> do not.</td></tr>
 <tr><th scope="row">A 20,000-candidate cap (see <a href="#cap">the cap</a>)</th><td>Memory bound with a loud stderr notice instead of unbounded buffering.</td></tr>
 </tbody>
 </table>
-<p>Everything else is parity by construction, enforced by a differential test that fails the build
-if hay and ripgrep ever disagree on <em>which lines match</em>.</p>
+<p>For equivalent flags and normalized traversal inputs, match semantics are parity by
+construction. The differential test fails the build if hay and the corresponding ripgrep
+invocation disagree on <em>which lines match</em>.</p>
 </section>
 
 <!-- ─────────────────────────────── exits ─────────────────────────────── -->
@@ -405,8 +417,9 @@ results”. Scripts should treat 2 as “retry narrower”, not as success.</p>
 <section id="cap">
 <h2>The candidate cap</h2>
 <p>hay buffers up to <strong>20,000 matching lines</strong> to score them. A pattern broader than
-that (say, <code>-e e</code> on the Linux kernel) ranks only the strongest 20,000 candidates — and
-says so on stderr while still exiting&nbsp;2, because the printed list is <em>not</em> every match
+that (say, <code>-e e</code> on the Linux kernel) ranks only the 20,000
+strongest-by-prescore candidates — and says so on stderr while still exiting&nbsp;2, because the
+printed list is <em>not</em> every match
 in the tree. For exhaustive counting or completeness checks on very broad patterns, use
 <code>rg</code>. That is not a limitation hay apologises for; it is the trade that makes ranking
 affordable, stated where you can see it.</p>
@@ -508,7 +521,7 @@ hay --json -F "$symbol" "$root" \
 <div class="codewrap"><pre><code>hay -C 3 -m 10 -F "$symbol" "$root"   # blocks stay grouped, gaps show as --</code></pre><button class="copy" type="button">copy</button></div>
 <h3>Honesty check on a big tree</h3>
 <div class="codewrap"><pre><code>hay -m 0 -F "$symbol" "$root" 2&gt;err.log || true
-grep -q "candidate cap" err.log &amp;&amp; echo "truncated — switch to rg for exhaustiveness"</code></pre><button class="copy" type="button">copy</button></div>
+grep -q "ranked the .* strongest" err.log &amp;&amp; echo "truncated — switch to rg for exhaustiveness"</code></pre><button class="copy" type="button">copy</button></div>
 <h3>Install on an agent's machine</h3>
 <div class="codewrap"><pre><code>curl -fsSL https://raw.githubusercontent.com/mneves75/hay/main/install.sh | bash   # inspect first!
 # inspect-first form:
@@ -622,6 +635,7 @@ q.addEventListener("input", () => {
       }
     }
   }
+  document.body.classList.toggle("no-search-results", !!needle && hits === 0);
   meta.textContent = needle ? `${hits} section${hits === 1 ? "" : "s"} match “${q.value.trim()}”` : "";
 });
 
