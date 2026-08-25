@@ -192,9 +192,10 @@ export async function rankOfAnswer(
   answers: Set<string>,
   retriever: Retriever = RETRIEVER,
 ): Promise<{ rank: number | null; scanned: number; ndcg: number; pageComplete: boolean; files: string[]; truncated: boolean }> {
-  // hay's stderr carries the candidate-cap warning — "N matches; ranked the 20000 strongest
-  // candidates" (format pinned by a contract test in hay/tests/cli.rs). On a query that hits the
-  // cap, hay ranked only the strongest-prescore candidates and the answer may have been dropped
+  // hay's stderr carries the candidate-cap warning — "N matches; ranked the 20000
+  // strongest-by-prescore candidates" (format pinned by a contract test in hay/tests/cli.rs). On
+  // a query that hits the cap, hay ranked only the strongest-prescore candidates and the answer
+  // may have been dropped
   // BEFORE scoring, which is a different failure from "ranked it badly". Invariant 7: a measure's
   // truncations are counted, never absorbed. hay prints it before any stdout, so reading the
   // stream after the kill cannot lose it.

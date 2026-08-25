@@ -177,6 +177,63 @@ fn json_output_is_one_valid_object_per_line() {
 }
 
 #[test]
+fn json_context_records_include_absolute_offsets() {
+    let d = fixture("json-context-offset");
+    let out = hay()
+        .args(["--json", "-C1", "-F", "validateSession", "src/auth.ts"])
+        .current_dir(d.path())
+        .assert()
+        .success();
+    let stdout = String::from_utf8(out.get_output().stdout.clone()).unwrap();
+    let records: Vec<serde_json::Value> = stdout
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+    let contexts: Vec<&serde_json::Value> = records
+        .iter()
+        .filter(|record| record["type"] == "context")
+        .collect();
+    assert_eq!(contexts.len(), 2);
+    assert_eq!(contexts[0]["data"]["line_number"], 1);
+    assert_eq!(contexts[0]["data"]["absolute_offset"], 0);
+    let line_1 = "import x from 'y'\n";
+    let line_2 = "export function validateSession(t: string) {\n";
+    assert_eq!(contexts[1]["data"]["line_number"], 3);
+    assert_eq!(
+        contexts[1]["data"]["absolute_offset"],
+        (line_1.len() + line_2.len()) as u64
+    );
+}
+
+#[test]
+fn json_preserves_zero_width_submatches() {
+    let d = fixture("json-zero-width");
+    for pattern in ["^", "$"] {
+        let out = hay()
+            .args(["--json", pattern, "src/auth.ts"])
+            .current_dir(d.path())
+            .assert()
+            .success();
+        let stdout = String::from_utf8(out.get_output().stdout.clone()).unwrap();
+        for line in stdout.lines() {
+            let record: serde_json::Value = serde_json::from_str(line).unwrap();
+            let span = &record["data"]["submatches"][0];
+            let expected = if pattern == "^" {
+                0
+            } else {
+                record["data"]["lines"]["text"]
+                    .as_str()
+                    .unwrap()
+                    .trim_end_matches('\n')
+                    .len()
+            };
+            assert_eq!(span["start"], expected);
+            assert_eq!(span["end"], expected);
+        }
+    }
+}
+
+#[test]
 fn files_with_matches_prints_plain_paths_even_under_json() {
     // `--json`'s documented contract is match/context messages only, so there is no JSON form
     // of `-l` output — a lone `begin` record per file was neither that contract nor rg-shaped.
@@ -242,7 +299,7 @@ fn a_broad_pattern_reports_truncation_rather_than_pretending_to_be_exhaustive() 
         .args(["-F", "-m", "0", "config", "."])
         .current_dir(d.path())
         .assert()
-        .success()
+        .code(2)
         // The exact phrase is a contract: `measure-mrr.ts` matches /ranked the \d+ strongest/ on
         // stderr to count truncated evaluations. Rewording it silently zeroes that count.
         .stderr(predicate::str::is_match(r"ranked the \d+ strongest").unwrap());

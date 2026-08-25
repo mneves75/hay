@@ -1,3 +1,5 @@
+#![forbid(unsafe_code)]
+
 //! `hay` — a ranked grep for coding agents.
 //!
 //! ripgrep returns matches in path order. For an agent that reads the first page and acts, path
@@ -11,12 +13,12 @@
 mod score;
 
 use std::collections::HashMap;
-use std::fs::File;
 use std::io::{self, BufRead, BufReader, BufWriter, Write};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use std::sync::mpsc;
 
+use cap_std::{ambient_authority, fs::Dir};
 use grep_matcher::Matcher;
 use grep_regex::RegexMatcherBuilder;
 use grep_searcher::{BinaryDetection, Searcher, SearcherBuilder, Sink, SinkMatch};
@@ -76,11 +78,13 @@ OPTIONS:
 Differences from ripgrep, deliberate: results are rank-ordered rather than path-ordered,
 `-m` bounds total results rather than matches per file, `--json` emits only `match`
 and `context` messages (`begin`/`end`/`summary` are file-scoped and output is not), and
-`-l` prints plain paths even under `--json`.
+`-l` prints plain paths even under `--json`. For deterministic traversal, repository
+`.gitignore` rules apply but global gitignore, `.git/info/exclude`, `.ignore`, and
+`.rgignore` inputs do not.
 
-A search matching more than 20000 lines ranks only the strongest 20000 candidates and
-says so on stderr, so `-m 0` prints every result hay ranked rather than every match in
-the tree. Use `rg` when you need exhaustiveness on a very broad pattern.
+A search matching more than 20000 lines ranks only the 20000 strongest-by-prescore
+candidates, says so on stderr, and exits 2 because the result is incomplete. `-m 0`
+prints every result hay ranked, not every tree match. Use `rg` for broad exhaustive searches.
 ";
 
 #[derive(Default, Debug)]
@@ -251,6 +255,9 @@ fn type_list() -> String {
 
 struct Hit {
     path: String,
+    /// Original filesystem path. Keep it lossless: the display path may replace non-UTF-8 bytes,
+    /// and reopening that lossy spelling can address a different file.
+    fs_path: PathBuf,
     line_no: u64,
     /// Byte offset of the start of this line within the file. ripgrep's `--json` reports it and
     /// consumers use it to seek; it is captured during the search rather than reconstructed.
@@ -366,6 +373,13 @@ fn base64(bytes: &[u8]) -> String {
     out
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum SearchOutcome {
+    Found,
+    NotFound,
+    Incomplete,
+}
+
 fn main() -> ExitCode {
     let opts = match parse_args(std::env::args().skip(1).collect()) {
         Ok(o) => o,
@@ -382,7 +396,9 @@ fn main() -> ExitCode {
     };
 
     match run(&opts) {
-        Ok(found) => ExitCode::from(if found { 0 } else { 1 }),
+        Ok(SearchOutcome::Found) => ExitCode::from(0),
+        Ok(SearchOutcome::NotFound) => ExitCode::from(1),
+        Ok(SearchOutcome::Incomplete) => ExitCode::from(2),
         Err(e) => {
             eprintln!("hay: {e}");
             ExitCode::from(2)
@@ -405,13 +421,20 @@ fn build_pattern(o: &Opts) -> String {
         .join("|")
 }
 
-fn run(o: &Opts) -> Result<bool, String> {
+fn run(o: &Opts) -> Result<SearchOutcome, String> {
     // A mistyped path must not look like "no matches". `ignore` walks a missing root silently,
     // so exit 0 with no output would be indistinguishable from a successful empty search — the
     // same silent-wrong-answer class this project has been bitten by repeatedly.
     if !o.path.exists() {
         return Err(format!("{}: no such file or directory", o.path.display()));
     }
+
+    // Anchor the context reader before walking. Reopening by ambient pathname after ranking lets
+    // a writable tree replace a matched path with a symlink to a file outside the search root.
+    let context_root = (!o.files_only && (o.before > 0 || o.after > 0))
+        .then(|| ContextRoot::new(&o.path))
+        .transpose()
+        .map_err(|e| format!("could not anchor context root: {e}"))?;
 
     let matcher = RegexMatcherBuilder::new()
         .case_insensitive(o.ignore_case)
@@ -522,6 +545,7 @@ fn run(o: &Opts) -> Result<bool, String> {
             // root made `hay foo src` print `file.rs`, which is both wrong output and loses the
             // `src/` prefix the path classifier ranks on.
             let display = entry.path().to_string_lossy().into_owned();
+            let fs_path = entry.path().to_path_buf();
             let searched = searcher.search_path(
                 &matcher,
                 entry.path(),
@@ -543,6 +567,7 @@ fn run(o: &Opts) -> Result<bool, String> {
                     let raw = matches!(text, std::borrow::Cow::Owned(_)).then(|| bytes.to_vec());
                     let _ = tx.send(Hit {
                         path: display.clone(),
+                        fs_path: fs_path.clone(),
                         line_no: lnum,
                         offset,
                         text: text.into_owned(),
@@ -569,11 +594,12 @@ fn run(o: &Opts) -> Result<bool, String> {
         return Err(format!("{error_count} path(s) could not be read"));
     }
     if total == 0 {
-        return Ok(false);
+        return Ok(SearchOutcome::NotFound);
     }
-    if total > MAX_CANDIDATES {
+    let truncated = total > MAX_CANDIDATES;
+    if truncated {
         eprintln!(
-            "hay: {total} matches; ranked the {MAX_CANDIDATES} strongest candidates. \
+            "hay: {total} matches; ranked the {MAX_CANDIDATES} strongest-by-prescore candidates. \
 Narrow the pattern for an exhaustive result."
         );
     }
@@ -619,7 +645,8 @@ Narrow the pattern for an exhaustive result."
         emit_files(&mut w, &scored, limit)
     } else {
         let page: Vec<(ScoreBreakdown, &Hit)> = scored.into_iter().take(limit).collect();
-        let ctx = read_context(&page, o.before, o.after);
+        let ctx = read_context(&page, o.before, o.after, context_root.as_ref())
+            .map_err(|e| format!("could not read context: {e}"))?;
         emit_lines(&mut w, &page, &ctx, &matcher, o)
     }
     .map_err(|e| e.to_string())?;
@@ -632,7 +659,11 @@ Narrow the pattern for an exhaustive result."
             "{error_count} path(s) could not be read; results are incomplete"
         ));
     }
-    Ok(true)
+    Ok(if truncated {
+        SearchOutcome::Incomplete
+    } else {
+        SearchOutcome::Found
+    })
 }
 
 fn emit_files(
@@ -657,18 +688,71 @@ fn emit_files(
     Ok(())
 }
 
+struct ContextRoot {
+    dir: Dir,
+    base: PathBuf,
+}
+
+impl ContextRoot {
+    fn new(search_path: &Path) -> io::Result<Self> {
+        let base = if search_path.is_dir() {
+            search_path.to_path_buf()
+        } else {
+            search_path
+                .parent()
+                .filter(|parent| !parent.as_os_str().is_empty())
+                .unwrap_or_else(|| Path::new("."))
+                .to_path_buf()
+        };
+        let dir = Dir::open_ambient_dir(&base, ambient_authority())
+            .map_err(|e| io::Error::new(e.kind(), format!("{}: {e}", base.display())))?;
+        Ok(Self { dir, base })
+    }
+
+    fn open(&self, path: &Path) -> io::Result<cap_std::fs::File> {
+        let relative = if let Ok(relative) = path.strip_prefix(&self.base) {
+            relative
+        } else if self.base == Path::new(".") && path.is_relative() {
+            path
+        } else {
+            return Err(io::Error::new(
+                io::ErrorKind::PermissionDenied,
+                format!(
+                    "{} is outside anchored search root {}",
+                    path.display(),
+                    self.base.display()
+                ),
+            ));
+        };
+        if relative.as_os_str().is_empty() {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "context path resolves to the search root",
+            ));
+        }
+        self.dir.open(relative)
+    }
+}
+
 /// Lines needed for `-A`/`-B`/`-C`, plus the last line each file actually has.
 ///
 /// Read after ranking, for the page that will actually be printed, rather than carried through
 /// the walk: context is decoration on at most `-m` results, so buffering it for up to 20,000
 /// candidates would multiply peak memory for output nobody sees.
-#[derive(Default)]
+#[derive(Debug, Default)]
 struct Context {
-    /// Line bytes exactly as they appear in the file, terminator included when present.
-    lines: HashMap<(String, u64), Vec<u8>>,
+    lines: HashMap<(PathBuf, u64), ContextLine>,
     /// Highest line number present in each file, so emission can stop at EOF instead of at the
     /// arithmetic end of a window the caller asked for.
-    last_line: HashMap<String, u64>,
+    last_line: HashMap<PathBuf, u64>,
+}
+
+#[derive(Debug)]
+struct ContextLine {
+    /// Absolute byte offset of this line, matching ripgrep's JSON contract.
+    offset: u64,
+    /// Bytes exactly as they appear in the file, terminator included when present.
+    bytes: Vec<u8>,
 }
 
 /// The [lo, hi] line window a hit's context spans. One definition, used by both the reader and
@@ -681,46 +765,65 @@ fn window(h: &Hit, before: usize, after: usize) -> (u64, u64) {
     )
 }
 
-fn read_context(page: &[(ScoreBreakdown, &Hit)], before: usize, after: usize) -> Context {
+fn read_context(
+    page: &[(ScoreBreakdown, &Hit)],
+    before: usize,
+    after: usize,
+    root: Option<&ContextRoot>,
+) -> io::Result<Context> {
     let mut out = Context::default();
     if before == 0 && after == 0 {
-        return out;
+        return Ok(out);
     }
+    let root = root.ok_or_else(|| io::Error::other("context root missing for requested window"))?;
+
     // Ranges, never the expanded line numbers: `-A 1000000000000` is a valid ripgrep argument, and
     // materialising that window as a set is an out-of-memory rather than a search.
-    let mut wanted: HashMap<&str, Vec<(u64, u64)>> = HashMap::new();
+    let mut wanted: HashMap<&Path, Vec<(u64, u64)>> = HashMap::new();
     for (_, h) in page {
         wanted
-            .entry(&h.path)
+            .entry(h.fs_path.as_path())
             .or_default()
             .push(window(h, before, after));
     }
     for (path, ranges) in wanted {
         let last = ranges.iter().map(|&(_, hi)| hi).max().unwrap_or(0);
-        let Ok(file) = File::open(path) else { continue };
+        let file = root
+            .open(path)
+            .map_err(|e| io::Error::new(e.kind(), format!("{}: {e}", path.display())))?;
         // Read bytes, not `lines()`: that decodes UTF-8 and would stop at the first invalid line,
         // silently dropping every following context line in exactly the files hay was just taught
-        // to search. Context is decoration, so a genuine IO error still just ends the scan.
+        // to search. A genuine IO error makes the requested output incomplete, so it must fail.
         let mut reader = BufReader::new(file);
-        let (mut n, mut seen, mut buf) = (0u64, 0u64, Vec::new());
+        let (mut n, mut seen, mut offset, mut buf) = (0u64, 0u64, 0u64, Vec::new());
         loop {
             buf.clear();
-            match reader.read_until(b'\n', &mut buf) {
-                Ok(0) | Err(_) => break,
-                Ok(_) => {}
+            let line_offset = offset;
+            let read = reader
+                .read_until(b'\n', &mut buf)
+                .map_err(|e| io::Error::new(e.kind(), format!("{}: {e}", path.display())))?;
+            if read == 0 {
+                break;
             }
+            offset = offset.saturating_add(read as u64);
             n += 1;
             if n > last {
                 break;
             }
             seen = n;
             if ranges.iter().any(|&(lo, hi)| n >= lo && n <= hi) {
-                out.lines.insert((path.to_string(), n), buf.clone());
+                out.lines.insert(
+                    (path.to_path_buf(), n),
+                    ContextLine {
+                        offset: line_offset,
+                        bytes: buf.clone(),
+                    },
+                );
             }
         }
-        out.last_line.insert(path.to_string(), seen);
+        out.last_line.insert(path.to_path_buf(), seen);
     }
-    out
+    Ok(out)
 }
 
 fn emit_lines(
@@ -768,7 +871,7 @@ fn emit_lines(
         // turned it into a trillion lookups past EOF, which is indistinguishable from a hang.
         let eof = ctx
             .last_line
-            .get(h.path.as_str())
+            .get(h.fs_path.as_path())
             .copied()
             .unwrap_or(h.line_no);
         let hi = hi.min(eof.max(h.line_no));
@@ -778,7 +881,7 @@ fn emit_lines(
                 if ranked.get(h.path.as_str()).is_some_and(|r| r.contains(&n)) {
                     continue; // printed at its own rank, as a match
                 }
-                if !ctx.lines.contains_key(&(h.path.clone(), n))
+                if !ctx.lines.contains_key(&(h.fs_path.clone(), n))
                     || !shown.entry(&h.path).or_default().insert(n)
                 {
                     continue;
@@ -789,8 +892,8 @@ fn emit_lines(
             }
             if is_match {
                 emit_match(w, *s, h, matcher, o)?;
-            } else if let Some(bytes) = ctx.lines.get(&(h.path.clone(), n)) {
-                emit_context(w, &h.path, n, bytes, o)?;
+            } else if let Some(line) = ctx.lines.get(&(h.fs_path.clone(), n)) {
+                emit_context(w, &h.path, n, line, o)?;
             }
             last_written = Some((&h.path, n));
         }
@@ -813,24 +916,22 @@ fn emit_match(
         // is scanned as its originals rather than as the lossy decoding.
         let hay: &[u8] = h.raw.as_deref().unwrap_or(h.text.as_bytes());
         let mut submatches = Vec::new();
-        let mut at = 0usize;
-        while at < hay.len() {
-            match matcher.find_at(hay, at) {
-                Ok(Some(m)) if m.end() > m.start() => {
-                    submatches.push(match std::str::from_utf8(&hay[m.start()..m.end()]) {
-                        Ok(t) => serde_json::json!({
-                            "match": {"text": t}, "start": m.start(), "end": m.end(),
-                        }),
-                        Err(_) => serde_json::json!({
-                            "match": {"bytes": base64(&hay[m.start()..m.end()])},
-                            "start": m.start(), "end": m.end(),
-                        }),
-                    });
-                    at = m.end();
-                }
-                _ => break,
-            }
-        }
+        // The matcher crate owns empty-match progress. A hand-rolled `find_at` loop dropped
+        // valid zero-width spans (`^`, `$`, `\b`) to avoid looping forever.
+        matcher
+            .find_iter(hay, |m| {
+                submatches.push(match std::str::from_utf8(&hay[m.start()..m.end()]) {
+                    Ok(t) => serde_json::json!({
+                        "match": {"text": t}, "start": m.start(), "end": m.end(),
+                    }),
+                    Err(_) => serde_json::json!({
+                        "match": {"bytes": base64(&hay[m.start()..m.end()])},
+                        "start": m.start(), "end": m.end(),
+                    }),
+                });
+                true
+            })
+            .map_err(|_| io::Error::other("matcher failed while emitting JSON"))?;
         // Exactly the file's bytes for this line — a final line with no terminator must not gain
         // one, or the reported bytes are not the bytes ripgrep would report.
         let lines = json_line(&h.file_bytes());
@@ -877,7 +978,7 @@ fn emit_context(
     w: &mut impl Write,
     path: &str,
     line_no: u64,
-    bytes: &[u8],
+    line: &ContextLine,
     o: &Opts,
 ) -> io::Result<()> {
     if o.json {
@@ -888,8 +989,9 @@ fn emit_context(
                 "type": "context",
                 "data": {
                     "path": {"text": path},
-                    "lines": json_line(bytes),
+                    "lines": json_line(&line.bytes),
                     "line_number": line_no,
+                    "absolute_offset": line.offset,
                     "submatches": [],
                 }
             })
@@ -897,6 +999,7 @@ fn emit_context(
     }
     // Stored with its terminator so JSON can report the file's exact bytes; stripped here because
     // `writeln!` adds one.
+    let bytes = line.bytes.as_slice();
     let text = String::from_utf8_lossy(bytes.strip_suffix(b"\n").unwrap_or(bytes));
     // ripgrep's separator convention: `:` introduces a match line, `-` a context line, so a
     // consumer can tell them apart without tracking state.
@@ -1082,6 +1185,7 @@ mod tests {
         Hit {
             path: path.into(),
             line_no,
+            fs_path: path.into(),
             offset: 0,
             text: text.into(),
             raw: None,
@@ -1117,15 +1221,20 @@ mod tests {
             .collect();
         let mut c = Context::default();
         for (p, n, t) in ctx {
-            c.lines
-                .insert((p.to_string(), *n), format!("{t}\n").into_bytes());
-            let e = c.last_line.entry(p.to_string()).or_insert(0);
+            c.lines.insert(
+                (PathBuf::from(p), *n),
+                ContextLine {
+                    offset: 0,
+                    bytes: format!("{t}\n").into_bytes(),
+                },
+            );
+            let e = c.last_line.entry(PathBuf::from(p)).or_insert(0);
             *e = (*e).max(*n);
         }
         // Every hit's own line exists too, or clamping would cut the window at the last context
         // line rather than at the end of the file.
         for h in hits {
-            let e = c.last_line.entry(h.path.clone()).or_insert(0);
+            let e = c.last_line.entry(h.fs_path.clone()).or_insert(0);
             *e = (*e).max(h.line_no);
         }
         let m = RegexMatcherBuilder::new().build("x").unwrap();
@@ -1136,6 +1245,76 @@ mod tests {
 
     fn render(hits: &[Hit], ctx: &[(&str, u64, &str)], argv: &[&str]) -> String {
         render_scored(hits, &[], ctx, argv)
+    }
+
+    #[test]
+    fn context_read_errors_are_not_silent() {
+        let dir = tempfile::tempdir().unwrap();
+        let missing = dir.path().join("removed-after-search.txt");
+        let h = hit(&missing.to_string_lossy(), 1, "x");
+        let score = ScoreBreakdown {
+            definition: 0.0,
+            path: 0.0,
+            tf: 0.0,
+            total: 1.0,
+        };
+        let page = [(score, &h)];
+        let root = ContextRoot::new(dir.path()).unwrap();
+        let err =
+            read_context(&page, 1, 1, Some(&root)).expect_err("missing context file must fail");
+        assert_eq!(err.kind(), io::ErrorKind::NotFound);
+        assert!(
+            err.to_string().contains("removed-after-search.txt"),
+            "error should identify the incomplete file: {err}"
+        );
+    }
+
+    #[test]
+    fn context_root_rejects_paths_outside_the_search_tree() {
+        let root_dir = tempfile::tempdir().unwrap();
+        let outside_dir = tempfile::tempdir().unwrap();
+        let allowed = root_dir.path().join("allowed.txt");
+        let outside = outside_dir.path().join("secret.txt");
+        std::fs::write(&allowed, b"allowed\n").unwrap();
+        std::fs::write(&outside, b"secret\n").unwrap();
+
+        let root = ContextRoot::new(root_dir.path()).unwrap();
+        assert!(root.open(&allowed).unwrap().metadata().unwrap().is_file());
+        let err = root
+            .open(&outside)
+            .expect_err("an anchored context reader must reject an outside path");
+        assert_eq!(err.kind(), io::ErrorKind::PermissionDenied);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn context_reread_cannot_follow_a_symlink_outside_the_search_tree() {
+        use std::os::unix::fs::symlink;
+
+        let root_dir = tempfile::tempdir().unwrap();
+        let outside_dir = tempfile::tempdir().unwrap();
+        let matched = root_dir.path().join("matched.txt");
+        let outside = outside_dir.path().join("secret.txt");
+        std::fs::write(&matched, b"safe\n").unwrap();
+        std::fs::write(&outside, b"secret\n").unwrap();
+
+        let root = ContextRoot::new(root_dir.path()).unwrap();
+        let h = hit(&matched.to_string_lossy(), 1, "safe");
+        let score = ScoreBreakdown {
+            definition: 0.0,
+            path: 0.0,
+            tf: 0.0,
+            total: 1.0,
+        };
+        let page = [(score, &h)];
+        let before = read_context(&page, 1, 0, Some(&root)).unwrap();
+        assert_eq!(before.lines[&(matched.clone(), 1)].bytes, b"safe\n");
+
+        std::fs::remove_file(&matched).unwrap();
+        symlink(&outside, &matched).unwrap();
+        let err = read_context(&page, 1, 0, Some(&root))
+            .expect_err("context must not escape through a replaced symlink");
+        assert_eq!(err.kind(), io::ErrorKind::PermissionDenied);
     }
 
     #[test]
@@ -1203,6 +1382,7 @@ mod tests {
         // `is_whole_word` once advanced a byte at a time and panicked here.
         let h = Hit {
             path: "src/a.rs".into(),
+            fs_path: "src/a.rs".into(),
             line_no: 1,
             offset: 0,
             text: "let café = createClient()".into(),
