@@ -3,7 +3,7 @@ import { AbsoluteFill, interpolate, Sequence, spring, useCurrentFrame, useVideoC
 
 type ToolScore = { tool: string; available: boolean; mrr: number };
 type CorpusReport = { corpus: string; queries: number; tools: ToolScore[] };
-type BenchmarkPayload = { corpora: CorpusReport[] };
+type BenchmarkPayload = { versions: { hay: string }; corpora: CorpusReport[] };
 type CorpusDatum = { name: string; hay: number; rg: number };
 
 const MIN_USABLE_QUERIES = 10;
@@ -52,6 +52,9 @@ const deriveCorpora = (payload: BenchmarkPayload): CorpusDatum[] => {
 
 const CORPORA = deriveCorpora(benchmarkPayload as BenchmarkPayload);
 const usableCorpusPhrase = CORPORA.length === 4 ? "four usable corpora" : String(CORPORA.length) + " usable corpora";
+const versionMatch = (benchmarkPayload as BenchmarkPayload).versions.hay.match(/^hay (\d+\.\d+\.\d+)$/);
+if (!versionMatch) throw new Error("video requires an exact stable hay version in benchmark evidence");
+const PUBLIC_VERSION = versionMatch[1];
 
 const C = {
   ground: "#f8f5ec",
@@ -133,7 +136,7 @@ const BenchmarkScene: React.FC = () => {
           public benchmark · {usableCorpusPhrase} · parser ground truth
         </div>
         <div style={{ fontFamily: serif, fontSize: 72, color: C.ink, margin: "18px 0 60px", fontWeight: 600 }}>
-          First on every usable corpus.
+          Measured corpus by corpus.
         </div>
         {CORPORA.map((c, i) => (
           <BarRow key={c.name} name={c.name} hay={c.hay} rg={c.rg} delay={i * 18} f={f} fps={fps} wMax={wMax} />
@@ -147,7 +150,7 @@ const BenchmarkScene: React.FC = () => {
             opacity: interpolate(f, [110, 130], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }),
           }}
         >
-          bars = mean reciprocal rank · muted = plain ripgrep · gold = hay · full intervals at the live page
+          Final scores: hay ranks first on all four · bars = mean reciprocal rank · full intervals at the live page
         </div>
       </div>
     </AbsoluteFill>
@@ -192,7 +195,7 @@ const GuaranteeScene: React.FC = () => {
 
 const EndScene: React.FC = () => {
   const f = useCurrentFrame();
-  const installCommand = "cargo install --locked --path hay";
+  const installCommand = `curl -fsSL https://raw.githubusercontent.com/mneves75/hay/v${PUBLIC_VERSION}/install.sh | HAY_REF=v${PUBLIC_VERSION} bash`;
   const chars = Math.floor(interpolate(f, [10, 55], [0, installCommand.length], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }));
   const cmd = installCommand.slice(0, chars);
   return (
@@ -205,7 +208,7 @@ const EndScene: React.FC = () => {
             marginTop: 40,
             display: "inline-block",
             fontFamily: mono,
-            fontSize: 64,
+            fontSize: 28,
             color: C.ink,
             background: C.panel,
             border: `1px solid ${C.rule}`,
@@ -217,7 +220,7 @@ const EndScene: React.FC = () => {
           {cmd}
           <span style={{ color: C.accent, opacity: f % 30 < 15 ? 1 : 0 }}>▌</span>
         </div>
-        <div style={{ fontFamily: mono, fontSize: 30, color: C.soft, marginTop: 48 }}>github.com/mneves75/hay</div>
+        <div style={{ fontFamily: mono, fontSize: 30, color: C.soft, marginTop: 48 }}>github.com/mneves75/hay · v{PUBLIC_VERSION}</div>
       </div>
     </AbsoluteFill>
   );

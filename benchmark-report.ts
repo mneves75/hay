@@ -9,7 +9,7 @@
  *        bun benchmark-report.ts --selftest
  */
 
-type Interval = { mean: number; lo: number; hi: number; p: number; n: number; clusters?: number };
+type Interval = { mean: number; lo: number; hi: number; p: number; n: number; clusters: number };
 type Timing = { medianMs: number | null; minMs: number | null; peakRssMb: number | null; timedOut: boolean };
 type ToolScore = {
   tool: string; label: string; available: boolean; queries: number;
@@ -20,7 +20,7 @@ type ToolScore = {
 type CorpusReport = {
   corpus: string; lang: string;
   files: { onDisk: number; rgVisible: number; gitTracked: number };
-  provenance?: { revision: string; dirty: boolean };
+  provenance: { revision: string; dirty: boolean };
   symbolsUniquelyDeclared: number; queries: number;
   /** Present in evidence written by benchmark.ts ≥0.7.1; absent (optional) in older files. */
   symbols?: string[];
@@ -29,7 +29,7 @@ type CorpusReport = {
 };
 type Payload = {
   task: string; groundTruth: string; rankCap: number;
-  generatedAt?: string;
+  generatedAt: string;
   machine: { loadavg: string; cpus: number };
   load?: { min: number; median: number; max: number; samples: number };
   versions: Record<string, string>;
@@ -47,7 +47,7 @@ type DocsQueryRecord = {
 };
 type DocsCorpusReport = {
   corpus: string; lang: string; eligibleQueries: number; queries: DocsQueryRecord[];
-  provenance?: { revision: string; dirty: boolean };
+  provenance: { revision: string; dirty: boolean };
   tools: Record<DocsTool, { mrr: number; top10: number }>;
   delta: { mrr: Interval; randomizationP: number };
   featureSplits: {
@@ -98,19 +98,14 @@ export function detected(t: { tool: string; vsRipgrep?: Interval; vsRipgrepRandP
   return typeof t.vsRipgrepRandP === "number" && t.vsRipgrepRandP < 0.05;
 }
 
-/** An interval without its paired reference test is historical evidence, not a verified result. */
-export function unverified(t: { tool: string; vsRipgrep?: Interval; vsRipgrepRandP?: number }): boolean {
-  return significant(t.vsRipgrep) && typeof t.vsRipgrepRandP !== "number";
-}
-
 /** The interval says yes and the reference test says no — worth naming, not burying. */
 export function disputed(t: { tool: string; vsRipgrep?: Interval; vsRipgrepRandP?: number }): boolean {
   return significant(t.vsRipgrep) && typeof t.vsRipgrepRandP === "number" && t.vsRipgrepRandP >= 0.05;
 }
 
 /**
- * The randomization p, or `—` for the baseline and for evidence files written before the test
- * existed. Never a fabricated value: an absent field means the run did not compute one.
+ * The randomization p, or `baseline` for ripgrep itself. The validator requires this value on
+ * every comparable row; the em dash remains a defensive fallback for direct helper calls.
  *
  * Printed as `<0.001` rather than `0.000` at the floor — a 10,000-replicate simulation resolves to
  * 1/10,001, and rendering that as zero would claim a precision the run does not have.
@@ -171,8 +166,10 @@ export function validatePayload(d: Payload): Payload {
   const close = (a: number, b: number) => Math.abs(a - b) <= 1e-9;
   integer(d.rankCap, "rankCap", 1);
   integer(d.machine.cpus, "machine.cpus", 1);
-  if (d.generatedAt !== undefined && (typeof d.generatedAt !== "string" || !Number.isFinite(Date.parse(d.generatedAt))))
-    bad("generatedAt", d.generatedAt, "ISO timestamp");
+  if (typeof d.generatedAt !== "string" ||
+      !Number.isFinite(Date.parse(d.generatedAt)) ||
+      new Date(d.generatedAt).toISOString() !== d.generatedAt)
+    bad("generatedAt", d.generatedAt, "canonical ISO timestamp");
   if (d.load) {
     for (const key of ["min", "median", "max"] as const) {
       if (finite(d.load[key], `load.${key}`) < 0) bad(`load.${key}`, d.load[key], "non-negative number");
@@ -185,11 +182,9 @@ export function validatePayload(d: Payload): Payload {
     integer(corpus.queries, `${corpus.corpus}.queries`);
     for (const key of ["onDisk", "rgVisible", "gitTracked"] as const) integer(corpus.files[key], `${corpus.corpus}.files.${key}`);
     integer(corpus.symbolsUniquelyDeclared, `${corpus.corpus}.symbolsUniquelyDeclared`);
-    if (corpus.provenance) {
-      if (!/^[0-9a-f]{40}$/i.test(corpus.provenance.revision) || typeof corpus.provenance.dirty !== "boolean")
-        bad(`${corpus.corpus}.provenance`, corpus.provenance, "40-hex revision and dirty boolean");
-      if (corpus.provenance.dirty) bad(`${corpus.corpus}.provenance.dirty`, true, "clean corpus");
-    }
+    if (!corpus.provenance || !/^[0-9a-f]{40}$/i.test(corpus.provenance.revision) || typeof corpus.provenance.dirty !== "boolean")
+      bad(`${corpus.corpus}.provenance`, corpus.provenance, "40-hex revision and dirty boolean");
+    if (corpus.provenance.dirty) bad(`${corpus.corpus}.provenance.dirty`, true, "clean corpus");
     const baseline = corpus.tools.find((tool) => tool.tool === "rg");
     if (!baseline || !baseline.available) bad(`${corpus.corpus}.tools`, corpus.tools, "available rg baseline");
     const baselineMrr = baseline!.mrr;
@@ -210,8 +205,11 @@ export function validatePayload(d: Payload): Payload {
         if (rank < 1 || rank > d.rankCap)
           bad(`${corpus.corpus}.${tool.tool}.medianRank`, rank, `number in [1, ${d.rankCap}]`);
       }
-      if (!tool.available && (tool.vsRipgrep || tool.vsRipgrepRandP !== undefined))
-        bad(`${corpus.corpus}.${tool.tool}`, tool, "no comparison for an unavailable tool");
+      const comparable = tool.available && tool.tool !== "rg" && corpus.queries > 0;
+      if (comparable && (!tool.vsRipgrep || typeof tool.vsRipgrepRandP !== "number"))
+        bad(`${corpus.corpus}.${tool.tool}`, tool, "paired interval and randomization p");
+      if (!comparable && (tool.vsRipgrep || tool.vsRipgrepRandP !== undefined))
+        bad(`${corpus.corpus}.${tool.tool}`, tool, "no comparison for baseline, unavailable tool, or empty corpus");
       if (tool.vsRipgrep) {
         const interval = tool.vsRipgrep;
         for (const key of ["mean", "lo", "hi"] as const) {
@@ -220,13 +218,10 @@ export function validatePayload(d: Payload): Payload {
         }
         probability(interval.p, `${corpus.corpus}.${tool.tool}.vsRipgrep.p`);
         integer(interval.n, `${corpus.corpus}.${tool.tool}.vsRipgrep.n`);
-        if (interval.clusters !== undefined) {
-          integer(interval.clusters, `${corpus.corpus}.${tool.tool}.vsRipgrep.clusters`);
-          if (interval.clusters !== corpus.queries)
-            bad(`${corpus.corpus}.${tool.tool}.vsRipgrep.clusters`, interval.clusters, `corpus query count ${corpus.queries}`);
-        }
+        integer(interval.clusters, `${corpus.corpus}.${tool.tool}.vsRipgrep.clusters`);
+        if (interval.clusters !== corpus.queries)
+          bad(`${corpus.corpus}.${tool.tool}.vsRipgrep.clusters`, interval.clusters, `corpus query count ${corpus.queries}`);
         if (interval.lo > interval.hi) bad(`${corpus.corpus}.${tool.tool}.vsRipgrep`, interval, "lo <= hi");
-        if (tool.tool === "rg") bad(`${corpus.corpus}.rg.vsRipgrep`, interval, "no self-comparison");
         if (!close(interval.mean, tool.mrr - baselineMrr))
           bad(`${corpus.corpus}.${tool.tool}.vsRipgrep.mean`, interval.mean, `MRR difference ${tool.mrr - baselineMrr}`);
         if (interval.n !== corpus.queries) bad(`${corpus.corpus}.${tool.tool}.vsRipgrep.n`, interval.n, `corpus query count ${corpus.queries}`);
@@ -280,7 +275,11 @@ export function validateDocsPayload(d: DocsPayload): DocsPayload {
   string(d.generatedBy, "generatedBy");
   string(d.task, "task");
   string(d.groundTruth, "groundTruth");
-  string(d.meta.date, "meta.date");
+  const date = string(d.meta.date, "meta.date");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) ||
+      !Number.isFinite(Date.parse(`${date}T00:00:00.000Z`)) ||
+      new Date(`${date}T00:00:00.000Z`).toISOString().slice(0, 10) !== date)
+    bad("meta.date", date, "ISO calendar date");
   finite(d.meta.seed, "meta.seed");
   integer(d.meta.sample, "meta.sample", 1);
   integer(d.meta.rankCap, "meta.rankCap", 1);
@@ -291,11 +290,9 @@ export function validateDocsPayload(d: DocsPayload): DocsPayload {
     integer(corpus.eligibleQueries, `${corpus.corpus}.eligibleQueries`);
     if (corpus.eligibleQueries < corpus.queries.length)
       bad(`${corpus.corpus}.eligibleQueries`, corpus.eligibleQueries, "at least sampled query count");
-    if (corpus.provenance) {
-      if (!/^[0-9a-f]{40}$/i.test(corpus.provenance.revision) || typeof corpus.provenance.dirty !== "boolean")
-        bad(`${corpus.corpus}.provenance`, corpus.provenance, "40-hex revision and dirty boolean");
-      if (corpus.provenance.dirty) bad(`${corpus.corpus}.provenance.dirty`, true, "clean corpus");
-    }
+    if (!corpus.provenance || !/^[0-9a-f]{40}$/i.test(corpus.provenance.revision) || typeof corpus.provenance.dirty !== "boolean")
+      bad(`${corpus.corpus}.provenance`, corpus.provenance, "40-hex revision and dirty boolean");
+    if (corpus.provenance.dirty) bad(`${corpus.corpus}.provenance.dirty`, true, "clean corpus");
     for (const query of corpus.queries) {
       string(query.token, `${corpus.corpus}.query.token`);
       const answer = string(query.answer, `${corpus.corpus}.${query.token}.answer`);
@@ -329,11 +326,9 @@ export function validateDocsPayload(d: DocsPayload): DocsPayload {
       finite(corpus.delta.mrr[key], `${corpus.corpus}.delta.mrr.${key}`);
     probability(corpus.delta.mrr.p, `${corpus.corpus}.delta.mrr.p`);
     integer(corpus.delta.mrr.n, `${corpus.corpus}.delta.mrr.n`);
-    if (corpus.delta.mrr.clusters !== undefined) {
-      integer(corpus.delta.mrr.clusters, `${corpus.corpus}.delta.mrr.clusters`);
-      if (corpus.delta.mrr.clusters !== corpus.queries.length)
-        bad(`${corpus.corpus}.delta.mrr.clusters`, corpus.delta.mrr.clusters, "sampled query count");
-    }
+    integer(corpus.delta.mrr.clusters, `${corpus.corpus}.delta.mrr.clusters`);
+    if (corpus.delta.mrr.clusters !== corpus.queries.length)
+      bad(`${corpus.corpus}.delta.mrr.clusters`, corpus.delta.mrr.clusters, "sampled query count");
     if (corpus.delta.mrr.lo < -1 || corpus.delta.mrr.hi > 1 || corpus.delta.mrr.mean < -1 || corpus.delta.mrr.mean > 1 || corpus.delta.mrr.lo > corpus.delta.mrr.hi)
       bad(`${corpus.corpus}.delta.mrr`, corpus.delta.mrr, "ordered values in [-1, 1]");
     probability(corpus.delta.randomizationP, `${corpus.corpus}.delta.randomizationP`);
@@ -392,8 +387,7 @@ export function validateDocsPayload(d: DocsPayload): DocsPayload {
 
 const CAPABILITIES: { id: string; ranked: string; ignore: string; deterministic: string; json: string; index: string }[] = [
   { id: "hay", ranked: "yes", ignore: "gitignore", deterministic: "yes", json: "rg-shaped", index: "none" },
-  { id: "rg", ranked: "no", ignore: "gitignore", deterministic: "no", json: "yes", index: "none" },
-  { id: "rg-sorted", ranked: "no", ignore: "gitignore", deterministic: "yes", json: "yes", index: "none" },
+  { id: "rg", ranked: "no", ignore: "gitignore", deterministic: "yes (--sort path)", json: "yes", index: "none" },
   { id: "ugrep", ranked: "no", ignore: "opt-in", deterministic: "yes", json: "yes", index: "none" },
   { id: "ag", ranked: "no", ignore: "own rules", deterministic: "no", json: "no", index: "none" },
   { id: "ack", ranked: "no", ignore: "file types", deterministic: "yes", json: "no", index: "none" },
@@ -448,22 +442,32 @@ export function deltaRows(d: Payload): DeltaRow[] {
   return rows;
 }
 
-/** Geometric-mean search-time ratio vs ripgrep across every timed query of every real corpus.
- *  Ratios, not milliseconds: per the Limits section, ratios survive machine noise better. */
+/** Geometric-mean search-time ratio vs deterministic ripgrep --sort path on the common complete
+ *  paired cohort. A tool with any timeout or missing timing is omitted from the chart rather than
+ *  having its slowest observations silently dropped. Ratios survive machine noise better. */
 export function timeRatios(d: Payload): { tool: string; ratio: number; samples: number }[] {
   const acc = new Map<string, number[]>();
+  const incomplete = new Set<string>();
+  let expectedSamples = 0;
   for (const c of d.corpora) {
     if (thin(c)) continue;
     for (const q of c.perf) {
       const base = q.results["rg"];
       if (!base || base.timedOut || base.medianMs === null || base.medianMs <= 0) continue;
+      expectedSamples++;
       for (const [tool, t] of Object.entries(q.results)) {
-        if (tool === "rg" || !t || t.timedOut || t.medianMs === null || t.medianMs <= 0) continue;
+        if (tool === "rg") continue;
+        if (!t || t.timedOut || t.medianMs === null || t.medianMs <= 0) {
+          incomplete.add(tool);
+          continue;
+        }
         (acc.get(tool) ?? acc.set(tool, []).get(tool)!).push(t.medianMs / base.medianMs);
       }
     }
   }
-  return [...acc].map(([tool, xs]) => ({ tool, ratio: geomean(xs), samples: xs.length }))
+  return [...acc]
+    .filter(([tool, xs]) => !incomplete.has(tool) && xs.length === expectedSamples)
+    .map(([tool, xs]) => ({ tool, ratio: geomean(xs), samples: xs.length }))
     .sort((a, b) => a.ratio - b.ratio);
 }
 
@@ -513,7 +517,7 @@ and “exactly once” because a symbol declared in three places has no single r
 <h3>4 · Turning position into a number</h3>
 <p>Averaging raw positions is wrong, because the gap between 1st and 2nd is enormous and the gap
 between 50th and 51st is nothing. So flip it — score by <strong>1 divided by the position</strong>:</p>
-<table class="rr">
+<table class="rr" tabindex="0" aria-label="Reciprocal-rank score examples">
 <thead><tr><th scope="col">position</th><th scope="col">1</th><th scope="col">2</th><th scope="col">4</th><th scope="col">10</th><th scope="col">100</th><th scope="col">never</th></tr></thead>
 <tbody><tr><th scope="row">score</th><td>1.00</td><td>0.50</td><td>0.25</td><td>0.10</td><td>0.01</td><td>0.00</td></tr></tbody>
 </table>
@@ -610,8 +614,8 @@ ${mark(X(r.mean), y, 4.5, fill)}
     return `${MARK[t]!(lx, H + 2, 4.5, "var(--panel)")}<text x="${lx + 12}" y="${H + 6}" class="legend">${esc(t)}</text>`;
   }).join("");
   return `<svg viewBox="0 0 ${W} ${H + 22}" width="100%" role="img" aria-labelledby="deltatitle deltadesc" class="chart">
-<title id="deltatitle">How much each tool beats plain ripgrep, per repository</title>
-<desc id="deltadesc">Horizontal dot plot. Each mark is a tool's mean improvement in mean reciprocal rank over ripgrep's default order, with a whisker showing the 95% bootstrap interval. The vertical line at zero is ripgrep itself.</desc>
+<title id="deltatitle">How much each tool beats ripgrep --sort path, per repository</title>
+<desc id="deltadesc">Horizontal dot plot. Each mark is a tool's mean improvement in mean reciprocal rank over deterministic ripgrep --sort path, with a whisker showing the 95% bootstrap interval. The vertical line at zero is ripgrep itself.</desc>
 ${g.join("\n")}${legend}
 <text x="${padL + CHART_TOOLS.length * 130}" y="${H + 6}" class="legend">filled = both statistical tests agree</text></svg>`;
 }
@@ -680,12 +684,14 @@ export function chartTime(d: Payload): string {
 ${clamped ? `<path d="M ${xe + (xe < x0 ? -7 : 7)} ${y} l ${(xe < x0 ? 7 : -7)} -4 v 8 z" fill="var(--ink-faint)"/>` : ""}
 <text x="${W - padR + 10}" y="${y + 4}" class="val">${r.ratio.toFixed(2)}×</text>`);
   });
-  const minSamples = Math.min(...rows.map((r) => r.samples));
+  const samples = rows[0]!.samples;
+  if (!rows.every((row) => row.samples === samples))
+    throw new Error("timing chart requires one complete paired cohort");
   return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-labelledby="timetitle timedesc" class="chart">
-<title id="timetitle">Full-search time relative to ripgrep, geometric mean</title>
-<desc id="timedesc">Bars from the one-times line: to the left is faster than ripgrep, to the right slower, on a logarithmic scale. Values are geometric means across all timed queries of all full-sized repositories.</desc>
+<title id="timetitle">Full-search time relative to ripgrep --sort path, geometric mean</title>
+<desc id="timedesc">Bars from the one-times line: to the left is faster than ripgrep --sort path, to the right slower, on a logarithmic scale. Every displayed tool completed the same paired queries; tools with any timeout or missing result are omitted.</desc>
 ${g.join("\n")}
-<text x="0" y="${H - 4}" class="legend">geometric mean over ${minSamples} timed queries per tool · lower is faster</text></svg>`;
+<text x="0" y="${H - 4}" class="legend">geometric mean over ${samples} complete paired queries · tools with timeouts omitted · lower is faster</text></svg>`;
 }
 
 const statP = (value: number): string => value < 0.001 ? "<0.001" : value.toFixed(3);
@@ -720,17 +726,18 @@ function docsHtml(d: DocsPayload): string {
   return `<section class="corpus" id="docs-track">
 <h2>Documentation track</h2>
 <p class="meta">Generated ${esc(d.meta.date)} · hay ${esc(d.meta.versions.hay)} · rg ${esc(d.meta.versions.rg)}</p>
+<p class="meta">Corpus revisions: ${d.corpora.map((c) => `${esc(c.corpus)} ${esc(c.provenance.revision.slice(0, 12))}`).join(" · ")}</p>
 <p>A public development set for documentation retrieval: identifier-like tokens from ATX headings
 that occur in exactly one markdown file’s headings and in at least three parity-visible files.
 Ranks use the same ${d.meta.rankCap}-result-line cap as the code track; cap truncations are reported
 as <code>hay / rg</code>, never absorbed into another metric.</p>
-<div class="scroll"><table>
-<thead><tr><th scope="col">corpus</th><th scope="col" class="n">n</th><th scope="col" class="n">MRR hay</th><th scope="col" class="n">MRR rg</th><th scope="col">Δ MRR (95% CI)</th><th scope="col" class="n">bootstrap p</th><th scope="col" class="n">randomization p</th><th scope="col">both tests</th><th scope="col" class="n">cap truncations</th></tr></thead>
+<div class="scroll" tabindex="0"><table>
+<thead><tr><th scope="col">corpus</th><th scope="col" class="n">n</th><th scope="col" class="n">MRR hay</th><th scope="col" class="n">MRR rg --sort path</th><th scope="col">Δ MRR (95% CI)</th><th scope="col" class="n">bootstrap p</th><th scope="col" class="n">randomization p</th><th scope="col">both tests</th><th scope="col" class="n">cap truncations</th></tr></thead>
 <tbody>${summary}</tbody></table></div>
-<h4>Query-shape splits</h4>
+<h3>Query-shape splits</h3>
 <p class="meta">Mutually exclusive precedence: flag-shaped → uppercase → snake case → hyphenated → camel case → pascal case → plain word.</p>
-<div class="scroll"><table>
-<thead><tr><th scope="col">corpus</th><th scope="col">feature</th><th scope="col" class="n">n</th><th scope="col" class="n">MRR hay</th><th scope="col" class="n">MRR rg</th><th scope="col">Δ MRR</th></tr></thead>
+<div class="scroll" tabindex="0"><table>
+<thead><tr><th scope="col">corpus</th><th scope="col">feature</th><th scope="col" class="n">n</th><th scope="col" class="n">MRR hay</th><th scope="col" class="n">MRR rg --sort path</th><th scope="col">Δ MRR</th></tr></thead>
 <tbody>${features}</tbody></table></div>
 </section>`;
 }
@@ -763,6 +770,7 @@ export function markdown(d: Payload, docs?: DocsPayload): string {
   p();
   p("## Method");
   p();
+  p(`- **Generated** — ${d.generatedAt}.`);
   p(`- **Task** — ${d.task}.`);
   p(`- **Ground truth** — ${d.groundTruth}. A symbol declared in more than one place is discarded:`);
   p("  there is no single right answer, so scoring against an arbitrary one would be noise.");
@@ -771,7 +779,7 @@ export function markdown(d: Payload, docs?: DocsPayload): string {
   p("  seeded, so the same corpus yields the same queries on every run.");
   p(`- **Metric** — reciprocal rank of the first result line landing in the declaring file, capped`);
   p(`  at ${d.rankCap} results. Mean reciprocal rank and the share answered within the first ten.`);
-  p("- **Difference** — absolute, against ripgrep in its default order, with a 95% paired bootstrap");
+  p("- **Difference** — absolute, against deterministic ripgrep `--sort path`, with a 95% paired bootstrap");
   p("  interval over per-query reciprocal ranks (10,000 replicates, fixed seed). An interval that");
   p("  spans zero is not a detected difference, whatever the point estimate suggests.");
   p("- **Significance** — Fisher's paired randomization test on the same differences, reported");
@@ -783,7 +791,8 @@ export function markdown(d: Payload, docs?: DocsPayload): string {
   p("  case-sensitive, `path:line:text`. Filtering is deliberately *not* normalised across tools,");
   p("  because what a tool skips is a real property of it; the file counts each tool sees are");
   p("  reported per corpus. The **one exception is ripgrep**, which is given");
-  p("  `--no-ignore-dot --no-ignore-global --no-ignore-exclude` so it walks exactly what `hay`");
+  p("  `--sort path --no-ignore-dot --no-ignore-global --no-ignore-exclude` so its rank order is");
+  p("  deterministic and it walks exactly what `hay`");
   p("  walks. `hay` disables those sources internally so operator-local state cannot change");
   p("  results; without the flags the head-to-head measured which files were searched rather than");
   p("  how they were ranked — 231 files against 225 on the ripgrep corpus, which ships a `.ignore`.");
@@ -802,13 +811,14 @@ export function markdown(d: Payload, docs?: DocsPayload): string {
     p("## Documentation track");
     p();
     p(`Generated ${docs.meta.date} · hay ${docs.meta.versions.hay} · rg ${docs.meta.versions.rg}.`);
+    p(`Corpus revisions: ${docs.corpora.map((c) => `${c.corpus} \`${c.provenance.revision.slice(0, 12)}\``).join(" · ")}.`);
     p();
     p("A public development set for documentation retrieval: identifier-like tokens from ATX");
     p("headings that occur in exactly one markdown file's headings and in at least three");
     p(`parity-visible files. Ranks use the same ${docs.meta.rankCap}-result-line cap as the code`);
     p("track; cap truncations are reported as `hay / rg`, never absorbed into another metric.");
     p();
-    p("| corpus | n | MRR hay | MRR rg | Δ MRR (95% CI) | bootstrap p | randomization p | both tests | cap truncations (hay / rg) |");
+    p("| corpus | n | MRR hay | MRR rg --sort path | Δ MRR (95% CI) | bootstrap p | randomization p | both tests | cap truncations (hay / rg) |");
     p("|---|---:|---:|---:|---|---:|---:|---|---:|");
     for (const c of docs.corpora) {
       const marker = thin({ queries: c.queries.length }) ? "— too few queries" : docsAgreement(c);
@@ -820,7 +830,7 @@ export function markdown(d: Payload, docs?: DocsPayload): string {
     p("Mutually exclusive precedence: flag-shaped → uppercase → snake case → hyphenated → camel");
     p("case → pascal case → plain word.");
     p();
-    p("| corpus | feature | n | MRR hay | MRR rg | Δ MRR |");
+    p("| corpus | feature | n | MRR hay | MRR rg --sort path | Δ MRR |");
     p("|---|---|---:|---:|---:|---:|");
     for (const c of docs.corpora) {
       for (const split of c.featureSplits)
@@ -837,7 +847,7 @@ export function markdown(d: Payload, docs?: DocsPayload): string {
       p(`> numbers below are not evidence and no difference is marked as detected.`);
       p();
     }
-    if (c.provenance) p(`Corpus revision \`${c.provenance.revision.slice(0, 12)}\`${c.provenance.dirty ? " · **dirty working tree**" : " · clean"}.`);
+    p(`Corpus revision \`${c.provenance.revision.slice(0, 12)}\` · clean.`);
     p(`${c.lang.toUpperCase()} · ${c.files.onDisk.toLocaleString()} files on disk · ` +
       `${c.files.rgVisible.toLocaleString()} visible after gitignore · ` +
       `${c.files.gitTracked.toLocaleString()} tracked by git · ` +
@@ -954,7 +964,7 @@ export function html(d: Payload, docs?: DocsPayload): string {
     const ids = c.perf[0] ? Object.keys(c.perf[0].results) : [];
     const perf = c.perf.length
       ? `<h4>Time to complete a full search</h4>
-<div class="scroll"><table class="perf">
+<div class="scroll" tabindex="0"><table class="perf">
 <thead><tr><th scope="col">query</th>${ids.map((i) => `<th scope="col">${esc(i)}</th>`).join("")}</tr></thead>
 <tbody>${c.perf.map((r) => `<tr><th scope="row"><code>${esc(r.query)}</code></th>${ids.map((i) => `<td class="n">${esc(ms(r.results[i]!))}</td>`).join("")}</tr>`).join("")}
 <tr class="rss"><th scope="row">peak memory</th>${ids.map((i) => `<td class="n">${esc(peakRss(c, i))}</td>`).join("")}</tr></tbody></table></div>`
@@ -963,8 +973,8 @@ export function html(d: Payload, docs?: DocsPayload): string {
     return `<section class="corpus${thin(c) ? " thin" : ""}">
 <h3>${esc(c.corpus)}</h3>
 ${thin(c) ? `<p class="thin-note"><strong>Too few queries to conclude anything (${c.queries}).</strong> Reported for completeness; these numbers are not evidence and no difference is marked as detected.</p>` : ""}
-<p class="meta">${c.provenance ? `revision ${esc(c.provenance.revision.slice(0, 12))} · ${c.provenance.dirty ? "dirty working tree" : "clean"} · ` : ""}${esc(c.lang.toUpperCase())} · ${c.files.onDisk.toLocaleString()} files · ${c.files.rgVisible.toLocaleString()} after gitignore · ${c.files.gitTracked.toLocaleString()} tracked · ${c.symbolsUniquelyDeclared.toLocaleString()} symbols declared once · <strong>${c.queries} ${c.queries === 1 ? "query" : "queries"}</strong></p>
-<div class="scroll"><table>
+<p class="meta">revision ${esc(c.provenance.revision.slice(0, 12))} · clean · ${esc(c.lang.toUpperCase())} · ${c.files.onDisk.toLocaleString()} files · ${c.files.rgVisible.toLocaleString()} after gitignore · ${c.files.gitTracked.toLocaleString()} tracked · ${c.symbolsUniquelyDeclared.toLocaleString()} symbols declared once · <strong>${c.queries} ${c.queries === 1 ? "query" : "queries"}</strong></p>
+<div class="scroll" tabindex="0"><table>
 <thead><tr>
   <th scope="col">tool</th><th scope="col" class="n">MRR</th><th scope="col" class="n">top 10</th>
   <th scope="col" class="n">median rank</th><th scope="col" class="n">never found</th>
@@ -991,7 +1001,7 @@ ${perf}
 <meta property="og:type" content="article">
 <style>
 :root{
-  --ground:#f8f5ec; --panel:#fffdf6; --ink:#201b10; --ink-soft:#5c5544; --ink-faint:#8b8371;
+  --ground:#f8f5ec; --panel:#fffdf6; --ink:#201b10; --ink-soft:#5c5544; --ink-faint:#6b6452;
   --rule:#e7e1cf; --rule-strong:#cfc6a8;
   --accent:#8a6d10; --accent-soft:#f1e7c8; --accent-ink:#6b5408;
   --up:#256b45; --down:#96382a; --warn:#8a6410;
@@ -999,7 +1009,7 @@ ${perf}
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --ground:#16130c; --panel:#1e1a10; --ink:#ece5d2; --ink-soft:#b3aa92; --ink-faint:#847c66;
+    --ground:#16130c; --panel:#1e1a10; --ink:#ece5d2; --ink-soft:#b3aa92; --ink-faint:#958c72;
     --rule:#2e2918; --rule-strong:#46402a;
     --accent:#ddb84f; --accent-soft:#332b14; --accent-ink:#e6c86e;
     --up:#69c493; --down:#e08a78; --warn:#d9ad55;
@@ -1007,7 +1017,7 @@ ${perf}
   }
 }
 :root[data-theme="dark"]{
-  --ground:#16130c; --panel:#1e1a10; --ink:#ece5d2; --ink-soft:#b3aa92; --ink-faint:#847c66;
+  --ground:#16130c; --panel:#1e1a10; --ink:#ece5d2; --ink-soft:#b3aa92; --ink-faint:#958c72;
   --rule:#2e2918; --rule-strong:#46402a;
   --accent:#ddb84f; --accent-soft:#332b14; --accent-ink:#e6c86e;
   --up:#69c493; --down:#e08a78; --warn:#d9ad55;
@@ -1116,10 +1126,10 @@ svg.chart .zero{stroke:var(--rule-strong);stroke-width:1.5}
 svg.chart .whisker{stroke:var(--ink-faint);stroke-width:1.2}
 .feynman{counter-reset:fstep;background:var(--panel);border:1px solid var(--rule);border-radius:4px;padding:1.5rem;margin:0 0 1.5rem}
 .feynman h3{font-size:1.02rem;margin:0 0 .45rem}
-.fstep{padding:1rem 0;border-top:1px dashed var(--rule)}
+.fstep{min-width:0;padding:1rem 0;border-top:1px dashed var(--rule)}
 .fstep:first-of-type{border-top:0;padding-top:.4rem}
 .fstep p:last-child{margin-bottom:0}
-table.rr{border-collapse:collapse;margin:.8rem auto;font-variant-numeric:tabular-nums;font-size:.86rem}
+table.rr{display:block;width:max-content;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:.8rem auto;font-variant-numeric:tabular-nums;font-size:.86rem}
 table.rr th,table.rr td{border:1px solid var(--rule);padding:.35rem .8rem;text-align:center;white-space:normal}
 table.rr thead td{font-family:"IBM Plex Mono",monospace;color:var(--accent-ink);font-weight:600}
 table.rr tbody td{font-family:"IBM Plex Mono",monospace}
@@ -1127,7 +1137,7 @@ table.rr th{font-family:"IBM Plex Mono",monospace;font-size:.72rem;text-transfor
 @supports (animation-timeline: view()) {
   @media (prefers-reduced-motion: no-preference){
     .corpus,.chartcard,.feynman{animation:rise linear both;animation-timeline:view();animation-range:entry 0% entry 42%}
-    @keyframes rise{from{opacity:.15;translate:0 18px}}
+    @keyframes rise{from{translate:0 18px}}
   }
 }
 @media print{
@@ -1140,7 +1150,7 @@ table.rr th{font-family:"IBM Plex Mono",monospace;font-size:.72rem;text-transfor
   .chartcard{overflow-x:auto}
   .chartcard svg.chart{min-width:620px}
 }
-@media (max-width:640px){ .wrap{padding:2rem 1rem 3rem} .corpus{padding:1rem} }
+@media (max-width:640px){ .wrap{padding:2rem 1rem 3rem} nav.toc{margin-inline:-1rem;padding-inline:1rem} .corpus{padding:1rem} }
 </style>
 </head>
 <body>
@@ -1174,9 +1184,9 @@ table.rr th{font-family:"IBM Plex Mono",monospace;font-size:.72rem;text-transfor
   sufficient alone, which is why both exist.</p>
 </div>
 
-<figure class="chartcard" id="results">
+<figure class="chartcard" tabindex="0" id="results">
 <h2 style="margin-top:.25rem">The result in one picture</h2>
-<p>Each mark is a tool’s mean improvement over plain ripgrep on that repository, with a 95%
+<p>Each mark is a tool’s mean improvement over deterministic ripgrep <code>--sort path</code> on that repository, with a 95%
 bootstrap-interval whisker. A <strong>filled</strong> mark means both statistical tests agree the
 difference is real; a hollow mark means they disagree or the interval touches zero — exactly the
 cases the tables refuse to call detected. The vertical line is ripgrep itself.</p>
@@ -1186,14 +1196,14 @@ hay (circles) wins by construction here — the ground truth <em>is</em> a decla
 is what hay optimises. The honest comparison is the margin, and whether ast-grep, which parses
 code rather than scoring text, keeps pace.</figcaption>
 </figure>
-<figure class="chartcard">
+<figure class="chartcard" tabindex="0">
 <h2 style="margin-top:.25rem">The first page of results</h2>
 <p>Agents read roughly ten results. Share of queries answered within them:</p>
 ${chartTop10(d)}
 </figure>
-<figure class="chartcard">
+<figure class="chartcard" tabindex="0">
 <h2 style="margin-top:.25rem">What speed costs</h2>
-<p>Full-repository search time relative to ripgrep — geometric mean over every timed query, log
+<p>Full-repository search time relative to ripgrep <code>--sort path</code> — geometric mean over complete paired queries, log
 scale. Ranking costs work; the question is how much answer quality buys:</p>
 ${chartTime(d)}
 </figure>
@@ -1205,20 +1215,20 @@ ${FEYNMAN}
   <li><strong>Ground truth</strong> — ${esc(d.groundTruth)}. A symbol declared in more than one place is discarded: with no single right answer, scoring against an arbitrary one is noise.</li>
   <li><strong>Queries</strong> — symbols with 5–2,000 occurrences, sampled with a fixed seed so the same corpus yields the same queries every run.</li>
   <li><strong>Metric</strong> — reciprocal rank of the first result line in the declaring file, capped at ${d.rankCap}.</li>
-  <li><strong>Difference</strong> — absolute, against ripgrep's default order, 95% paired bootstrap interval over per-query reciprocal ranks, 10,000 replicates, fixed seed. An interval spanning zero is not a detected difference.</li>
-  <li><strong>Flag parity</strong> — every tool asked for the same job. Filtering is deliberately not normalised across tools: what a tool skips is a real property of it, so the file counts it sees are reported instead. The one exception is ripgrep, given <code>--no-ignore-dot --no-ignore-global --no-ignore-exclude</code> so it walks exactly what <code>hay</code> walks; without it the head-to-head measured which files were searched rather than how they were ranked.</li>
+  <li><strong>Difference</strong> — absolute, against deterministic ripgrep <code>--sort path</code>, 95% paired bootstrap interval over per-query reciprocal ranks, 10,000 replicates, fixed seed. An interval spanning zero is not a detected difference.</li>
+  <li><strong>Flag parity</strong> — every tool asked for the same job. Filtering is deliberately not normalised across tools: what a tool skips is a real property of it, so the file counts it sees are reported instead. The one exception is ripgrep, given <code>--sort path --no-ignore-dot --no-ignore-global --no-ignore-exclude</code> so its rank order is deterministic and it walks exactly what <code>hay</code> walks; without it the head-to-head measured which files were searched rather than how they were ranked.</li>
   <li><strong>Invocation</strong> — absolute paths only. On this machine <code>grep</code> is a shell function resolving to ugrep, so calling tools by name would have measured the wrong program.</li>
 </ul>
 
 ${docs ? `${docsHtml(docs)}\n\n` : ""}${d.corpora.map(corpusSection).join("\n")}
 
 <h2 id="data">What each tool is</h2>
-<div class="scroll"><table>
+<div class="scroll" tabindex="0"><table>
 <thead><tr><th scope="col">tool</th><th scope="col">ranks results</th><th scope="col">skips files</th><th scope="col">deterministic</th><th scope="col">machine-readable</th><th scope="col">index</th></tr></thead>
 <tbody>${CAPABILITIES.map((c) => `<tr><th scope="row"><code>${esc(c.id)}</code></th><td>${esc(c.ranked)}</td><td>${esc(c.ignore)}</td><td>${esc(c.deterministic)}</td><td>${esc(c.json)}</td><td>${esc(c.index)}</td></tr>`).join("")}</tbody>
 </table></div>
 
-<h4>Not benchmarked</h4>
+<h3>Not benchmarked</h3>
 <ul>${NOT_BENCHMARKED.map(([n, w]) => `<li><strong>${esc(n!)}</strong> — ${esc(w!)}</li>`).join("")}</ul>
 
 <h2 id="limits">Limits</h2>
@@ -1231,7 +1241,7 @@ ${docs ? `${docsHtml(docs)}\n\n` : ""}${d.corpora.map(corpusSection).join("\n")}
 </ul>
 
 <h2 id="reproduce">Reproduce it</h2>
-<pre><code># clones whatever benchmark.ts wants, runs --sample 30, renders this page, deletes its clones:
+<pre tabindex="0"><code># clones whatever benchmark.ts wants, runs --sample 30, renders this page, deletes its clones:
 ./benchmark-corpora.sh
 
 # or, by hand:
@@ -1247,7 +1257,8 @@ bun benchmark-report.ts             # writes BENCHMARK.md and this page</code></
 
 <footer>
   Generated from <code>evidence/benchmark.json</code> by <code>benchmark-report.ts</code>.
-${d.generatedAt ? `  Generated: ${esc(d.generatedAt)} ·\n` : ""}  Versions: ${Object.entries(d.versions).map(([k, v]) => `${esc(k)} ${esc(v.split(" ").slice(0, 2).join(" "))}`).join(" · ")}
+  Generated: ${esc(d.generatedAt)} ·
+  Versions: ${Object.entries(d.versions).map(([k, v]) => `${esc(k)} ${esc(v.split(" ").slice(0, 2).join(" "))}`).join(" · ")}
 </footer>
 </main>
 </body>
@@ -1278,32 +1289,28 @@ if (import.meta.main) {
     // 0.1475 renders as 0.147, not 0.148: it is not exactly representable in binary and toFixed
     // rounds the stored value, which is below the decimal midpoint. Pinned so a future change to
     // the formatter cannot quietly shift a published interval bound.
-    eq(delta({ mean: 0.0808, lo: 0.0183, hi: 0.1475, p: 0.01, n: 40 }), "+0.081 [0.018, 0.147]", "signed delta");
-    eq(delta({ mean: -0.0035, lo: -0.0103, hi: 0.0, p: 0.1, n: 50 }), "-0.004 [-0.010, 0.000]", "negative delta");
+    eq(delta({ mean: 0.0808, lo: 0.0183, hi: 0.1475, p: 0.01, n: 40, clusters: 40 }), "+0.081 [0.018, 0.147]", "signed delta");
+    eq(delta({ mean: -0.0035, lo: -0.0103, hi: 0.0, p: 0.1, n: 50, clusters: 50 }), "-0.004 [-0.010, 0.000]", "negative delta");
     // An interval touching zero is NOT a detected difference; getting this backwards would
     // publish noise as a result, which is the mistake this whole project is about.
-    eq(significant({ mean: 0.08, lo: 0.02, hi: 0.15, p: 0, n: 1 }), true, "excludes zero");
-    eq(significant({ mean: -0.003, lo: -0.01, hi: 0.0, p: 0.1, n: 1 }), false, "touches zero");
-    eq(significant({ mean: 0.01, lo: -0.01, hi: 0.03, p: 0.4, n: 1 }), false, "spans zero");
+    eq(significant({ mean: 0.08, lo: 0.02, hi: 0.15, p: 0, n: 1, clusters: 1 }), true, "excludes zero");
+    eq(significant({ mean: -0.003, lo: -0.01, hi: 0.0, p: 0.1, n: 1, clusters: 1 }), false, "touches zero");
+    eq(significant({ mean: 0.01, lo: -0.01, hi: 0.03, p: 0.4, n: 1, clusters: 1 }), false, "spans zero");
     // A p of exactly 0 is impossible from a finite simulation, so the floor must render as a
-    // bound and not as certainty; a missing field must render as missing and never as 1.000.
+    // bound and not as certainty.
     eq(randP({ tool: "hay", vsRipgrepRandP: 0.00009999 }), "<0.001", "simulation floor is a bound");
     eq(randP({ tool: "hay", vsRipgrepRandP: 0.0423 }), "0.042", "ordinary p");
-    eq(randP({ tool: "hay" }), "—", "an evidence file without the test reports no p");
     eq(randP({ tool: "rg", vsRipgrepRandP: 0.5 }), "baseline", "the baseline is not tested against itself");
     // Both tests must agree before a difference is called detected. The real case from this
     // corpus: openclaw's hay row, where the interval excludes zero and the reference test does not
     // agree. Bolding it on the interval alone is the generous reading this project exists to avoid.
-    const openclawHay = { tool: "hay", vsRipgrep: { mean: 0.150, lo: 0.005, hi: 0.297, p: 0.04, n: 30 }, vsRipgrepRandP: 0.0576 };
+    const openclawHay = { tool: "hay", vsRipgrep: { mean: 0.150, lo: 0.005, hi: 0.297, p: 0.04, n: 30, clusters: 30 }, vsRipgrepRandP: 0.0576 };
     eq(detected(openclawHay), false, "an interval alone does not detect a difference");
     eq(disputed(openclawHay), true, "and the disagreement is surfaced, not buried");
-    const agreed = { tool: "hay", vsRipgrep: { mean: 0.302, lo: 0.156, hi: 0.449, p: 0.0002, n: 28 }, vsRipgrepRandP: 0.0007 };
+    const agreed = { tool: "hay", vsRipgrep: { mean: 0.302, lo: 0.156, hi: 0.449, p: 0.0002, n: 28, clusters: 28 }, vsRipgrepRandP: 0.0007 };
     eq(detected(agreed), true, "both tests agreeing is a detected difference");
     eq(disputed(agreed), false, "agreement is not a dispute");
-    // Older evidence has no randomization test at all; the interval must still be usable.
-    eq(detected({ tool: "hay", vsRipgrep: { mean: 0.3, lo: 0.1, hi: 0.5, p: 0.01, n: 20 } }), false, "missing randomization evidence is unverified");
-    eq(unverified({ tool: "hay", vsRipgrep: { mean: 0.3, lo: 0.1, hi: 0.5, p: 0.01, n: 20 } }), true, "missing randomization evidence is surfaced");
-    eq(detected({ tool: "hay", vsRipgrep: { mean: 0.01, lo: -0.01, hi: 0.03, p: 0.4, n: 20 }, vsRipgrepRandP: 0.001 }), false, "a spanning interval is never detected");
+    eq(detected({ tool: "hay", vsRipgrep: { mean: 0.01, lo: -0.01, hi: 0.03, p: 0.4, n: 20, clusters: 20 }, vsRipgrepRandP: 0.001 }), false, "a spanning interval is never detected");
     eq(significant(undefined), false, "no interval");
     eq(ms({ medianMs: 1801, minMs: 1, peakRssMb: 1, timedOut: false }), "1.80 s", "seconds");
     eq(ms({ medianMs: 42, minMs: 1, peakRssMb: 1, timedOut: false }), "42 ms", "milliseconds");
@@ -1312,6 +1319,7 @@ if (import.meta.main) {
     // Peak memory is the max across queries, not the first query's value.
     const mk = (rss: (number | null)[]): CorpusReport => ({
       corpus: "c", lang: "rust", files: { onDisk: 1, rgVisible: 1, gitTracked: 1 },
+      provenance: { revision: "a".repeat(40), dirty: false },
       symbolsUniquelyDeclared: 1, queries: 1, tools: [],
       perf: rss.map((v, i) => ({ query: `q${i}`, results: { t: { medianMs: 1, minMs: 1, peakRssMb: v, timedOut: false } } })),
     });
@@ -1324,16 +1332,18 @@ if (import.meta.main) {
     const mkCorpus = (name: string, queries: number, tools: Partial<Record<string, { mrr?: number; top10?: number; ms?: number | null; available?: boolean; vs?: [number, number, number] }>>): CorpusReport => ({
       corpus: name, lang: "rust", files: { onDisk: 1, rgVisible: 1, gitTracked: 1 },
       symbolsUniquelyDeclared: 1, queries,
+      provenance: { revision: "b".repeat(40), dirty: false },
       tools: Object.entries(tools).map(([tool, v]) => ({
         tool, label: tool, available: v?.available ?? true, queries: 1,
         mrr: v?.mrr ?? 0.5, top10: v?.top10 ?? 0.8, medianRank: null, unreachable: 0, timeouts: 0,
-        vsRipgrep: v?.vs ? { mean: v.vs[0], lo: v.vs[1], hi: v.vs[2], p: 0, n: queries } : undefined,
+        vsRipgrep: v?.vs ? { mean: v.vs[0], lo: v.vs[1], hi: v.vs[2], p: 0, n: queries, clusters: queries } : undefined,
         ...(tool === "hay" && v?.vs ? { vsRipgrepRandP: 0.001 } : {}),
       })),
       perf: [0, 1, 2].map((i) => ({ query: `q${i}`, results: {
         rg: { medianMs: v_ms("rg"), minMs: 1, peakRssMb: null, timedOut: false },
         hay: { medianMs: v_ms("hay"), minMs: 1, peakRssMb: null, timedOut: false },
         ugrep: { medianMs: v_ms("ugrep")!, minMs: 1, peakRssMb: null, timedOut: false },
+        ack: { medianMs: null, minMs: null, peakRssMb: null, timedOut: true },
         grep: { medianMs: null, minMs: null, peakRssMb: null, timedOut: false },
       } })),
     });
@@ -1342,6 +1352,7 @@ if (import.meta.main) {
     }
     const payload: Payload = {
       task: "t", groundTruth: "g", rankCap: 50, machine: { loadavg: "1", cpus: 1 }, versions: {},
+      generatedAt: "2026-08-26T00:00:00.000Z",
       corpora: [
         mkCorpus("real", 30, { hay: { vs: [0.3, 0.2, 0.4] }, "ast-grep": { vs: [0.1, -0.05, 0.25] }, cs: { vs: [0.15, 0.06, 0.24] } }),
         mkCorpus("thin", 3, { hay: { vs: [0.9, 0.8, 1.0] } }),
@@ -1354,6 +1365,7 @@ if (import.meta.main) {
     };
     const mkDocsCorpus = (name: string, n: number, interval: Interval, randomizationP: number): DocsCorpusReport => ({
       corpus: name, lang: "rust", eligibleQueries: n,
+      provenance: { revision: "c".repeat(40), dirty: false },
       queries: Array.from({ length: n }, (_, i) => ({
         token: `plainword${i}`, answer: "docs/answer.md", occurrences: 3, features: docsFeatures,
         tools: {
@@ -1374,8 +1386,8 @@ if (import.meta.main) {
       generatedBy: "benchmark.ts --docs-track", task: "docs", groundTruth: "headings",
       meta: { date: "2026-08-23", seed: 7, sample: 12, rankCap: 1000, versions: { hay: "hay 1", rg: "rg 1" } },
       corpora: [
-        mkDocsCorpus("agree", 12, { mean: 0.25, lo: 0.1, hi: 0.4, p: 0.002, n: 12 }, 0.003),
-        mkDocsCorpus("disagree", 11, { mean: 0.25, lo: 0.01, hi: 0.4, p: 0.02, n: 11 }, 0.08),
+        mkDocsCorpus("agree", 12, { mean: 0.25, lo: 0.1, hi: 0.4, p: 0.002, n: 12, clusters: 12 }, 0.003),
+        mkDocsCorpus("disagree", 11, { mean: 0.25, lo: 0.01, hi: 0.4, p: 0.02, n: 11, clusters: 11 }, 0.08),
       ],
     };
     validateDocsPayload(docsPayload);
@@ -1407,6 +1419,18 @@ if (import.meta.main) {
     dirtyDocs.corpora[0]!.provenance = { revision: "a".repeat(40), dirty: true };
     try { validateDocsPayload(dirtyDocs); throw new Error("docs validator accepted a dirty corpus"); }
     catch (e) { if (!String(e).includes("tampered")) throw e; }
+    const missingDocsProvenance = structuredClone(docsPayload);
+    Reflect.deleteProperty(missingDocsProvenance.corpora[0]!, "provenance");
+    try { validateDocsPayload(missingDocsProvenance); throw new Error("docs validator accepted missing provenance"); }
+    catch (e) { if (!String(e).includes("tampered")) throw e; }
+    const missingDocsClusters = structuredClone(docsPayload);
+    Reflect.deleteProperty(missingDocsClusters.corpora[0]!.delta.mrr, "clusters");
+    try { validateDocsPayload(missingDocsClusters); throw new Error("docs validator accepted missing clusters"); }
+    catch (e) { if (!String(e).includes("tampered")) throw e; }
+    const invalidDocsDate = structuredClone(docsPayload);
+    invalidDocsDate.meta.date = "2026-02-30";
+    try { validateDocsPayload(invalidDocsDate); throw new Error("docs validator accepted an invalid date"); }
+    catch (e) { if (!String(e).includes("tampered")) throw e; }
     // Finite-but-false: a summary that disagrees with its own per-query rows must also refuse.
     const inconsistentDocs = structuredClone(docsPayload);
     inconsistentDocs.corpora[0]!.tools.hay.mrr = 0.9;
@@ -1421,6 +1445,24 @@ if (import.meta.main) {
     dirtyEvidence.corpora[0]!.provenance = { revision: "a".repeat(40), dirty: true };
     try { validatePayload(dirtyEvidence); throw new Error("validator accepted a dirty corpus"); }
     catch (e) { if (!String(e).includes("tampered")) throw e; }
+    const missingGeneratedAt = structuredClone(committedEvidence);
+    Reflect.deleteProperty(missingGeneratedAt, "generatedAt");
+    try { validatePayload(missingGeneratedAt); throw new Error("validator accepted a missing timestamp"); }
+    catch (e) { if (!String(e).includes("tampered")) throw e; }
+    const missingProvenance = structuredClone(committedEvidence);
+    Reflect.deleteProperty(missingProvenance.corpora[0]!, "provenance");
+    try { validatePayload(missingProvenance); throw new Error("validator accepted missing provenance"); }
+    catch (e) { if (!String(e).includes("tampered")) throw e; }
+    const missingRandomization = structuredClone(committedEvidence);
+    const missingRandomizationHay = missingRandomization.corpora[0]!.tools.find((tool) => tool.tool === "hay")!;
+    Reflect.deleteProperty(missingRandomizationHay, "vsRipgrepRandP");
+    try { validatePayload(missingRandomization); throw new Error("validator accepted a missing randomization test"); }
+    catch (e) { if (!String(e).includes("tampered")) throw e; }
+    const missingClusters = structuredClone(committedEvidence);
+    const missingClustersHay = missingClusters.corpora[0]!.tools.find((tool) => tool.tool === "hay")!;
+    Reflect.deleteProperty(missingClustersHay.vsRipgrep!, "clusters");
+    try { validatePayload(missingClusters); throw new Error("validator accepted missing clusters"); }
+    catch (e) { if (!String(e).includes("tampered")) throw e; }
     const unavailableComparison = structuredClone(committedEvidence);
     const unavailableHay = unavailableComparison.corpora[0]!.tools.find((tool) => tool.tool === "hay")!;
     unavailableHay.available = false;
@@ -1432,6 +1474,9 @@ if (import.meta.main) {
     eq(deltaRows(payload).find((r) => r.corpus === "real" && r.tool === "ast-grep")?.detected, false, "interval spanning zero is hollow");
     eq(timeRatios(payload).map((r) => r.tool), ["hay", "ugrep"], "only tools with measurable timings appear");
     eq(timeRatios(payload)[0]!.ratio, 0.5, "hay at half of ripgrep's time");
+    eq(timeRatios(payload).every((row) => row.samples === 6), true, "timing rows share one complete paired cohort");
+    if (!chartTime(payload).includes("tools with timeouts omitted"))
+      throw new Error("timing chart does not disclose timeout exclusion");
     // Charts must render as self-describing SVG for every real-shaped payload.
     for (const [name, svg] of [["delta", chartDelta(payload)], ["top10", chartTop10(payload)], ["time", chartTime(payload)]] as const) {
       if (!svg.includes("role=\"img\"")) throw new Error(`${name} chart lacks role=img`);

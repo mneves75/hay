@@ -197,17 +197,7 @@ export const TOOLS: Tool[] = [
   },
   {
     id: "rg",
-    label: "ripgrep (default order)",
-    bin: "rg",
-    args: (q) => [...RG_PARITY, "-F", "-n", "-e", q, "."],
-    parse: plain,
-    scope: "gitignore-aware",
-    ranked: false,
-    note: "default output order is nondeterministic under parallel traversal",
-  },
-  {
-    id: "rg-sorted",
-    label: "ripgrep --sort path",
+    label: "ripgrep --sort path (deterministic baseline)",
     bin: "rg",
     args: (q) => [...RG_PARITY, "-F", "-n", "--sort", "path", "-e", q, "."],
     parse: plain,
@@ -601,7 +591,7 @@ export type ToolScore = {
   medianRank: number | null;
   unreachable: number;
   timeouts: number;
-  /** Paired difference against the ripgrep default-order baseline. Absent for the baseline. */
+  /** Paired difference against the deterministic ripgrep --sort path baseline. Absent for the baseline. */
   vsRipgrep?: Interval;
   /** Fisher's paired randomization test on the same differences — Smucker et al.'s reference. */
   vsRipgrepRandP?: number;
@@ -830,11 +820,14 @@ if (import.meta.main) {
     // to walk the same tree. hay disables global gitignore, .git/info/exclude and .ignore files
     // internally; ripgrep honours all three unless told not to. 231 files versus 225 on the
     // ripgrep corpus before this was fixed.
-    for (const id of ["rg", "rg-sorted"]) {
+    for (const id of ["rg"]) {
       const argv = TOOLS.find((t) => t.id === id)!.args("q", "rust");
       for (const flag of ["--no-config", "--no-ignore-dot", "--no-ignore-global", "--no-ignore-exclude"]) {
         if (!argv.includes(flag)) throw new Error(`${id} must pass ${flag} to walk hay's file set`);
       }
+      const sort = argv.indexOf("--sort");
+      if (sort === -1 || argv[sort + 1] !== "path")
+        throw new Error("the rank baseline must be deterministic ripgrep --sort path");
     }
     // Ground truth with the wrong grammar is garbage that parses: every corpus lang must be
     // known, and an unknown one must refuse rather than fall back to Rust.
