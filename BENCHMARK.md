@@ -1,6 +1,6 @@
 # Code search benchmark
 
-Every code-search tool installed on the test machine, over 5 repositories, measured on one
+Every code-search tool installed on the test machine, over 4 usable repositories (plus 1 thin self-check corpus), measured on one
 task: **given a symbol, how far down the results is its declaration?**
 
 > ### Read this before the numbers
@@ -64,6 +64,8 @@ and the places this benchmark is wrong.
 | `ast-grep` | ast-grep 0.45.1 |
 
 ## Documentation track
+
+Generated 2026-08-23 · hay hay 0.1.2 · rg ripgrep 15.2.0.
 
 A public development set for documentation retrieval: identifier-like tokens from ATX
 headings that occur in exactly one markdown file's headings and in at least three

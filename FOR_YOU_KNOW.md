@@ -27,8 +27,8 @@ Then it got tested, and it does not work. Against real agent behaviour, `proseSh
 with actual search difficulty at **ρ −0.035** — statistically indistinguishable from a coin.
 
 The reason is almost funny. The metric assumed dead documentation is a needle in a haystack of live
-documentation. Measured against what agents actually open, **76% of all documentation in these
-repos had never been opened by any agent, in 3,144 recorded sessions.** It is not the needle. It is
+documentation. Measured against what agents actually open, **78% of all documentation in these
+repos had never been opened by any agent, across 2,256 matching transcript sessions.** It is not the needle. It is
 the haystack. And a metric that weighs all prose equally is measuring the size of a pile that is
 almost entirely inert.
 
@@ -130,6 +130,24 @@ to seventeen traversal and matcher cases, while release archives gained provenan
 None of this changes ranking; it strengthens the sentence callers can safely infer from an exit
 code.
 
+## What 0.1.4 taught: evidence has a supply chain
+
+A benchmark is not just the number at the end. It is a chain of custody: the exact source revision,
+the files admitted into the corpus, the way subprocess failures propagate, and the renderer that
+turns raw evidence into a public claim. If any link silently substitutes, truncates, or guesses, a
+polished chart can be less trustworthy than no chart at all.
+
+The 0.1.4 pass tightened those boundaries without touching ranking. The installer now builds the
+exact requested ref with Cargo's lockfile enforced. Private transcript exports live behind one
+permission-checked writer. Public benchmark artifacts identify a clean source revision and refuse
+impossible or partial comparisons. Archive ingestion limits compressed bytes, expanded bytes,
+member count, path depth, and file types before any content becomes evidence. The release video
+reads the benchmark artifact instead of keeping a second handwritten scoreboard.
+
+Think of those as two ledgers that must reconcile: one records what the search tool returned; the
+other records why anyone should believe the measurement. The first ledger was already the focus of
+the differential suite. Version 0.1.4 makes the second one explicit enough to audit.
+
 ## Pitfalls, if you work here
 
 - **zsh does not word-split unquoted expansions.** `$repos` arrives as one argument. This cost four
@@ -147,7 +165,7 @@ code.
 - **MRR is only reproducible against a fixed checkout.** The measured repositories are live working
   trees; ranks move when they do. Compare against a pinned commit, not across a day.
 
-## What 0.5.0 taught: the instrument needs auditing too
+## What the pre-public 0.5.0 cycle taught: the instrument needs auditing too
 
 Everything above is about the harness catching bugs in the *tool*. 0.5.0 was the reverse — pointing
 the same suspicion at the harness itself — and it found the thing that could have invalidated every
@@ -179,7 +197,7 @@ Notice the pattern in all three: none was a crash, none looked wrong in the outp
 happened to favour the tool being sold. That is not coincidence — it is what selection pressure
 looks like when the person checking is also the person hoping.
 
-## What 0.6.0 taught: count first, then code
+## What the pre-public 0.6.0 cycle taught: count first, then code
 
 0.5.0 ended with a confession: the gate fails and there is no theory of the gap. 0.6.0 is what
 happens when you buy the theory before touching the ranker. Every miss and regression went into

@@ -132,11 +132,12 @@ jobs:
       - run: bun benchmark.ts --selftest
       - run: bun benchmark-report.ts --selftest
       - run: bun explainer-html.ts --selftest
+      - run: bash install.sh --selftest
       - name: Generated reports are current
         run: |
           bun benchmark-report.ts
-          bun explainer-html.ts --in BENCHMARK_FEYNMAN.md --out benchmark-feynman.html
-          git diff --exit-code -- BENCHMARK.md benchmark.html benchmark-feynman.html
+          bun explainer-html.ts --in BENCHMARK_FEYNMAN.md --out BENCHMARK_FEYNMAN.html
+          git diff --exit-code -- BENCHMARK.md benchmark.html BENCHMARK_FEYNMAN.html
       - run: shellcheck benchmark-corpora.sh hay/differential-test.sh install.sh
 
   site:
@@ -156,7 +157,7 @@ jobs:
           run_install: false
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 26.5.0
+          node-version: 24.19.0
           cache: pnpm
           cache-dependency-path: site/video-src/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile

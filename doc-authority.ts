@@ -21,9 +21,9 @@
  *        bun doc-authority.ts --selftest
  */
 
-import { homedir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { join, isAbsolute, relative, basename, extname } from "node:path";
-import { readFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 
 const PROSE_EXT = new Set([".md", ".mdx", ".txt", ".rst", ".adoc"]);
 
@@ -71,19 +71,45 @@ export function evaluate(items: { flagged: boolean; dead: boolean }[]) {
 
 // ── transcripts: which files did agents actually open? ────────────────────────
 
-function readsByRepo(): Map<string, Map<string, number>> {
-  const root = join(homedir(), ".claude", "projects");
+async function relevantTranscriptFiles(repos: string[], root: string): Promise<string[]> {
+  if (repos.length === 0) return [];
+  const rg = Bun.which("rg");
+  if (!rg) throw new Error("ripgrep is required to prefilter transcript files");
+  const patterns = repos.flatMap((repo) => ["-e", JSON.stringify(repo)]);
+  const proc = Bun.spawn(
+    [rg, "--no-config", "--hidden", "--no-ignore", "-g", "*.jsonl", "-l", "-0", "-F", ...patterns, root],
+    { stdout: "pipe", stderr: "pipe" },
+  );
+  const errText = new Response(proc.stderr).text();
+  const text = await new Response(proc.stdout).text();
+  const code = await proc.exited;
+  if (code >= 2) {
+    throw new Error(`transcript prefilter failed (exit ${code}): ${(await errText).trim().slice(0, 300) || "no diagnostic"}`);
+  }
+  return text.split("\0").filter(Boolean);
+}
+
+async function readsByRepo(
+  repos: string[],
+  root = join(homedir(), ".claude", "projects"),
+): Promise<{ reads: Map<string, Map<string, number>>; sessions: number }> {
+  const wanted = new Set(repos);
   const out = new Map<string, Map<string, number>>();
-  for (const rel of new Bun.Glob("**/*.jsonl").scanSync(root)) {
+  const sessions = new Set<string>();
+  // Ripgrep scans the full transcript store in native code, then JSON parsing confirms exact cwd
+  // equality. A literal repo path elsewhere in a transcript can only add harmless parse work.
+  for (const file of await relevantTranscriptFiles(repos, root)) {
     let text: string;
-    try { text = readFileSync(join(root, rel), "utf8"); } catch { continue; }
+    try { text = readFileSync(file, "utf8"); } catch { continue; }
     for (const line of text.split("\n")) {
       if (!line) continue;
       let d: any;
       try { d = JSON.parse(line); } catch { continue; }
       const cwd: string | undefined = d.cwd;
       const content = d.message?.content;
-      if (!cwd || !Array.isArray(content)) continue;
+      if (!cwd || !wanted.has(cwd)) continue;
+      sessions.add(file);
+      if (!Array.isArray(content)) continue;
       for (const b of content) {
         if (b?.type !== "tool_use") continue;
         const p = b.input?.file_path;
@@ -96,16 +122,18 @@ function readsByRepo(): Map<string, Map<string, number>> {
       }
     }
   }
-  return out;
+  return { reads: out, sessions: sessions.size };
 }
 
 // ── repo features ─────────────────────────────────────────────────────────────
 
 async function sh(cmd: string[], cwd: string): Promise<string> {
-  const p = Bun.spawn(cmd, { cwd, stdout: "pipe", stderr: "ignore" });
-  const t = await new Response(p.stdout).text();
-  await p.exited;
-  return t;
+  const p = Bun.spawn(cmd, { cwd, stdout: "pipe", stderr: "pipe" });
+  const errText = new Response(p.stderr).text();
+  const text = await new Response(p.stdout).text();
+  const code = await p.exited;
+  if (code >= 2) throw new Error(`${cmd[0] ?? "subprocess"} failed (exit ${code}): ${(await errText).trim().slice(0, 300) || "no diagnostic"}`);
+  return text;
 }
 
 /** Days since each tracked file's last commit. One `git log` walk, not one call per file. */
@@ -126,27 +154,21 @@ async function ageDays(repo: string): Promise<Map<string, number>> {
 
 /** How many other files mention this file's basename — a crude inbound-link count. */
 async function inboundLinks(repo: string, files: string[]): Promise<Map<string, number>> {
-  const counts = new Map<string, number>(files.map((f) => [f, 0]));
-  const names = [...new Set(files.map((f) => basename(f)))];
-  for (let i = 0; i < names.length; i += 200) {
-    const chunk = names.slice(i, i + 200).flatMap((n) => ["-e", n]);
-    const proc = Bun.spawn(
-      ["rg", "--no-config", "--hidden", "-g", "!.git/", "-l", "-F", ...chunk, "."],
-      { cwd: repo, stdout: "pipe", stderr: "ignore" },
-    );
-    // -l gives files containing ANY of the chunk; for a crude count re-check per name.
-    await new Response(proc.stdout).text();
-    await proc.exited;
+  const counts = new Map<string, number>(files.map((file) => [file, 0]));
+  const names = [...new Set(files.map((file) => basename(file)))];
+  for (let offset = 0; offset < names.length; offset += 8) {
+    await Promise.all(names.slice(offset, offset + 8).map(async (name) => {
+      const text = await sh(
+        ["rg", "--no-config", "--hidden", "-g", "!.git/", "-l", "-0", "-F", "-e", name, "."],
+        repo,
+      );
+      const matched = text.split("\0").filter(Boolean)
+        .map((path) => path.replace(/^\.\//, "").replaceAll("\\", "/"));
+      for (const file of files) {
+        if (basename(file) === name) counts.set(file, matched.filter((path) => path !== file).length);
+      }
+    }));
   }
-  // Precise per-name counts, bounded to the prose set (this is the expensive part, so it runs once).
-  await Promise.all(names.map(async (n) => {
-    const p = Bun.spawn(["rg", "--no-config", "--hidden", "-g", "!.git/", "-c", "-F", "-e", n, "."],
-      { cwd: repo, stdout: "pipe", stderr: "ignore" });
-    const txt = await new Response(p.stdout).text();
-    await p.exited;
-    const hits = txt.split("\n").filter(Boolean).length;
-    for (const f of files) if (basename(f) === n) counts.set(f, Math.max(0, hits - 1)); // minus itself
-  }));
   return counts;
 }
 
@@ -169,6 +191,33 @@ if (import.meta.main) {
     eq(evaluate(perfect).precision, 1, "perfect precision");
     eq(evaluate(perfect).lift, 2, "perfect signal at 50% base rate has lift 2");
     eq(evaluate([]).lift, 0, "empty");
+    const fixture = mkdtempSync(join(tmpdir(), "doc-authority-"));
+    try {
+      await Bun.write(join(fixture, "target.md"), "# Target\n");
+      await Bun.write(join(fixture, "self.md"), "self.md\n");
+      await Bun.write(join(fixture, "ref.md"), "See target.md\n");
+      const inbound = await inboundLinks(fixture, ["target.md", "self.md", "ref.md"]);
+      eq(inbound.get("target.md"), 1, "only the actual target path is excluded from inbound links");
+      eq(inbound.get("self.md"), 0, "a self-reference is not an inbound link");
+      const transcripts = join(fixture, "transcripts");
+      mkdirSync(transcripts);
+      const targetRepo = join(fixture, "wanted");
+      const record = (cwd: string, filePath: string) => JSON.stringify({
+        cwd,
+        message: { content: [{ type: "tool_use", name: "Read", input: { file_path: filePath } }] },
+      });
+      await Bun.write(join(transcripts, "wanted.jsonl"), record(targetRepo, join(targetRepo, "README.md")) + "\n");
+      await Bun.write(join(transcripts, "other.jsonl"), record(join(fixture, "other"), join(fixture, "other/README.md")) + "\n");
+      const history = await readsByRepo([targetRepo], transcripts);
+      eq(history.reads.get(targetRepo)?.get("README.md"), 1, "prefilter preserves exact relevant reads");
+      eq(history.reads.size, 1, "prefilter excludes unrelated repositories");
+      eq(history.sessions, 1, "session count uses exact repository matches");
+      const empty = await readsByRepo([], transcripts);
+      eq(empty.reads.size, 0, "an empty eligible cohort performs no transcript search");
+      eq(empty.sessions, 0, "an empty eligible cohort has no sessions");
+    } finally {
+      rmSync(fixture, { recursive: true, force: true });
+    }
     console.log("selftest ok");
     process.exit(0);
   }
@@ -176,16 +225,23 @@ if (import.meta.main) {
   const repos = argv.filter((a) => !a.startsWith("--"));
   if (repos.length === 0) { console.error("usage: bun doc-authority.ts <repo>... [--json]"); process.exit(1); }
 
-  console.error("mining transcripts for file opens...");
-  const reads = readsByRepo();
-
-  const report: any[] = [];
+  const eligible = new Map<string, string[]>();
   for (const repo of repos) {
-    const opened = reads.get(repo) ?? new Map();
     const files = (await sh(["rg", "--files", "--no-config", "--hidden", "-g", "!.git/"], repo))
       .split("\n").filter(Boolean).map((f) => f.replace(/^\.\//, ""))
       .filter((f) => PROSE_EXT.has(extname(f).toLowerCase()));
     if (files.length < 20) { console.error(`skip ${basename(repo)}: only ${files.length} prose files`); continue; }
+    eligible.set(repo, files);
+  }
+
+  console.error(`mining transcripts for ${eligible.size} eligible repositories...`);
+  const history = await readsByRepo([...eligible.keys()]);
+  const reads = history.reads;
+  console.error(`matched ${history.sessions} transcript sessions to the eligible cohort`);
+
+  const report: any[] = [];
+  for (const [repo, files] of eligible) {
+    const opened = reads.get(repo) ?? new Map();
 
     const [age, inbound] = await Promise.all([ageDays(repo), inboundLinks(repo, files)]);
     const rows = files.map((f) => ({
@@ -213,5 +269,5 @@ if (import.meta.main) {
     }
     report.push({ repo: name, files: rows.length, signals });
   }
-  if (argv.includes("--json")) console.log(JSON.stringify(report, null, 2));
+  if (argv.includes("--json")) console.log(JSON.stringify({ sessions: history.sessions, repositories: report }, null, 2));
 }

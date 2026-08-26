@@ -13,6 +13,63 @@ set -euo pipefail
 
 need() { command -v "$1" >/dev/null 2>&1 || { echo "hay installer: missing '$1' ($2)" >&2; exit 2; }; }
 need git "https://git-scm.com"
+
+# Fetch the requested object itself. `git clone --branch` accepts branches and tags, not arbitrary
+# commits; the old fallback silently cloned the default branch when that failed, defeating HAY_REF.
+checkout_source() {
+  local repo="$1" ref="$2" destination="$3"
+  git init -q "$destination"
+  git -C "$destination" remote add origin "$repo"
+  git -C "$destination" fetch --quiet --depth 1 origin -- "$ref"
+  git -C "$destination" checkout --quiet --detach FETCH_HEAD
+  [ "$(git -C "$destination" rev-parse HEAD)" = "$(git -C "$destination" rev-parse 'FETCH_HEAD^{commit}')" ]
+}
+
+installer_selftest() (
+  local root source checkout first second
+  root="$(mktemp -d)"
+  trap 'chmod -R u+w "$root"; rm -r "$root"' EXIT
+  source="$root/source"
+  mkdir "$source"
+  git init -q "$source"
+  git -C "$source" config user.email installer-test@example.invalid
+  git -C "$source" config user.name installer-test
+  printf 'first\n' > "$source/marker"
+  git -C "$source" add marker
+  git -C "$source" commit -qm first
+  git -C "$source" branch -M main
+  first="$(git -C "$source" rev-parse HEAD)"
+  git -C "$source" tag -am "annotated installer test tag" test-tag
+  git -C "$source" branch test-branch
+  printf 'second\n' > "$source/marker"
+  git -C "$source" commit -qam second
+  second="$(git -C "$source" rev-parse HEAD)"
+
+  checkout="$root/by-branch"
+  checkout_source "$source" main "$checkout"
+  [ "$(git -C "$checkout" rev-parse HEAD)" = "$second" ]
+  checkout="$root/by-tag"
+  checkout_source "$source" test-tag "$checkout"
+  [ "$(git -C "$checkout" rev-parse HEAD)" = "$first" ]
+  checkout="$root/by-commit"
+  checkout_source "$source" "$first" "$checkout"
+  [ "$(git -C "$checkout" rev-parse HEAD)" = "$first" ]
+  if checkout_source "$source" does-not-exist "$root/bad-ref" 2>/dev/null; then
+    echo "installer selftest: nonexistent ref unexpectedly succeeded" >&2
+    return 1
+  fi
+  if checkout_source "$source" --depth=1 "$root/bad-option" 2>/dev/null; then
+    echo "installer selftest: option-like ref unexpectedly succeeded" >&2
+    return 1
+  fi
+  echo "installer selftest ok"
+)
+
+if [ "${1:-}" = "--selftest" ]; then
+  installer_selftest
+  exit 0
+fi
+
 need cargo "https://rustup.rs — Rust edition 2024 needs a current toolchain"
 
 # MSRV gate: hay is edition 2024 and its ripgrep crates declare rust-version 1.88.
@@ -27,26 +84,33 @@ REPO="${HAY_REPO:-https://github.com/mneves75/hay.git}"
 REF="${HAY_REF:-main}"
 
 dir="$(mktemp -d)"
-trap 'rm -rf "$dir"' EXIT
+trap 'chmod -R u+w "$dir"; rm -r "$dir"' EXIT
 
-echo "==> cloning $REPO @ $REF"
-git clone --depth 1 --branch "$REF" "$REPO" "$dir" 2>/dev/null \
-  || git clone --depth 1 "$REPO" "$dir"
-
-echo "==> building release binary"
-cargo build --release --manifest-path "$dir/hay/Cargo.toml"
+echo "==> fetching $REPO @ $REF"
+if ! checkout_source "$REPO" "$REF" "$dir"; then
+  echo "hay installer: could not resolve requested ref '$REF'; nothing installed" >&2
+  exit 2
+fi
+echo "==> source commit $(git -C "$dir" rev-parse HEAD)"
 
 # cargo install ignores where the cargo binary lives; it targets
 # $CARGO_INSTALL_ROOT, else $CARGO_HOME, else ~/.cargo — always <root>/bin.
 bin_dir="${CARGO_INSTALL_ROOT:-${CARGO_HOME:-$HOME/.cargo}}/bin"
 echo "==> installing to $bin_dir"
-cargo install --path "$dir/hay" --force
+cargo install --locked --path "$dir/hay" --force
 
-if command -v hay >/dev/null 2>&1; then
-  echo "==> installed: $(hay --version)"
-  if hay -F hay . >/dev/null 2>&1; then echo "==> smoke test: search works."; fi
+installed="$bin_dir/hay"
+if [ -x "$installed" ]; then
+  echo "==> installed: $($installed --version)"
+  if "$installed" -F 'name = "hay"' "$dir/hay/Cargo.toml" >/dev/null 2>&1; then
+    echo "==> smoke test: newly installed binary searches successfully."
+  else
+    echo "hay installer: newly installed binary failed its smoke test" >&2
+    exit 2
+  fi
   echo "Done. Try: hay -F validateSession src/"
 else
-  echo "==> installed, but 'hay' is not on PATH." >&2
+  echo "==> cargo install completed, but $installed is missing or not executable." >&2
   echo "    Add \"$bin_dir\" to your PATH." >&2
+  exit 2
 fi

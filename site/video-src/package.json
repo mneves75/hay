@@ -26,5 +26,8 @@
     "upgrade": "remotion upgrade",
     "lint": "eslint src && tsc",
     "render": "remotion render HayBenchmark out/hay-benchmark.mp4"
+  },
+  "engines": {
+    "node": ">=24.19.0"
   }
 }

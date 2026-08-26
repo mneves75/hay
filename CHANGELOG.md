@@ -6,6 +6,53 @@ history lives in git and `memory/`.
 
 ## [Unreleased]
 
+## [0.1.4] — 2026-08-26
+
+No ranking change — this release closes integrity gaps in the installer, measurement kit, public
+benchmark provenance, and generated web surfaces. The three ranking signals, weights, failed
+pre-registered gate, and complete-search parity contract are unchanged.
+
+### Security and release integrity
+
+- `install.sh` now resolves the requested branch, tag, or commit exactly, refuses an invalid
+  `HAY_REF` instead of falling back to `main`, installs with Cargo's lockfile, and verifies the
+  newly installed binary rather than an older `PATH` entry.
+- Transcript-derived corpora and paired-query dumps can only be written beneath the gitignored
+  `corpus/` boundary, with 0700 directories and 0600 files; traversal and symlinked parents are
+  rejected, and atomic replacement prevents a pre-planted hard link from being truncated.
+- SWE-Explore repository archives now use the maintained `tar` parser and enforce compressed and
+  expanded byte budgets, decompression ratio, member count, path depth, and regular-file/directory
+  entry types before extraction, aborting both the input stream and decompressor on the first
+  violation. The committed sample manifest is never rewritten after partial
+  scoring and an unresolvable manifest fails closed.
+- CI uses the active Node 24 LTS line for the benchmark film and runs the installer's exact-ref
+  positive controls.
+- The public-corpus helper rejects ambiguous clone names, sets an explicit network user agent, and removes
+  only the exact clones created by that run.
+
+### Measurement integrity
+
+- Natural child-process failures now invalidate measurements while deliberate early rank stops
+  remain distinct; generic commands such as `git` and `find` must exit zero.
+- Bootstrap output distinguishes observations from resampling clusters. Public code and
+  documentation benchmarks record generation time plus corpus commit/dirty state, and the
+  renderer rejects dirty provenance, impossible ranges, missing reference tests, and aggregates
+  that disagree with their rows.
+- Transcript harvesting recognizes attached `-ePATTERN`, `-pPATTERN`, `--regexp=...`, and
+  `--pattern=...` forms. Document-authority analysis now subtracts only the actual target file
+  from inbound-link counts and prefilters transcript parsing to the eligible repository cohort;
+  its public aggregate was recomputed from the corrected instrument.
+
+### Site and documentation
+
+- `BENCHMARK_FEYNMAN.html` is the single canonical hosted explainer filename across its
+  generator, CI, README, and manual; the page now carries description, canonical, and Open Graph
+  metadata and refuses unsafe link schemes.
+- The manual tolerates unavailable browser storage, supports clipboard fallback when opened
+  locally, and announces copy failures without disabling its other controls.
+- The benchmark film imports the committed evidence instead of hand-copied scores and refuses to
+  render if the four-corpus layout or the “hay ranks first” claim is no longer supported.
+
 ## [0.1.3] — 2026-08-25
 
 No ranking change — this release hardens incomplete-search reporting, JSON compatibility, and

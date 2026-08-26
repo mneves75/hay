@@ -167,7 +167,7 @@ table.rr th{font-family:"IBM Plex Mono",monospace;font-size:.72rem;text-transfor
 <header>
   <p class="eyebrow">hay · benchmark</p>
   <h1>Ranked grep, measured against everything else</h1>
-  <p class="lede">Every code-search tool installed on the test machine, over 5 repositories,
+  <p class="lede">Every code-search tool installed on the test machine, over 4 usable repositories (plus 1 thin self-check corpus),
   on one task: given a symbol, how far down the results is its declaration?</p>
   <div class="stats">
     <div class="stat"><b>4</b><span>repositories, each parsed for ground truth</span></div>
@@ -293,7 +293,7 @@ code rather than scoring text, keeps pace.</figcaption>
 <p>Agents read roughly ten results. Share of queries answered within them:</p>
 <svg viewBox="0 0 760 328" width="100%" role="img" aria-labelledby="t10title t10desc" class="chart">
 <title id="t10title">Share of queries answered within the first ten results</title>
-<desc id="t10desc">Grouped horizontal bars per repository: teal for hay, muted for ast-grep and codespelunker, against ripgrep as the implicit baseline axis.</desc>
+<desc id="t10desc">Grouped horizontal bars per repository: the accent bar is hay; muted bars are ast-grep and codespelunker; ripgrep is the implicit baseline axis.</desc>
 <line x1="150" y1="26" x2="150" y2="306" class="grid"/>
 <text x="150" y="322" text-anchor="middle" class="tick">0%</text>
 <line x1="423" y1="26" x2="423" y2="306" class="grid"/>
@@ -392,7 +392,7 @@ scale. Ranking costs work; the question is how much answer quality buys:</p>
 <section class="feynman" id="from-zero">
 <h2>The whole thing from zero</h2>
 <p class="lede">No jargon, one idea at a time. (The long version, with the traps and the wrong
-turns, lives in <a href="BENCHMARK_FEYNMAN.md">BENCHMARK_FEYNMAN.md</a>.)</p>
+turns, lives in <a href="BENCHMARK_FEYNMAN.html">BENCHMARK_FEYNMAN.html</a>.)</p>
 
 <div class="fstep">
 <h3>1 · One sentence</h3>
@@ -481,6 +481,7 @@ The fix is in every result below.</p>
 
 <section class="corpus" id="docs-track">
 <h2>Documentation track</h2>
+<p class="meta">Generated 2026-08-23 · hay hay 0.1.2 · rg ripgrep 15.2.0</p>
 <p>A public development set for documentation retrieval: identifier-like tokens from ATX headings
 that occur in exactly one markdown file’s headings and in at least three parity-visible files.
 Ranks use the same 1000-result-line cap as the code track; cap truncations are reported

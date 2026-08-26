@@ -1,12 +1,57 @@
+import benchmarkPayload from "../../../evidence/benchmark.json";
 import { AbsoluteFill, interpolate, Sequence, spring, useCurrentFrame, useVideoConfig } from "remotion";
 
-// Values from evidence/benchmark.json. The recorded run used hay 0.6.0; 0.7.0 kept ranking unchanged.
-const CORPORA = [
-  { name: "linux kernel", hay: 0.967, rg: 0.67 },
-  { name: "openclaw", hay: 0.879, rg: 0.669 },
-  { name: "ripgrep source", hay: 0.8, rg: 0.41 },
-  { name: "alamofire", hay: 0.691, rg: 0.294 },
-];
+type ToolScore = { tool: string; available: boolean; mrr: number };
+type CorpusReport = { corpus: string; queries: number; tools: ToolScore[] };
+type BenchmarkPayload = { corpora: CorpusReport[] };
+type CorpusDatum = { name: string; hay: number; rg: number };
+
+const MIN_USABLE_QUERIES = 10;
+const corpusNames: Record<string, string> = {
+  linux: "linux kernel",
+  openclaw: "openclaw",
+  ripgrep: "ripgrep source",
+  alamofire: "alamofire",
+};
+
+const findTool = (corpus: CorpusReport, tool: string): ToolScore => {
+  const score = corpus.tools.find((candidate) => candidate.tool === tool && candidate.available);
+  if (!score) throw new Error("benchmark evidence missing available " + tool + " score for " + corpus.corpus);
+  if (!Number.isFinite(score.mrr) || score.mrr < 0 || score.mrr > 1) {
+    throw new Error("benchmark evidence has invalid " + tool + " MRR for " + corpus.corpus);
+  }
+  return score;
+};
+
+const deriveCorpora = (payload: BenchmarkPayload): CorpusDatum[] => {
+  const corpora = payload.corpora.filter((corpus) => corpus.queries >= MIN_USABLE_QUERIES);
+  if (corpora.length !== 4) {
+    throw new Error("video layout requires exactly four usable benchmark corpora; found " + corpora.length);
+  }
+  for (const corpus of corpora) {
+    const hay = findTool(corpus, "hay");
+    const competitors = corpus.tools.filter((tool) => tool.tool !== "hay" && tool.available);
+    if (competitors.length === 0) {
+      throw new Error("benchmark evidence has no available comparator for " + corpus.corpus);
+    }
+    const strongestOther = Math.max(...competitors.map((tool) => {
+      if (!Number.isFinite(tool.mrr) || tool.mrr < 0 || tool.mrr > 1)
+        throw new Error("benchmark evidence has invalid " + tool.tool + " MRR for " + corpus.corpus);
+      return tool.mrr;
+    }));
+    if (hay.mrr <= strongestOther) {
+      throw new Error("benchmark copy unsupported: hay is not first on " + corpus.corpus);
+    }
+  }
+  return corpora.map((corpus) => ({
+    name: corpusNames[corpus.corpus] ?? corpus.corpus,
+    hay: findTool(corpus, "hay").mrr,
+    rg: findTool(corpus, "rg").mrr,
+  }));
+};
+
+const CORPORA = deriveCorpora(benchmarkPayload as BenchmarkPayload);
+const usableCorpusPhrase = CORPORA.length === 4 ? "four usable corpora" : String(CORPORA.length) + " usable corpora";
 
 const C = {
   ground: "#f8f5ec",
@@ -48,7 +93,7 @@ const TitleScene: React.FC = () => {
         <div style={{ fontFamily: mono, fontSize: 190, fontWeight: 700, color: C.accent, letterSpacing: "-0.04em", lineHeight: 1 }}>hay</div>
         <div style={{ fontFamily: serif, fontSize: 62, color: C.ink, marginTop: 24 }}>A ranked grep for coding agents</div>
         <div style={{ fontFamily: mono, fontSize: 32, color: C.soft, marginTop: 20 }}>
-          same matches as ripgrep — reordered so the declaration comes first
+          on complete searches, hay returns ripgrep&rsquo;s matches — reordered
         </div>
       </div>
     </AbsoluteFill>
@@ -85,7 +130,7 @@ const BenchmarkScene: React.FC = () => {
       <RuledBg />
       <div style={{ position: "relative" }}>
         <div style={{ fontFamily: mono, fontSize: 26, letterSpacing: "0.24em", textTransform: "uppercase", color: C.accent }}>
-          public benchmark · four usable corpora · parser ground truth
+          public benchmark · {usableCorpusPhrase} · parser ground truth
         </div>
         <div style={{ fontFamily: serif, fontSize: 72, color: C.ink, margin: "18px 0 60px", fontWeight: 600 }}>
           First on every usable corpus.
@@ -120,7 +165,7 @@ const GuaranteeScene: React.FC = () => {
         <div style={{ fontFamily: mono, fontSize: 120, color: C.accent, scale: Math.max(pop, 0), display: "inline-block" }}>
           differential: 0 differing
         </div>
-        <div style={{ fontFamily: serif, fontSize: 76, color: C.ink, marginTop: 40 }}>Exactly ripgrep&rsquo;s matches.</div>
+        <div style={{ fontFamily: serif, fontSize: 76, color: C.ink, marginTop: 40 }}>Complete searches match ripgrep exactly.</div>
         <div style={{ fontFamily: serif, fontSize: 76, color: C.ink, opacity: interpolate(f, [30, 50], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }) }}>
           Only the order changes.
         </div>
@@ -147,8 +192,9 @@ const GuaranteeScene: React.FC = () => {
 
 const EndScene: React.FC = () => {
   const f = useCurrentFrame();
-  const chars = Math.floor(interpolate(f, [10, 55], [0, "cargo install --path hay".length], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }));
-  const cmd = "cargo install --path hay".slice(0, chars);
+  const installCommand = "cargo install --locked --path hay";
+  const chars = Math.floor(interpolate(f, [10, 55], [0, installCommand.length], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }));
+  const cmd = installCommand.slice(0, chars);
   return (
     <AbsoluteFill style={{ justifyContent: "center", alignItems: "center" }}>
       <RuledBg />

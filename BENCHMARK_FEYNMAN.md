@@ -231,7 +231,7 @@ They disagree, and the reason is known rather than mysterious: the bootstrap run
 small samples. Thirty queries is a small sample.
 
 So the report no longer bolds on the interval alone. A difference is claimed only when **both**
-tests agree; where they disagree the table says so and takes the conservative reading. That 0.5.0
+tests agree; where they disagree the table says so and takes the conservative reading. That pre-public 0.5.0 development
 report reduced `hay`'s detected wins from three corpora to two. The current run restores openclaw
 because the tool improved: +0.210 [0.067, 0.354], randomization p=0.008.
 

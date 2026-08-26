@@ -27,21 +27,32 @@ for (const c of CORPORA) if (c.clone) console.log(c.dir, c.clone);')" \
   || { echo "cannot read corpus list from benchmark.ts (is bun installed?)" >&2; exit 2; }
 [ -n "$list" ] || { echo "corpus list came back empty" >&2; exit 2; }
 
+remove_clone() {
+  local dir="$1"
+  local target="${CORPORA_DIR:?}/$dir"
+  case "$dir" in ""|"."|".."|.*|*[!A-Za-z0-9._-]*) return 2;; esac
+  [ "$target" != "$CORPORA_DIR" ] || return 2
+  if [ -e "$target" ] || [ -L "$target" ]; then
+    # Redirect stdin so BSD rm never prompts on Git's read-only object files.
+    # shellcheck disable=SC2217
+    rm -r -- "$target" < /dev/null
+  fi
+}
+
 cloned=()
 cleanup() {
   for d in "${cloned[@]:-}"; do
     [ -n "$d" ] || continue
     echo "== removing $d (cloned for this run)" >&2
-    rm -rf "${CORPORA_DIR:?}/$d"
+    remove_clone "$d" || { echo "refusing unsafe cleanup target: $d" >&2; return 2; }
   done
 }
 trap cleanup EXIT
 
 while read -r dir url; do
   [ -n "$dir" ] || continue
-  # dir/url come from committed source, but this script performs the repo's only destructive bulk
-  # operation — validate before they touch rm -rf or git.
-  case "$dir" in *[!A-Za-z0-9._-]*|"") echo "rejecting unsafe corpus dir: $dir" >&2; exit 2;; esac
+  # dir/url come from committed source, but cleanup is destructive — validate before using either.
+  case "$dir" in ""|"."|".."|.*|*[!A-Za-z0-9._-]*) echo "rejecting unsafe corpus dir: $dir" >&2; exit 2;; esac
   case "$url" in https://*[[:space:]]*|https://) echo "rejecting clone url with whitespace or no host: $url" >&2; exit 2;; esac
   if [ -d "$CORPORA_DIR/$dir" ]; then
     echo "== $dir already present, reusing (and leaving in place)"
@@ -50,16 +61,16 @@ while read -r dir url; do
   echo "== cloning $dir"
   # Abort when the transfer stalls: github's smart-HTTP path can hang mid-handshake (seen here:
   # web endpoints fine, /info/refs silent), and a hung clone must not block the run forever.
-  if ! git -c http.lowSpeedLimit=1 -c http.lowSpeedTime=60 clone --depth 1 "$url" "$CORPORA_DIR/$dir"; then
-    rm -rf "${CORPORA_DIR:?}/$dir"   # a partial clone must not look "present" to the next run
+  if ! git -c http.userAgent='OpenAI File Downloader, XaiImageApiFetch/1.0' -c http.lowSpeedLimit=1 -c http.lowSpeedTime=60 clone --depth 1 "$url" "$CORPORA_DIR/$dir"; then
+    remove_clone "$dir" || echo "could not clean partial clone safely: $dir" >&2
     echo "clone failed: $url" >&2
     exit 2
   fi
   cloned+=("$dir")
 done <<<"$list"
 
-# Never benchmark against a partial corpus: benchmark.ts skips absent dirs and would happily
-# write partial tables. Exit 2 means incomplete, per the repo's error discipline.
+# Verify the complete corpus set here as well as in benchmark.ts. Exit 2 means incomplete, per the
+# repo's error discipline.
 while read -r dir _; do
   [ -d "$CORPORA_DIR/$dir" ] || { echo "corpus still missing: $dir — not benchmarking" >&2; exit 2; }
 done <<<"$list"

@@ -11,8 +11,12 @@ and currently fails its pre-registered ship gate. See the
 ```bash
 git clone https://github.com/mneves75/hay.git
 cd hay
-cargo install --path hay
+cargo install --locked --path hay
 ```
+
+> **Version-history note:** the research record numbered internal development cycles 0.1.0–0.7.0
+> before public tags restarted at v0.1.0. Those unprefixed labels in method and lesson documents
+> name development cycles, not published tags. Cargo metadata and the changelog are authoritative.
 
 ## The negative result that produced `hay`
 
@@ -56,10 +60,10 @@ share in the set (3.9%) ranks 8th of 12 on retrieval; the repo with by far the w
 Doc-to-code *file ratio* fares no better: one repo has more prose files than code files and scores
 mid-table, while another with a smaller majority scores worst.
 
-## Finding 2 — Three quarters of documentation is never read at all
+## Finding 2 — More than three quarters of documentation is never read at all
 
-Across those repositories, **1,191 of 1,567 prose files (76%) were never opened by any agent in
-3,144 recorded sessions.** Per repo the rate runs from 4% to 90%.
+In the 2026-08-26 snapshot, **1,248 of 1,604 prose files (78%) were never opened by any agent in
+2,256 matching transcript sessions.** Per repo the rate runs from 8% to 91%.
 
 That reframes the problem. The original plan was to build a clever heuristic for spotting dead
 documents. Tested against revealed preference, every candidate signal is close to worthless — not
@@ -68,11 +72,11 @@ looks accurate:
 
 | signal | precision | lift over base rate |
 |---|---|---|
-| suspect path / filename (`archive/`, `plan-v3-FINAL.md`) | 86% | **1.14** |
-| no inbound links from any other file | 85% | **1.12** |
-| both | 87% | **1.15** |
+| suspect path / filename (`archive/`, `plan-v3-FINAL.md`) | 88% | **1.13** |
+| no inbound links from any other file | 85% | **1.09** |
+| both | 87% | **1.12** |
 
-A lift of 1.14 means the heuristic is 14% better than guessing. **The base rate is the finding, and
+A lift of 1.13 means the heuristic is 13% better than guessing. **The base rate is the finding, and
 the base rate is directly measurable** — you do not need a heuristic to tell you which documents are
 dead when you can simply observe that nothing ever opened them.
 
@@ -118,7 +122,7 @@ Every flag, output format, traversal difference, and exit code is documented in 
 search.
 
 ```bash
-cargo install --path hay
+cargo install --locked --path hay
 hay classify_path            # same flags, same path:line:text output, different order
 ```
 
@@ -193,7 +197,7 @@ because neither is sufficient alone.
 **The win is now detected on all four usable corpora, by both tests.** `hay` ranks first on every
 corpus: Linux 0.967, openclaw 0.879, ripgrep 0.800, Alamofire 0.691, ahead of every other tool
 including `ast-grep`, which parses the code, and `codespelunker`, which ranks. The history
-matters more than the row of bolds: on the 0.5.0 run the two significance tests disagreed on
+matters more than the row of bolds: on the pre-public 0.5.0 development run the two significance tests disagreed on
 openclaw (bootstrap interval excluding zero, randomization p=0.058 — exactly the small-sample
 optimism Smucker et al.'s follow-up warns about), and the report demoted the claim to "two of
 three". What changed is the tool, not the test: the definition-precision fixes from the error
@@ -203,7 +207,7 @@ the evidence improves.
 
 Building it found the largest defect in the project so far. `hay`'s definition signal was **inert
 on C** — a kernel function definition contains no declaration keyword, so on the Linux kernel
-turning the signal off changed the score by nothing at all. Fixed in 0.4.0 (+0.081 MRR on the
+turning the signal off changed the score by nothing at all. Fixed in the pre-public 0.4.0 cycle (+0.081 MRR on the
 kernel, 95% CI [0.018, 0.148]), and the only reason it was ever found is that the benchmark used a
 language the tests did not.
 
@@ -233,10 +237,9 @@ reordering surfaces the files a successful agent needed earlier than ripgrep's p
 derivation rule here is deliberately dumb so that nothing per-instance can be tuned. The effect
 is *larger* than on the private corpus, which is worth exactly one sentence of caution: these
 gold files come from trajectories that solved the issue, a friendlier notion of relevance than
-"whatever file one developer's agent opened next". Exclusions are counted in the payload (215
-`pro`-split instances lack public issue text; the original draw also dropped 3 issues that
-yielded no derivable query, so the committed manifest holds the 97 scorable instances; 0
-repositories skipped).
+"whatever file one developer's agent opened next". Exclusions are counted in the payload: 215
+`pro`-split instances lack public issue text; the fixed manifest contains 97 instances, and the
+current run lost none to missing queries, unavailable repositories, or invisible gold files.
 
 ## What is also useful here
 
@@ -265,7 +268,8 @@ That is actionable in a way a repo-level percentage never was.
 The original scorer, `grep-hygiene.ts`, is kept for reproducibility. Its numbers should not be used
 to judge a repository.
 
-The measurement kit requires `bun` and `rg` and has no dependencies; `hay` requires only Rust.
+The measurement kit requires `bun` and `rg`; its sole runtime dependency is the maintained
+`tar` parser at the untrusted SWE archive boundary. `hay` itself requires only Rust.
 `corpus/` is gitignored — it contains real queries and paths from private repositories, and
 [SECURITY.md](SECURITY.md) says what each tool reads. Changes are in
 [CHANGELOG.md](CHANGELOG.md); contribution rules are in [CONTRIBUTING.md](CONTRIBUTING.md); the

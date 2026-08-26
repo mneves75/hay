@@ -191,10 +191,10 @@ headings, flag names, and body text.</p>
 <section id="start">
 <h2>Start here</h2>
 <p>Install from source — one line, or inspect first (Rust edition 2024, MSRV 1.88):</p>
-<div class="codewrap"><pre><code>curl -fsSL https://raw.githubusercontent.com/mneves75/hay/main/install.sh | bash
+<div class="codewrap"><pre><code>curl -fsSL https://raw.githubusercontent.com/mneves75/hay/v0.1.4/install.sh | HAY_REF=v0.1.4 bash
 
 # inspect-first form:
-git clone https://github.com/mneves75/hay.git &amp;&amp; cd hay &amp;&amp; ./install.sh</code></pre><button class="copy" type="button">copy</button></div>
+git clone --depth 1 --branch v0.1.4 https://github.com/mneves75/hay.git &amp;&amp; cd hay &amp;&amp; HAY_REF=v0.1.4 ./install.sh</code></pre><button class="copy" type="button">copy</button></div>
 <p>The script gates on the toolchain version, clones, builds release, installs via
 <code>cargo install</code>, and smoke-tests. Then search exactly like you would with ripgrep:</p>
 <div class="codewrap"><pre><code>hay validateSession src/          # ranked results, best first
@@ -225,7 +225,7 @@ differential harness disables those same non-<code>.gitignore</code> sources for
 20,000 strongest-by-prescore candidates, scores them, sorts them, and prints. Scoring never
 changes which retained lines match — only their order.</p>
 <p>If you want the full story — why ranking exists at all, what a bootstrap interval is, and the C
-bug the benchmark itself caught — read <a href="BENCHMARK_FEYNMAN.md">BENCHMARK_FEYNMAN.md</a>.
+bug the benchmark itself caught — read <a href="BENCHMARK_FEYNMAN.html">BENCHMARK_FEYNMAN.html</a>.
 It assumes no information-retrieval background.</p>
 </section>
 
@@ -523,9 +523,9 @@ hay --json -F "$symbol" "$root" \
 <div class="codewrap"><pre><code>hay -m 0 -F "$symbol" "$root" 2&gt;err.log || true
 grep -q "ranked the .* strongest" err.log &amp;&amp; echo "truncated — switch to rg for exhaustiveness"</code></pre><button class="copy" type="button">copy</button></div>
 <h3>Install on an agent's machine</h3>
-<div class="codewrap"><pre><code>curl -fsSL https://raw.githubusercontent.com/mneves75/hay/main/install.sh | bash   # inspect first!
+<div class="codewrap"><pre><code>curl -fsSL https://raw.githubusercontent.com/mneves75/hay/v0.1.4/install.sh | HAY_REF=v0.1.4 bash   # inspect first!
 # inspect-first form:
-git clone https://github.com/mneves75/hay.git &amp;&amp; cd hay &amp;&amp; ./install.sh</code></pre><button class="copy" type="button">copy</button></div>
+git clone --depth 1 --branch v0.1.4 https://github.com/mneves75/hay.git &amp;&amp; cd hay &amp;&amp; HAY_REF=v0.1.4 ./install.sh</code></pre><button class="copy" type="button">copy</button></div>
 </section>
 
 <!-- ─────────────────────────────── faq ─────────────────────────────── -->
@@ -576,14 +576,24 @@ are asserted by <code>hay/tests/cli.rs</code>.
 // ── theme: auto → dark → light → auto; persisted; falls back to OS via light-dark() ──
 const root = document.documentElement, btn = document.getElementById("theme-toggle");
 const next = { auto: "dark", dark: "light", light: "auto" };
-const saved = localStorage.getItem("hay-manual-theme");
-if (saved === "dark" || saved === "light") root.dataset.theme = saved;
-btn.textContent = saved ?? "auto";
+const readTheme = () => {
+  try { return localStorage.getItem("hay-manual-theme"); } catch { return null; }
+};
+const writeTheme = (value) => {
+  try { localStorage.setItem("hay-manual-theme", value); } catch {}
+};
+const saved = readTheme();
+let theme = saved === "dark" || saved === "light" || saved === "auto" ? saved : "auto";
+const applyTheme = () => {
+  if (theme === "auto") delete root.dataset.theme; else root.dataset.theme = theme;
+  btn.textContent = theme;
+  btn.setAttribute("aria-label", `Color theme: ${theme}. Activate to switch theme.`);
+};
+applyTheme();
 btn.addEventListener("click", () => {
-  const n = next[localStorage.getItem("hay-manual-theme") ?? "auto"];
-  if (n === "auto") delete root.dataset.theme; else root.dataset.theme = n;
-  localStorage.setItem("hay-manual-theme", n);
-  btn.textContent = n;
+  theme = next[theme];
+  applyTheme();
+  writeTheme(theme);
 });
 
 // ── scrollspy: aria-current drives TOC highlight; IO because scroll handlers jank ──
@@ -595,12 +605,41 @@ const spy = new IntersectionObserver((entries) => {
 }, { rootMargin: "-20% 0px -70% 0px" });
 document.querySelectorAll("main section[id]").forEach((s) => spy.observe(s));
 
-// ── copy buttons: clipboard API, inline confirmation, no toast library ──
+// ── copy buttons: secure-context API first, local-file fallback, accessible status ──
+const copyText = async (text) => {
+  if (navigator.clipboard?.writeText) {
+    try { await navigator.clipboard.writeText(text); return; } catch {}
+  }
+  const box = document.createElement("textarea");
+  box.value = text;
+  box.setAttribute("readonly", "");
+  box.style.cssText = "position:fixed;inset:0;opacity:0;pointer-events:none";
+  document.body.append(box);
+  box.select();
+  let copied = false;
+  try { copied = document.execCommand("copy"); } finally { box.remove(); }
+  if (!copied) throw new Error("clipboard unavailable");
+};
 for (const b of document.querySelectorAll(".copy")) {
+  b.setAttribute("aria-label", "Copy command to clipboard");
+  b.setAttribute("aria-live", "polite");
+  let reset;
   b.addEventListener("click", async () => {
-    await navigator.clipboard.writeText(b.previousElementSibling.querySelector("code").textContent);
-    b.textContent = "copied"; b.dataset.done = "";
-    setTimeout(() => { delete b.dataset.done; b.textContent = "copy"; }, 1400);
+    clearTimeout(reset);
+    const code = b.previousElementSibling?.querySelector("code");
+    try {
+      if (!code) throw new Error("copy source missing");
+      await copyText(code.textContent ?? "");
+      b.textContent = "copied";
+      b.dataset.done = "";
+    } catch {
+      b.textContent = "copy failed";
+      delete b.dataset.done;
+    }
+    reset = setTimeout(() => {
+      delete b.dataset.done;
+      b.textContent = "copy";
+    }, 1800);
   });
 }
 

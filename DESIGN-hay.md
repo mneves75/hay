@@ -46,7 +46,7 @@ failure case, where a generic word buries its own definition.
 | definition > mention | a line declaring the symbol is usually the answer | CodeSearchNet: normalising identifiers halves MRR (0.809 → 0.419), so identifier position carries the signal |
 | exact case/word match > substring | `Config` for `config` beats `reconfiguration` | free from the matcher |
 | code > prose | a definition beats a plan describing it | **weak prior — must be validated.** Repo-level prose share predicted nothing (ρ −0.035); it may still work as a per-result tiebreak, which is a different claim |
-| live > archived path | `src/` over `archive/`, `.scratch/` | **weak prior.** Measured lift for deadness detection was only 1.14; include only if ablation shows it helps ranking |
+| live > archived path | `src/` over `archive/`, `.scratch/` | **weak prior.** Measured lift for deadness detection was only 1.13; include only if ablation shows it helps ranking |
 | tests down-ranked unless the query looks test-related | `handleApi` usually means the implementation | untested hypothesis |
 | file concentration | many matches for a rare term = the home of that concept | this is just BM25 term frequency; listed for clarity |
 
@@ -167,9 +167,12 @@ Common ripgrep flags pass through unchanged (`-i -w -F -n -C -g -t --hidden --no
 
 # Results — built and measured
 
-Implemented in `hay/` (Rust, 1,850 lines of source plus 228 of CLI contract tests, 41 tests, zero
-warnings). A/B against the identical test collection: 12 repositories, 2,508 judged queries from
-real agent transcripts.
+Implemented in `hay/` (Rust 2024, no unsafe code, clippy clean). A/B against the identical test
+collection: 12 repositories, 2,508 judged queries from real agent transcripts.
+
+**Version-history note:** this design numbered internal development cycles 0.1.0–0.7.0 before
+public tags restarted at v0.1.0. The unprefixed labels below refer to those research cycles;
+`hay/Cargo.toml` and the changelog are the public-release source of truth.
 
 The ranking code was unchanged from 0.1.0 through 0.3.0; 0.4.0 added the typed-declaration rule for
 brace languages, and 0.5.0 changed no ranking behaviour at all — its numbers differ from 0.4.0's

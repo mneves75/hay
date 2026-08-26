@@ -10,9 +10,10 @@ Blocked by: 03, 08
 checked against anything. Ticket 03 asked for a signal that survives the case where the sludge *is*
 the repo. Test the candidates against ground truth rather than adding more heuristics.
 
-Ground truth available here and almost nowhere else: 3,144 recorded agent sessions say which prose
-files an agent has ever actually opened. A document nothing has opened across thousands of sessions
-is dead by revealed preference.
+Ground truth available here and almost nowhere else: the transcript store contains 3,144 recorded
+agent sessions, of which 2,256 have an exact working-directory match to one of the 12 eligible
+repositories. Those sessions say which prose files an agent actually opened. A document nothing
+opened across thousands of matching sessions is dead by revealed preference.
 
 ## Answer
 
@@ -25,20 +26,24 @@ precise.
 
 ### Across the 12 measured repositories
 
-**1,191 of 1,567 prose files (76%) were never opened by any agent in 3,144 sessions.** Per repo the
-rate runs 4% to 90%.
+**1,248 of 1,604 prose files (78%) were never opened by any agent across 2,256 matching sessions.**
+Per repo the rate runs 8% to 91%.
+
+These are the 2026-08-26 recomputed figures. The earlier report counted all transcript files as
+sessions for this cohort and subtracted one inbound match even when the target file was not among
+the matches; the corrected instrument filters exact repositories and excludes only the actual target.
 
 | signal | precision | lift |
 |---|---|---|
-| suspect path / filename | 86% | 1.14 |
-| no inbound links from any file | 85% | 1.12 |
-| both together | 87% | 1.15 |
+| suspect path / filename | 88% | 1.13 |
+| no inbound links from any file | 85% | 1.09 |
+| both together | 87% | 1.12 |
 
 Git age was tested too and is unusable as specified: the median-age split degenerates in repos where
 most files share a commit date (several repos produced a threshold of 0-7 days, firing on nothing or
 everything, with lift 0.00-1.31 and no stable direction).
 
-**Lift 1.14 means 14% better than guessing.** The path/filename heuristic that `grep-hygiene.ts`
+**Lift 1.13 means 13% better than guessing.** The path/filename heuristic that `grep-hygiene.ts`
 ships as `suspectShare` is, against real behaviour, very slightly better than flagging documents at
 random. It does not deserve to be a metric.
 
@@ -62,7 +67,8 @@ prose equally, and almost all prose is inert. It was measuring the size of the h
 - Repos differ in how long they have been worked on with agent assistance, which moves the base rate
   independently of document quality.
 - Inbound-link counting is a basename substring match, so a common filename (`README.md`,
-  `index.md`) inflates its own inbound count.
+  `index.md`) can still inflate matches in other files. The target file itself is excluded from
+  its count.
 
 ### Follow-up worth doing
 

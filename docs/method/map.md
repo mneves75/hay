@@ -54,14 +54,18 @@ skill + repo conventions that apply the standard. Must work on the user's own re
 > **Cycle 2 route (2026-08-23):** [ticket 11](issues/11-cycle-2-plan.md) is the pre-registered
 > plan — docs-track dev set first, query-conditional prior gated on its counts, then the
 > rankable-deep bucket, weight fitting, external validity, and the token-outcome measure.
+>
+> **Release-integrity route (2026-08-25):** [ticket 12](issues/12-release-integrity.md)
+> fixes the installer, private-data boundary, archive extraction, measurement provenance, and
+> generated public surfaces without changing ranking or moving the failed gate.
 
 ## Decisions so far
 
 <!-- one line per closed ticket: gist + link. Zoom the ticket for the detail. -->
 
 - [09 — Can a signal tell a dead document from a live one?](issues/09-document-authority.md) — No,
-  and it does not matter: **1,191 of 1,567 prose files (76%) were never opened by any agent across
-  3,144 sessions**. Every candidate signal scores lift ~1.12-1.15, i.e. ~14% better than random,
+  and it does not matter: **1,248 of 1,604 prose files (78%) were never opened by any agent across
+  2,256 matching sessions**. Every candidate signal scores lift ~1.09-1.13, i.e. barely better than random,
   because nearly everything is dead. Dead documentation is the haystack, not the needle — the
   useful output is the observed never-opened list, which needs no inference.
 

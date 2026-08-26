@@ -23,7 +23,8 @@
  */
 
 import { existsSync } from "node:fs";
-import { basename, resolve, sep } from "node:path";
+import { basename } from "node:path";
+import { privateCorpusPath, writePrivateCorpus } from "./harvest-queries.ts";
 
 /** Beyond this many results an answer is unreachable by scrolling grep output; RR counts as 0. */
 const RANK_CAP = 1000;
@@ -202,12 +203,12 @@ export async function rankOfAnswer(
   const proc = Bun.spawn(retrieverArgv(retriever, query), {
     cwd: repo,
     stdout: "pipe",
-    stderr: retriever === "hay" ? "pipe" : "ignore",
+    stderr: "pipe",
   });
-  const errText: Promise<string> =
-    retriever === "hay" ? new Response(proc.stderr as ReadableStream).text().catch(() => "") : Promise.resolve("");
+  const errText = new Response(proc.stderr).text().catch(() => "");
   const dec = new TextDecoder();
   let buf = "";
+  let stoppedEarly = false;
   const scan = new ResultScan(answers);
   outer: for await (const chunk of proc.stdout as AsyncIterable<Uint8Array>) {
     buf += dec.decode(chunk, { stream: true });
@@ -215,13 +216,22 @@ export async function rankOfAnswer(
     while ((nl = buf.indexOf("\n")) !== -1) {
       const line = buf.slice(0, nl);
       buf = buf.slice(nl + 1);
-      if (!scan.push(line)) break outer;
+      if (!scan.push(line)) { stoppedEarly = true; break outer; }
     }
   }
-  proc.kill();
-  await proc.exited.catch(() => {});
-  const truncated = /ranked the \d+ strongest/.test(await errText);
+  if (stoppedEarly) proc.kill();
+  const code = await proc.exited;
+  const diagnostic = await errText;
+  assertCompleteExit(code, stoppedEarly, retriever, diagnostic);
+  const truncated = /ranked the \d+ strongest/.test(diagnostic);
   return { rank: scan.rank, scanned: scan.scanned, ndcg: scan.ndcg, pageComplete: scan.pageComplete, files: scan.files, truncated };
+}
+
+/** A deliberate early stop is part of rank measurement; a natural incomplete exit is not. */
+export function assertCompleteExit(code: number, stoppedEarly: boolean, purpose: string, diagnostic = ""): void {
+  if (!stoppedEarly && code >= 2) throw new Error(
+    `${purpose} failed (exit ${code}): ${diagnostic.trim().slice(0, 300) || "no diagnostic"}`,
+  );
 }
 
 /**
@@ -386,7 +396,13 @@ export function mulberry32(seed: number): () => number {
 
 export const mean = (xs: number[]): number => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
 
-export type Interval = { mean: number; lo: number; hi: number; p: number; n: number };
+export type Interval = {
+  mean: number; lo: number; hi: number; p: number;
+  /** Number of individual observations contributing to the estimand. */
+  n: number;
+  /** Number of independently resampled units (queries or repository clusters). */
+  clusters: number;
+};
 
 /**
  * Percentile bootstrap over paired differences.
@@ -402,7 +418,7 @@ export function bootstrapCI(groups: number[][], opts: { replicates?: number; see
   const rand = mulberry32(opts.seed ?? 20260819);
   const flat = groups.flat();
   const observed = mean(flat);
-  if (groups.length === 0) return { mean: 0, lo: 0, hi: 0, p: 1, n: 0 };
+  if (groups.length === 0) return { mean: 0, lo: 0, hi: 0, p: 1, n: 0, clusters: 0 };
 
   const means: number[] = [];
   for (let b = 0; b < replicates; b++) {
@@ -424,7 +440,7 @@ export function bootstrapCI(groups: number[][], opts: { replicates?: number; see
   // and bounds the answer at the simulation's own resolution.
   const crossings = means.filter((m) => (observed >= 0 ? m <= 0 : m >= 0)).length;
   const p = Math.min(1, (2 * (crossings + 1)) / (replicates + 1));
-  return { mean: observed, lo: at(0.025), hi: at(0.975), p, n: flat.length };
+  return { mean: observed, lo: at(0.025), hi: at(0.975), p, n: flat.length, clusters: groups.length };
 }
 
 /**
@@ -524,14 +540,14 @@ export function gateStats(pairs: Pair[]): GateStats {
   };
 }
 
-/**
- * Is the dump destination really inside `corpus/`? A plain `startsWith("corpus/")` accepted
- * `corpus/../evidence/pairs.json` — a path-traversal hole in the one guard standing between the
- * private per-query dump and a committed directory (review finding, 2026-08-20). Resolve first,
- * then compare against the canonical corpus root.
- */
+/** Use the same canonical boundary and symlink-aware writer as transcript harvesting. */
 export function isUnderCorpus(p: string, cwd = process.cwd()): boolean {
-  return resolve(cwd, p).startsWith(resolve(cwd, "corpus") + sep);
+  try {
+    privateCorpusPath(p, cwd);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /** Group paired differences by repository, for the cluster bootstrap. */
@@ -600,6 +616,13 @@ if (import.meta.main) {
     try { parseArgv(["--retriever"]); } catch { threw = true; }
     if (!threw) throw new Error("missing option value must throw");
 
+    // A natural incomplete child exit invalidates evidence; our own early stop remains valid.
+    let exitThrew = false;
+    try { assertCompleteExit(2, false, "fixture", "partial failure"); } catch { exitThrew = true; }
+    if (!exitThrew) throw new Error("natural exit 2 must fail closed");
+    assertCompleteExit(2, true, "fixture", "deliberately stopped");
+    assertCompleteExit(1, false, "fixture", "no matches");
+
     // The bootstrap is an instrument, and every instrument in this project has been wrong at
     // least once. Check it against cases whose answer is known before trusting an interval.
     const seeded = mulberry32(1);
@@ -610,6 +633,8 @@ if (import.meta.main) {
     const constant = bootstrapCI(Array.from({ length: 200 }, () => [0.1]), { replicates: 500 });
     if (!(constant.lo > 0.09 && constant.hi < 0.11)) throw new Error(`constant effect CI wrong: ${JSON.stringify(constant)}`);
     if (constant.p > 0.01) throw new Error(`constant effect should be significant, p=${constant.p}`);
+    eq(constant.n, 200, "bootstrap reports observations");
+    eq(constant.clusters, 200, "query bootstrap reports resampling units");
     // No effect: symmetric around zero, so the interval must straddle it and p must be large.
     const none = bootstrapCI(Array.from({ length: 400 }, (_, i) => [i % 2 ? 0.5 : -0.5]), { replicates: 500 });
     if (!(none.lo < 0 && none.hi > 0)) throw new Error(`null effect CI must straddle zero: ${JSON.stringify(none)}`);
@@ -623,6 +648,9 @@ if (import.meta.main) {
     );
     eq(clusters.length, 2, "one cluster per repo");
     eq(clusters.map((c) => c.length).sort(), [1, 2], "queries stay inside their repo");
+    const clusteredInterval = bootstrapCI(clusters, { replicates: 20 });
+    eq(clusteredInterval.n, 3, "cluster interval reports all observations");
+    eq(clusteredInterval.clusters, 2, "cluster interval reports repositories separately");
     // Two different repositories that share a basename must not collapse into one cluster.
     const collide = byCluster([mk("/x/core", "core", "q", 1), mk("/y/core", "core", "r", 1)], (p) => p.rrHay - p.rrRg);
     eq(collide.length, 2, "same basename, different paths, must stay separate clusters");
@@ -812,9 +840,9 @@ if (import.meta.main) {
     console.error("--dump-pairs only makes sense with --compare; the paired records are what it dumps.");
     process.exit(1);
   }
-  if (dumpPath && !isUnderCorpus(dumpPath) && !flags["--i-know-this-is-private"]) {
+  if (dumpPath && !isUnderCorpus(dumpPath)) {
     console.error(
-      "--dump-pairs writes real queries and file paths from private repositories. Write it under corpus/ (gitignored), or pass --i-know-this-is-private to write elsewhere.",
+      "--dump-pairs writes real queries and file paths from private repositories and must stay under corpus/ (gitignored).",
     );
     process.exit(1);
   }
@@ -874,7 +902,7 @@ if (import.meta.main) {
     };
     const show = (name: string, e: ReturnType<typeof effect>) => {
       const i = (label: string, v: Interval, rp: number) =>
-        console.error(`  ${label.padEnd(22)} ${v.mean >= 0 ? "+" : ""}${v.mean.toFixed(4)}  95% CI [${v.lo.toFixed(4)}, ${v.hi.toFixed(4)}]  boot p=${v.p.toFixed(4)}  rand p=${rp.toFixed(4)}  n=${v.n}`);
+        console.error(`  ${label.padEnd(22)} ${v.mean >= 0 ? "+" : ""}${v.mean.toFixed(4)}  95% CI [${v.lo.toFixed(4)}, ${v.hi.toFixed(4)}]  boot p=${v.p.toFixed(4)}  rand p=${rp.toFixed(4)}  observations=${v.n}  clusters=${v.clusters}`);
       i(`${name} (by query)`, e.byQuery, e.randomizationByQuery);
       i(`${name} (by repo)`, e.byRepo, e.randomizationByRepo);
     };
@@ -898,7 +926,7 @@ if (import.meta.main) {
     );
     if (dumpPath) {
       console.error(`\nhygiene: ${dumpPath} contains real queries and paths from private repositories. Never commit or publish it.`);
-      await Bun.write(dumpPath, JSON.stringify(pairs, null, 2));
+      writePrivateCorpus(dumpPath, JSON.stringify(pairs, null, 2));
       console.error(`wrote ${pairs.length} pairs to ${dumpPath}`);
     }
     if (flags["--json"]) console.log(JSON.stringify(report, null, 2));

@@ -124,6 +124,7 @@ own crates and `lexopt` deliberately. Check what they already implement before w
 
 Rust edition 2024, MSRV 1.88 (pinned by the ripgrep crates' own `rust-version`), no `unsafe`, clippy clean under `-D warnings`. Comments explain why
 a non-obvious thing is the way it is — several encode a defect that already happened, so do not
-delete them as noise. TypeScript tools are dependency-free and run under `bun`.
+delete them as noise. TypeScript tools run under `bun`; only archive extraction may use the
+audited `tar` dependency, because untrusted tar handling is not hand-rolled here.
 
 Conventional Commits. Update `CHANGELOG.md` for anything user-visible.

@@ -58,24 +58,38 @@ in both tools (measured: 367 MB for `hay`, 368 MB for ripgrep, on the same patte
 `grep-hygiene.ts`) reads your local coding-agent transcripts. Those contain real search terms,
 real file paths, and real project names from whatever you have worked on.
 
-- Output goes to `corpus/`, which is gitignored. Keep it that way.
+- Transcript-derived output and paired-query dumps only go beneath a real `corpus/` directory,
+  which is gitignored. Directories are 0700, files are 0600, and traversal or symlinked parents are
+  rejected. Files are replaced atomically so an existing hard link is not truncated. There is no
+  override for writing private pairs elsewhere.
 - Use `path=label` to anonymise repository identity and `--redact-names` to pseudonymise
-  identifiers before sharing any report.
+  identifiers before sharing any aggregate report.
 - The tools warn on stderr when a report would quote a security-sensitive identifier. Do not
   ignore that warning.
 
 `swe-explore.ts` is the one networked measurement tool. It reads fixed HTTPS endpoints on
-Hugging Face and GitHub, then invokes `tar` with an argument array rather than a shell. Remote
-instance IDs, GitHub owner/repository slugs, and 40-hex commit IDs are validated before they can
-name a cache path or archive URL. Ground-truth file names are normalized as Git paths; absolute
-paths, parent traversal, NULs, and platform-specific separators are rejected before a filesystem
-probe. Repository archive downloads have a byte budget and incomplete extractions are discarded.
-The tool never executes code from downloaded repositories.
+Hugging Face and GitHub and extracts archives with the maintained `tar` package rather than a
+shell command or hand-rolled parser. Remote instance IDs, GitHub owner/repository slugs, and
+40-hex commit IDs are validated before they can name a cache path or archive URL. Ground-truth
+file names are normalized as Git paths; absolute paths, parent traversal, NULs, and
+platform-specific separators are rejected before a filesystem probe. Downloads and expanded
+contents have independent byte caps; decompression ratio, member count, path depth, links, special
+entries, and unsafe member paths are bounded or rejected. The first violated archive limit aborts
+the compressed input stream and the parser's decompressor. Extraction occurs in a private
+temporary directory promoted only after complete validation. The tool never executes downloaded code.
+
+`install.sh` resolves `HAY_REF` exactly as a branch, tag, or commit and refuses an unresolved
+ref rather than falling back to `main`. It installs with `cargo install --locked` and
+smoke-tests the binary at Cargo's actual install path, so an older `hay` on `PATH` cannot fake
+success. Prefer a versioned script URL and matching `HAY_REF`; inspect any downloaded installer
+before running it.
 
 ## Supply chain
 
 `hay` depends on ripgrep's own crates (`ignore`, `grep-regex`, `grep-searcher`, `grep-matcher`),
-`serde_json`, and the Bytecode Alliance's `cap-std` for capability-scoped context reads. CI runs
+`serde_json`, and the Bytecode Alliance's `cap-std` for capability-scoped context reads. The
+measurement kit's sole runtime dependency is the locked, audited `tar` parser used at the untrusted
+archive boundary. CI runs
 Rust and Bun vulnerability audits, GitHub Actions are pinned by full commit SHA, and Dependabot
 proposes Cargo, Bun, and Actions updates weekly. Release archives have SHA-256 checksums and
 GitHub artifact attestations bound to the tag workflow. Verify both before installing:

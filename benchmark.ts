@@ -27,12 +27,19 @@ import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { bootstrapCI, mean, median, mulberry32, randomizationP, type Interval } from "./measure-mrr.ts";
+import { assertCompleteExit, bootstrapCI, mean, median, mulberry32, randomizationP, type Interval } from "./measure-mrr.ts";
 
 /** Beyond this many result lines the answer is unreachable by scrolling; RR counts as 0. */
 const RANK_CAP = 1000;
 /** A single search may not exceed this. Recorded as a timeout rather than silently dropped. */
 const TIMEOUT_MS = 60_000;
+
+/** Commands without a no-match exit code must succeed completely. */
+export function assertZeroExit(code: number, purpose: string, diagnostic = ""): void {
+  if (code !== 0) throw new Error(
+    `${purpose} failed (exit ${code}): ${diagnostic.trim().slice(0, 300) || "no diagnostic"}`,
+  );
+}
 
 // ── corpora ───────────────────────────────────────────────────────────────────
 
@@ -401,10 +408,12 @@ export async function groundTruth(root: string, c: Corpus): Promise<Map<string, 
     if (!astGrep) throw new Error("ast-grep is required to build ground truth; install it first");
     const proc = Bun.spawn(
       [astGrep, "--lang", astLang(c.lang), "-p", pattern, "--json=stream", "."],
-      { cwd: root, stdout: "pipe", stderr: "ignore" },
+      { cwd: root, stdout: "pipe", stderr: "pipe" },
     );
+    const errText = new Response(proc.stderr).text();
     const text = await new Response(proc.stdout).text();
-    await proc.exited.catch(() => {});
+    const code = await proc.exited;
+    assertCompleteExit(code, false, `${c.name} ground truth`, await errText);
     for (const line of text.split("\n")) {
       if (!line.trim()) continue;
       let o: { file?: string; metaVariables?: { single?: Record<string, { text?: string }> } };
@@ -434,10 +443,12 @@ async function occurrences(root: string, symbol: string): Promise<number> {
   // Same walk as the tools under test, so query selection cannot depend on the operator's global
   // gitignore — otherwise the "deterministic, seeded" sample is only deterministic per machine.
   const proc = Bun.spawn([rg, ...RG_PARITY, "-F", "-c", "--no-filename", "-e", symbol, "."], {
-    cwd: root, stdout: "pipe", stderr: "ignore",
+    cwd: root, stdout: "pipe", stderr: "pipe",
   });
+  const errText = new Response(proc.stderr).text();
   const text = await new Response(proc.stdout).text();
-  await proc.exited.catch(() => {});
+  const code = await proc.exited;
+  assertCompleteExit(code, false, `occurrence count for ${JSON.stringify(symbol)}`, await errText);
   return text.split("\n").filter(Boolean).reduce((a, b) => a + (Number(b) || 0), 0);
 }
 
@@ -481,10 +492,12 @@ export async function rankOf(tool: Tool, root: string, q: Query, lang: string): 
   const bin = resolveBin(tool);
   if (!bin) return { rank: null, scanned: 0, timedOut: false, truncated: false };
   const proc = Bun.spawn([bin, ...tool.args(q.symbol, lang)], {
-    cwd: root, stdout: "pipe", stderr: "ignore",
+    cwd: root, stdout: "pipe", stderr: "pipe",
   });
+  const errText = new Response(proc.stderr).text();
   const dec = new TextDecoder();
   let buf = "", scanned = 0, rank: number | null = null, timedOut = false, truncated = false;
+  let stoppedEarly = false, streamError: unknown;
   // Set INSIDE the callback: killing the child closes stdout as an ordinary EOF, so the loop below
   // ends normally and the `catch` never runs. Without this the report counts zero timeouts no
   // matter how many searches hit the cap, and a timeout is indistinguishable from "not found".
@@ -503,14 +516,17 @@ export async function rankOf(tool: Tool, root: string, q: Query, lang: string): 
         const path = tool.parse(line);
         if (path === null) continue;
         scanned++;
-        if (path === q.answer) { rank = scanned; break outer; }
-        if (scanned >= RANK_CAP) { truncated = true; break outer; }
+        if (path === q.answer) { rank = scanned; stoppedEarly = true; break outer; }
+        if (scanned >= RANK_CAP) { truncated = true; stoppedEarly = true; break outer; }
       }
     }
-  } catch { timedOut = true; }
+  } catch (error) { streamError = error; }
   clearTimeout(timer);
-  proc.kill();
-  await proc.exited.catch(() => {});
+  if (stoppedEarly && !timedOut) proc.kill();
+  const code = await proc.exited;
+  const diagnostic = await errText;
+  if (streamError && !timedOut) throw streamError;
+  assertCompleteExit(code, stoppedEarly || timedOut, tool.id, diagnostic);
   return { rank, scanned, timedOut, truncated };
 }
 
@@ -552,9 +568,10 @@ async function time(tool: Tool, root: string, query: string, lang: string, reps:
       new Response(proc.stderr).text(),
       new Promise<string>((r) => setTimeout(() => r(""), TIMEOUT_MS + 5_000)),
     ]);
-    await proc.exited.catch(() => {});
+    const code = await proc.exited;
     finished = true;
     clearTimeout(timer);
+    assertCompleteExit(code, killed, `${tool.id} timing`, err);
     const m = err.match(/(\d+)\s+maximum resident set size/);
     return { ms: performance.now() - started, rssMb: m ? Number(m[1]) / 1048576 : null, timedOut: killed };
   };
@@ -593,6 +610,7 @@ export type ToolScore = {
 export type CorpusReport = {
   corpus: string;
   lang: string;
+  provenance: { revision: string; dirty: boolean };
   files: { onDisk: number; rgVisible: number; gitTracked: number };
   symbolsUniquelyDeclared: number;
   queries: number;
@@ -609,10 +627,12 @@ const medianOf = (xs: number[]) => (xs.length === 0 ? null : median(xs));
 
 async function countFiles(root: string): Promise<{ onDisk: number; rgVisible: number; gitTracked: number }> {
   const count = async (cmd: string[]) => {
-    const p = Bun.spawn(cmd, { cwd: root, stdout: "pipe", stderr: "ignore" });
-    const t = await new Response(p.stdout).text();
-    await p.exited.catch(() => {});
-    return t.split("\n").filter(Boolean).length;
+    const p = Bun.spawn(cmd, { cwd: root, stdout: "pipe", stderr: "pipe" });
+    const errText = new Response(p.stderr).text();
+    const text = await new Response(p.stdout).text();
+    const code = await p.exited;
+    assertZeroExit(code, cmd[0] ?? "file count", await errText);
+    return text.split("\n").filter(Boolean).length;
   };
   return {
     onDisk: await count([Bun.which("find") ?? "/usr/bin/find", ".", "-type", "f", "-not", "-path", "./.git/*"]),
@@ -620,6 +640,23 @@ async function countFiles(root: string): Promise<{ onDisk: number; rgVisible: nu
     rgVisible: await count([Bun.which("rg") ?? "rg", ...RG_PARITY, "--files"]),
     gitTracked: await count([Bun.which("git") ?? "git", "ls-files"]),
   };
+}
+
+export async function corpusProvenance(root: string): Promise<{ revision: string; dirty: boolean }> {
+  const git = Bun.which("git");
+  if (!git) throw new Error("git is required to record benchmark corpus provenance");
+  const run = async (args: string[], purpose: string) => {
+    const proc = Bun.spawn([git, ...args], { cwd: root, stdout: "pipe", stderr: "pipe" });
+    const errText = new Response(proc.stderr).text();
+    const text = await new Response(proc.stdout).text();
+    const code = await proc.exited;
+    assertZeroExit(code, purpose, await errText);
+    return text.trim();
+  };
+  const revision = await run(["rev-parse", "HEAD"], "corpus revision");
+  if (!/^[0-9a-f]{40}$/i.test(revision)) throw new Error(`invalid corpus revision: ${JSON.stringify(revision)}`);
+  const dirty = (await run(["status", "--porcelain", "--untracked-files=all"], "corpus dirty-state check")).length > 0;
+  return { revision, dirty };
 }
 
 // ── docs track ────────────────────────────────────────────────────────────────
@@ -640,6 +677,7 @@ export type DocsAggregate = {
 export type DocsCorpusReport = DocsAggregate & {
   corpus: string;
   lang: string;
+  provenance: { revision: string; dirty: boolean };
   eligibleQueries: number;
   queries: DocsQueryRecord[];
 };
@@ -691,9 +729,11 @@ async function versionsFor(tools: Tool[]): Promise<Record<string, string>> {
   for (const tool of tools) {
     const bin = resolveBin(tool);
     if (!bin) { versions[tool.id] = "not installed"; continue; }
-    const proc = Bun.spawn([bin, "--version"], { stdout: "pipe", stderr: "ignore" });
+    const proc = Bun.spawn([bin, "--version"], { stdout: "pipe", stderr: "pipe" });
+    const errText = new Response(proc.stderr).text();
     versions[tool.id] = (await new Response(proc.stdout).text()).split("\n")[0]!.trim();
-    await proc.exited.catch(() => {});
+    const code = await proc.exited;
+    assertZeroExit(code, `${tool.id} --version`, await errText);
   }
   return versions;
 }
@@ -710,10 +750,11 @@ async function runDocsTrack(
   for (const corpus of corpora) {
     const root = corpus.dir === "." ? process.cwd() : `${corporaDir}/${corpus.dir}`;
     if (!existsSync(root)) {
-      console.error(`skipping ${corpus.name}: ${root} is absent${corpus.clone ? ` (git clone --depth 1 ${corpus.clone})` : ""}`);
-      continue;
+      console.error(`benchmark corpus missing: ${corpus.name} at ${root}`);
+      process.exit(2);
     }
     console.error(`\n=== ${corpus.name} docs track ===`);
+    const provenance = await corpusProvenance(root);
     const eligible = await docsGroundTruth(root, corpus);
     const selected = sample(eligible, sampleSize, seed);
     console.error(`  ${eligible.length} eligible docs queries; sampled ${selected.length}`);
@@ -731,6 +772,7 @@ async function runDocsTrack(
     );
     reports.push({
       corpus: corpus.name,
+      provenance,
       lang: corpus.lang,
       eligibleQueries: eligible.length,
       queries,
@@ -800,6 +842,24 @@ if (import.meta.main) {
     let langThrew = false;
     try { astLang("cobol"); } catch { langThrew = true; }
     if (!langThrew) throw new Error("an unknown corpus lang must throw, not silently parse as rust");
+    const provenance = await corpusProvenance(process.cwd());
+    if (!/^[0-9a-f]{40}$/i.test(provenance.revision) || typeof provenance.dirty !== "boolean")
+      throw new Error("corpus provenance must bind a revision and dirty state");
+    const bunBin = Bun.which("bun");
+    if (!bunBin) throw new Error("selftest requires bun");
+    const exitFixture: Tool = {
+      id: "exit-fixture", label: "exit fixture", bin: bunBin,
+      args: () => ["-e", "console.log('noise.ts:1:x'); console.error('incomplete'); process.exit(2)"],
+      parse: plain, scope: "fixture", ranked: false,
+    };
+    let incompleteThrew = false;
+    try { await rankOf(exitFixture, process.cwd(), { symbol: "x", answer: "answer.ts", occurrences: 1 }, "ts"); }
+    catch (error) { incompleteThrew = String(error).includes("exit 2"); }
+    if (!incompleteThrew) throw new Error("a naturally incomplete search must fail closed");
+    let zeroExitThrew = false;
+    try { assertZeroExit(1, "fixture", "generic failure"); } catch { zeroExitThrew = true; }
+    if (!zeroExitThrew) throw new Error("generic command exit 1 must fail closed");
+    assertZeroExit(0, "fixture");
     // A deterministic sample is what makes the benchmark rerunnable.
     eq(sample([1, 2, 3, 4, 5], 3, 7), sample([1, 2, 3, 4, 5], 3, 7), "same seed, same sample");
     // --queries-from: a prior evidence file must pin exactly its symbols, and anything that is
@@ -908,11 +968,12 @@ if (import.meta.main) {
   for (const c of selectedCorpora) {
     const root = c.dir === "." ? process.cwd() : `${corporaDir}/${c.dir}`;
     if (!existsSync(root)) {
-      console.error(`skipping ${c.name}: ${root} is absent${c.clone ? ` (git clone --depth 1 ${c.clone})` : ""}`);
-      continue;
+      console.error(`benchmark corpus missing: ${c.name} at ${root}`);
+      process.exit(2);
     }
     console.error(`\n=== ${c.name} (${c.lang}) ===`);
     const files = await countFiles(root);
+    const provenance = await corpusProvenance(root);
     const truth = await groundTruth(root, c);
     console.error(`  ${truth.size} symbols declared exactly once`);
 
@@ -970,7 +1031,7 @@ if (import.meta.main) {
         unreachable: rs.filter((r) => r.rank === null).length / (rs.length || 1),
         timeouts: rs.filter((r) => r.timedOut).length,
       };
-      if (t.id !== "rg" && rs.length > 0) {
+      if (t.id !== "rg" && score.available && rs.length > 0) {
         const diffs = rr.map((v, i) => [v - (baseRr[i] ?? 0)]);
         score.vsRipgrep = bootstrapCI(diffs);
         score.vsRipgrepRandP = randomizationP(diffs);
@@ -990,7 +1051,7 @@ if (import.meta.main) {
     }
 
     reports.push({
-      corpus: c.name, lang: c.lang, files,
+      corpus: c.name, lang: c.lang, files, provenance,
       symbolsUniquelyDeclared: truth.size,
       queries: queries.length, symbols: queries.map((q) => q.symbol), tools, perf,
     });
@@ -998,6 +1059,7 @@ if (import.meta.main) {
 
   const payload = {
     generatedBy: "benchmark.ts",
+    generatedAt: new Date().toISOString(),
     task: "definition finding: given a symbol declared exactly once, rank of the declaring file",
     groundTruth: "ast-grep (a parser), independent of every heuristic under test",
     rankCap: RANK_CAP,

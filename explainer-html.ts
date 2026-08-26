@@ -11,12 +11,18 @@
  * and links. Anything else is left as text rather than half-rendered, because a renderer that
  * silently mangles a construct is worse than one that admits it does not handle it.
  *
- * Usage: bun explainer-html.ts --in BENCHMARK_FEYNMAN.md --out benchmark-feynman.html
+ * Usage: bun explainer-html.ts --in BENCHMARK_FEYNMAN.md --out BENCHMARK_FEYNMAN.html
  *        bun explainer-html.ts --selftest
  */
 
 export const escapeHtml = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+/** Only ordinary web URLs and local document links become clickable. */
+export function safeHref(href: string): boolean {
+  if (/^https?:\/\//i.test(href) || href.startsWith("#") || /^\.{1,2}\//.test(href)) return true;
+  return !href.startsWith("//") && !/^[A-Za-z][A-Za-z0-9+.-]*:/.test(href);
+}
 
 /**
  * Inline formatting for one already-escaped run of text.
@@ -32,7 +38,10 @@ export function inline(text: string): string {
     return `\u0000${spans.length - 1}\u0000`;
   });
   s = escapeHtml(s);
-  s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_, label, href) => `<a href="${href}">${label}</a>`);
+  s = s.replace(
+    /\[([^\]]+)\]\(([^)\s]+)\)/g,
+    (_, label, href) => safeHref(href) ? `<a href="${href}">${label}</a>` : label,
+  );
   // Non-greedy and permissive about its contents, so bold may CONTAIN italics. The stricter
   // `[^*]+` form silently left `**bold with *italic* inside**` as literal asterisks on the page.
   s = s.replace(/\*\*(.+?)\*\*/gs, "<strong>$1</strong>");
@@ -167,7 +176,7 @@ export function render(blocks: Block[]): string {
         const [head, ...body] = b.rows;
         const at = (i: number) => (b.align[i] && b.align[i] !== "left" ? ` class="${b.align[i]}"` : "");
         out.push(
-          `<div class="scroll"><table><thead><tr>${(head ?? []).map((c, i) => `<th${at(i)}>${inline(c)}</th>`).join("")}</tr></thead>` +
+          `<div class="scroll"><table><thead><tr>${(head ?? []).map((c, i) => `<th scope="col"${at(i)}>${inline(c)}</th>`).join("")}</tr></thead>` +
             `<tbody>${body.map((r) => `<tr>${r.map((c, i) => `<td${at(i)}>${inline(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`,
         );
         break;
@@ -185,6 +194,7 @@ export function render(blocks: Block[]): string {
  * the measure is set for prose. Same palette, because they are two halves of one document.
  */
 export function page(title: string, lede: string, body: string): string {
+  const canonical = "https://mneves75.github.io/hay/BENCHMARK_FEYNMAN.html";
   // A complete document, not a fragment: this page is opened from disk as often as it is hosted,
   // and a bare fragment leaves the browser to invent <html>, <head> and the language. `lang` in
   // particular is what a screen reader uses to choose a voice.
@@ -194,6 +204,13 @@ export function page(title: string, lede: string, body: string): string {
 <meta charset="utf-8">
 <title>${escapeHtml(title)}</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="${escapeHtml(lede)}">
+<meta name="color-scheme" content="light dark">
+<link rel="canonical" href="${canonical}">
+<meta property="og:type" content="article">
+<meta property="og:title" content="${escapeHtml(title)}">
+<meta property="og:description" content="${escapeHtml(lede)}">
+<meta property="og:url" content="${canonical}">
 <style>
 :root{
   --ground:#f6f8f8; --panel:#ffffff; --ink:#161e20; --ink-soft:#46565a; --ink-faint:#7a8a8d;
@@ -324,6 +341,7 @@ if (import.meta.main) {
     eq(inline("**one** and **two**"), "<strong>one</strong> and <strong>two</strong>", "two bold runs");
     eq(inline("5 < 6 & 7"), "5 &lt; 6 &amp; 7", "text is escaped");
     eq(inline("[t](u)"), '<a href="u">t</a>', "link");
+    eq(inline("[unsafe](javascript:evil)"), "unsafe", "unsafe URL scheme is not clickable");
     eq(splitNumber("3. Title"), { n: "3", rest: "Title" }, "numbered heading");
     eq(splitNumber("Title"), { n: null, rest: "Title" }, "unnumbered heading");
     // Blocks
@@ -340,6 +358,9 @@ if (import.meta.main) {
     eq((parse("> quoted")[0] as { lines: string[] }).lines, ["quoted"], "blockquote");
     // A code fence must not be re-parsed as anything else, whatever it contains.
     eq(parse("```\n| not | a | table |\n# not a heading\n```").length, 1, "fence swallows its contents");
+    const document = page("Explainer title", "Evidence-led description", "<p>body</p>");
+    if (!document.includes('rel="canonical"') || !document.includes('property="og:description"'))
+      throw new Error("explainer metadata is incomplete");
     console.log("selftest ok");
     process.exit(0);
   }
@@ -354,7 +375,7 @@ if (import.meta.main) {
   const lede = (first?.text ?? "").replace(/^\*|\*$/g, "");
   const rest = blocks.filter((b) => b !== h1 && b !== first);
 
-  const out = flag("--out", "benchmark-feynman.html");
+  const out = flag("--out", "BENCHMARK_FEYNMAN.html");
   await Bun.write(out, page(h1?.text ?? inPath, lede, render(rest)));
   console.error(`wrote ${out}`);
 }

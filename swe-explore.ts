@@ -29,9 +29,14 @@
  *   bun swe-explore.ts --selftest
  */
 
-import { existsSync, mkdirSync, readdirSync, renameSync, rmSync } from "node:fs";
-import { homedir } from "node:os";
+import {
+  chmodSync, createReadStream, existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync,
+  renameSync, rmSync,
+  symlinkSync, writeFileSync, type Stats,
+} from "node:fs";
+import { homedir, tmpdir } from "node:os";
 import { join, posix } from "node:path";
+import { create as createTar, Unpack, type ReadEntry } from "tar";
 
 import {
   ResultScan, bootstrapCI, mean, mulberry32, randomizationP, rankOfAnswer,
@@ -174,10 +179,102 @@ export function bestOf(rs: QueryResult[]): { rr: number; top10: number; ndcg: nu
   };
 }
 
+// ── remote archive boundary ───────────────────────────────────────────────────
+
+const HTTP_USER_AGENT = "OpenAI File Downloader, XaiImageApiFetch/1.0";
+const MAX_ARCHIVE_MEMBERS = 200_000;
+const MAX_ARCHIVE_DEPTH = 64;
+const MAX_DECOMPRESSION_RATIO = 200;
+
+export type ArchiveLimits = { expandedBytes: number; members: number; depth: number };
+type ArchiveGuard = ((path: string, entry: ReadEntry | Stats) => boolean) & {
+  violation: () => string | null;
+};
+
+/** Validate every archive member before the maintained parser writes it to disk. */
+export function archiveEntryGuard(limits: ArchiveLimits): ArchiveGuard {
+  let members = 0, expandedBytes = 0, violation: string | null = null;
+  const reject = (message: string): false => { violation ??= message; return false; };
+  const guard = ((path: string, entry: ReadEntry | Stats): boolean => {
+    if (violation) return false;
+    // `tar` shares one filter type between creation (fs.Stats) and extraction (ReadEntry).
+    // This guard is extraction-only; rejecting the other shape keeps the boundary explicit.
+    if (!("type" in entry)) return reject("unexpected archive metadata");
+    if (
+      path.length === 0 || path.length > 4096 || path.includes("\0") ||
+      path.includes("\\") || posix.isAbsolute(path)
+    ) return reject("unsafe archive path");
+    const components = path.replace(/\/$/, "").split("/");
+    if (
+      components.some((component) => component === "" || component === "." || component === "..") ||
+      components.length > limits.depth
+    ) return reject("unsafe archive path depth");
+    if (entry.type !== "File" && entry.type !== "OldFile" && entry.type !== "Directory") {
+      return reject("unsupported archive entry type");
+    }
+    if (!Number.isSafeInteger(entry.size) || entry.size < 0) return reject("invalid archive entry size");
+    members++;
+    if (members > limits.members) return reject("archive member limit exceeded");
+    if (entry.size > limits.expandedBytes - expandedBytes) {
+      return reject("archive expanded-byte limit exceeded");
+    }
+    expandedBytes += entry.size;
+    return true;
+  }) as ArchiveGuard;
+  guard.violation = () => violation;
+  return guard;
+}
+
+export async function extractSafeArchive(
+  archive: string,
+  destination: string,
+  limits: ArchiveLimits,
+): Promise<void> {
+  const guard = archiveEntryGuard(limits);
+  await new Promise<void>((resolve, reject) => {
+    let settled = false;
+    const input = createReadStream(archive);
+    const finish = (error?: Error) => {
+      if (settled) return;
+      settled = true;
+      input.destroy();
+      if (error) reject(error);
+      else resolve();
+    };
+    const fail = (error: unknown) => {
+      finish(error instanceof Error ? error : new Error(String(error)));
+    };
+    let unpack: Unpack;
+    unpack = new Unpack({
+      cwd: destination,
+      gzip: true,
+      strict: true,
+      preservePaths: false,
+      unlink: true,
+      maxDecompressionRatio: MAX_DECOMPRESSION_RATIO,
+      filter: (path, entry) => {
+        if (guard(path, entry)) return true;
+        const error = new Error(guard.violation() ?? "archive safety limit exceeded");
+        input.destroy();
+        unpack.abort(error);
+        finish(error);
+        return false;
+      },
+    });
+    input.once("error", fail);
+    unpack.once("error", fail);
+    unpack.once("close", () => {
+      const violation = guard.violation();
+      finish(violation ? new Error(violation) : undefined);
+    });
+    input.pipe(unpack);
+  });
+}
+
 // ── plumbing ──────────────────────────────────────────────────────────────────
 
 async function fetchJson(url: string): Promise<unknown> {
-  const res = await fetch(url);
+  const res = await fetch(url, { headers: { "User-Agent": HTTP_USER_AGENT } });
   if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`);
   return res.json();
 }
@@ -218,54 +315,75 @@ async function fetchIssues(dataset: string, cacheName: string): Promise<Map<stri
  * scores as the repository (review finding).
  */
 async function fetchRepo(issue: Issue, budgetMb: number): Promise<string | null> {
-  const coordinates = safeArchiveCoordinates(
-    issue.instance_id,
-    issue.repo,
-    issue.base_commit,
-  );
+  const coordinates = safeArchiveCoordinates(issue.instance_id, issue.repo, issue.base_commit);
   if (!coordinates) return null;
   const dir = join(CACHE, "checkouts", coordinates.cacheKey);
   if (existsSync(dir)) {
+    const cacheState = lstatSync(dir);
+    if (!cacheState.isDirectory() || cacheState.isSymbolicLink()) {
+      throw new Error(`unsafe repository cache entry: ${dir}`);
+    }
     const entries = readdirSync(dir);
-    if (entries.length === 1) return `${dir}/${entries[0]}`;
+    if (entries.length === 1 && lstatSync(join(dir, entries[0]!)).isDirectory()) {
+      return join(dir, entries[0]!);
+    }
   }
   const tmp = `${dir}.tmp`;
+  const archive = `${dir}.tar.gz.tmp`;
   rmSync(tmp, { recursive: true, force: true });
-  mkdirSync(tmp, { recursive: true });
+  rmSync(archive, { force: true });
+  mkdirSync(tmp, { recursive: true, mode: 0o700 });
+  chmodSync(tmp, 0o700);
   const budget = budgetMb * 1024 * 1024;
   const url = `https://github.com/${coordinates.repo}/archive/${coordinates.commit}.tar.gz`;
-  const tar = Bun.spawn(["tar", "-xz", "-C", tmp], { stdin: "pipe", stderr: "ignore" });
   let ok = false;
+  writeFileSync(archive, "", { mode: 0o600 });
+  chmodSync(archive, 0o600);
+  const writer = Bun.file(archive).writer();
+  let writerClosed = false;
   try {
-    const res = await fetch(url, { redirect: "follow" });
+    const res = await fetch(url, { redirect: "follow", headers: { "User-Agent": HTTP_USER_AGENT } });
     if (res.ok && res.body) {
       let read = 0;
+      let overBudget = false;
       for await (const chunk of res.body) {
+        if (chunk.byteLength > budget - read) {
+          overBudget = true;
+          break;
+        }
         read += chunk.byteLength;
-        if (read > budget) break;
-        tar.stdin.write(chunk);
+        writer.write(chunk);
       }
-      await tar.stdin.end();
-      ok = read <= budget && (await tar.exited) === 0;
-    } else {
-      tar.kill();
-      await tar.exited;
+      await writer.end();
+      writerClosed = true;
+      if (!overBudget) {
+        await extractSafeArchive(archive, tmp, {
+          expandedBytes: budget,
+          members: MAX_ARCHIVE_MEMBERS,
+          depth: MAX_ARCHIVE_DEPTH,
+        });
+        ok = true;
+      }
     }
-  } catch {
-    tar.kill();
-    await tar.exited.catch(() => {});
+  } catch (error) {
+    console.error(`archive rejected for ${coordinates.cacheKey}: ${String(error).slice(0, 300)}`);
+  } finally {
+    if (!writerClosed) {
+      try { await writer.end(); } catch {}
+    }
+    rmSync(archive, { force: true });
   }
   if (!ok) {
     rmSync(tmp, { recursive: true, force: true });
     return null;
   }
   const entries = readdirSync(tmp);
-  if (entries.length !== 1) {
+  if (entries.length !== 1 || !lstatSync(join(tmp, entries[0]!)).isDirectory()) {
     rmSync(tmp, { recursive: true, force: true });
     return null;
   }
   renameSync(tmp, dir);
-  return `${dir}/${entries[0]}`;
+  return join(dir, entries[0]!);
 }
 
 // ── main ──────────────────────────────────────────────────────────────────────
@@ -348,6 +466,80 @@ if (import.meta.main) {
     eq(deriveQueries("`foo_bar` baz", "camelCase here"), deriveQueries("`foo_bar` baz", "camelCase here"), "deterministic");
 
     // Instance aggregation: best query wins; an instance with no hits is all zeros.
+    const archiveRoot = mkdtempSync(join(tmpdir(), "hay-swe-archive-"));
+    try {
+      const source = join(archiveRoot, "source");
+      const extracted = join(archiveRoot, "extracted");
+      mkdirSync(join(source, "root"), { recursive: true });
+      mkdirSync(extracted, { mode: 0o700 });
+      writeFileSync(join(source, "root", "small.txt"), "safe");
+      const goodArchive = join(archiveRoot, "good.tar.gz");
+      await createTar({ cwd: source, file: goodArchive, gzip: true }, ["root"]);
+      await extractSafeArchive(goodArchive, extracted, { expandedBytes: 1024, members: 10, depth: 4 });
+      eq(await Bun.file(join(extracted, "root/small.txt")).text(), "safe", "safe archive extracts");
+      if (process.platform !== "win32") {
+        eq(lstatSync(extracted).mode & 0o777, 0o700, "archive extraction state is private");
+      }
+
+      const fileEntry = { type: "File", size: 0 } as unknown as ReadEntry;
+      let guard = archiveEntryGuard({ expandedBytes: 10, members: 10, depth: 4 });
+      eq(guard("../escape", fileEntry), false, "archive traversal is rejected");
+      guard = archiveEntryGuard({ expandedBytes: 10, members: 10, depth: 1 });
+      eq(guard("root/nested", fileEntry), false, "archive path depth is bounded");
+      guard = archiveEntryGuard({ expandedBytes: 10, members: 1, depth: 4 });
+      eq(guard("first", fileEntry), true, "first archive member is admitted");
+      eq(guard("second", fileEntry), false, "archive member count is bounded");
+      guard = archiveEntryGuard({ expandedBytes: 10, members: 10, depth: 4 });
+      eq(
+        guard("link", { type: "SymbolicLink", size: 0 } as unknown as ReadEntry),
+        false,
+        "special archive entry types are rejected",
+      );
+      const bombSource = join(archiveRoot, "bomb-source");
+      const bombDest = join(archiveRoot, "bomb-dest");
+      mkdirSync(join(bombSource, "root"), { recursive: true });
+      mkdirSync(bombDest, { mode: 0o700 });
+      writeFileSync(join(bombSource, "root", "bomb"), Buffer.alloc(2 * 1024 * 1024));
+      const bombArchive = join(archiveRoot, "bomb.tar.gz");
+      await createTar({ cwd: bombSource, file: bombArchive, gzip: true }, ["root"]);
+      let rejection = "";
+      try {
+        await extractSafeArchive(bombArchive, bombDest, { expandedBytes: 64 * 1024, members: 10, depth: 4 });
+      } catch (error) { rejection = String(error); }
+      eq(
+        rejection.includes("archive expanded-byte limit exceeded"),
+        true,
+        "gzip bomb aborts at the expanded-byte limit",
+      );
+      eq(existsSync(join(bombDest, "root/bomb")), false, "rejected archive member is never written");
+      const ratioDest = join(archiveRoot, "ratio-dest");
+      mkdirSync(ratioDest, { mode: 0o700 });
+      let rejected = false;
+      try {
+        await extractSafeArchive(bombArchive, ratioDest, {
+          expandedBytes: 4 * 1024 * 1024, members: 10, depth: 4,
+        });
+      } catch { rejected = true; }
+      eq(rejected, true, "gzip bomb exceeds decompression-ratio limit");
+
+      if (process.platform !== "win32") {
+        const linkSource = join(archiveRoot, "link-source");
+        const linkDest = join(archiveRoot, "link-dest");
+        mkdirSync(join(linkSource, "root"), { recursive: true });
+        mkdirSync(linkDest, { mode: 0o700 });
+        symlinkSync("/tmp", join(linkSource, "root/link"));
+        const linkArchive = join(archiveRoot, "link.tar.gz");
+        await createTar({ cwd: linkSource, file: linkArchive, gzip: true }, ["root"]);
+        rejected = false;
+        try {
+          await extractSafeArchive(linkArchive, linkDest, { expandedBytes: 1024, members: 10, depth: 4 });
+        } catch { rejected = true; }
+        eq(rejected, true, "archive links are rejected");
+      }
+    } finally {
+      rmSync(archiveRoot, { recursive: true, force: true });
+    }
+
     const q = (rr: number, top10: number, ndcg: number): QueryResult => ({ rr, top10, ndcg, truncated: false, results: 1 });
     eq(bestOf([q(0, 0, 0), q(0.5, 1, 0.4)]), { rr: 0.5, top10: 1, ndcg: 0.4 }, "best of queries");
     eq(bestOf([]), { rr: 0, top10: 0, ndcg: 0 }, "no queries, zero score");
@@ -367,7 +559,9 @@ if (import.meta.main) {
   mkdirSync(`${CACHE}/checkouts`, { recursive: true });
   if (!existsSync(`${CACHE}/bench.final.public.jsonl`)) {
     console.error(`downloading instance list to ${CACHE} ...`);
-    await Bun.write(`${CACHE}/bench.final.public.jsonl`, await (await fetch(BENCH_URL)).arrayBuffer());
+    const response = await fetch(BENCH_URL, { headers: { "User-Agent": HTTP_USER_AGENT } });
+    if (!response.ok) throw new Error(`${BENCH_URL}: HTTP ${response.status}`);
+    await Bun.write(`${CACHE}/bench.final.public.jsonl`, await response.arrayBuffer());
   }
   const instances: Instance[] = (await Bun.file(`${CACHE}/bench.final.public.jsonl`).text())
     .split("\n").filter(Boolean).map((l) => JSON.parse(l));
@@ -388,14 +582,20 @@ if (import.meta.main) {
   // cannot deliver that — an upstream addition would shift the whole sample (review finding).
   // Pass --resample to draw a fresh seeded sample and overwrite the manifest.
   const manifestPath = "evidence/swe-explore-instances.json";
+  const resample = argv.includes("--resample");
+  if (!resample && !existsSync(manifestPath)) {
+    console.error(`${manifestPath} is missing; pass --resample to select and record instances before scoring`);
+    process.exit(2);
+  }
   let sampled: Instance[];
-  if (existsSync(manifestPath) && !argv.includes("--resample")) {
+  if (!resample) {
     const manifest: { instances: string[] } = await Bun.file(manifestPath).json();
     const byId = new Map(candidates.map((i) => [i.instance_id, i]));
     sampled = manifest.instances.flatMap((id) => byId.get(id) ?? []);
     console.error(`scoring the committed manifest: ${sampled.length} of ${manifest.instances.length} instances resolvable`);
     if (sampled.length < manifest.instances.length) {
-      console.error("some manifest instances are no longer resolvable upstream; their absence is visible in the counts");
+      console.error("some committed manifest instances are no longer resolvable upstream; refusing to publish a different sample");
+      process.exit(2);
     }
   } else {
     // Seeded stratified sample: shuffle once, then take up to `perLang` per language.
@@ -416,6 +616,11 @@ if (import.meta.main) {
       perLangCount.set(lang, n + 1);
       sampled.push(inst);
     }
+    await Bun.write(
+      manifestPath,
+      JSON.stringify({ seed: SEED, qderive: QDERIVE_VERSION, instances: sampled.map((i) => i.instance_id) }, null, 2),
+    );
+    console.error(`recorded ${sampled.length} selected instances before scoring`);
   }
 
   type InstanceResult = {
@@ -522,9 +727,5 @@ if (import.meta.main) {
   console.error(`  excluded: ${JSON.stringify(report.excluded)}`);
 
   await Bun.write("evidence/swe-explore.json", JSON.stringify(report, null, 2));
-  await Bun.write(
-    "evidence/swe-explore-instances.json",
-    JSON.stringify({ seed: SEED, qderive: QDERIVE_VERSION, instances: results.map((r) => r.instance_id) }, null, 2),
-  );
-  console.error("\nwrote evidence/swe-explore.json and evidence/swe-explore-instances.json (all public data)");
+  console.error("\nwrote evidence/swe-explore.json (all public data; sample manifest was not changed while scoring)");
 }

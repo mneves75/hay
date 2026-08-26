@@ -63,7 +63,7 @@ Check it works:
 Or install it onto your PATH so you can type `hay` anywhere:
 
 ```bash
-cargo install --path hay          # lands in ~/.cargo/bin/hay
+cargo install --locked --path hay # lands in ~/.cargo/bin/hay
 ```
 
 If you would rather not install, symlink the built binary instead:
@@ -271,22 +271,22 @@ reports the **absolute** difference with a 95% bootstrap interval — by query, 
 by repository, because queries inside one repo share a corpus and are not independent:
 
 ```text
-paired over 952 queries in 12 repositories
-  MRR      rg 0.2653  ->  hay 0.3973
-  top-10   rg 0.4601  ->  hay 0.5819
-  nDCG@10  rg 0.3729  ->  hay 0.5036
-  dMRR (by query)        +0.1320  95% CI [0.1060, 0.1578]  boot p=0.0002  rand p=0.0001  n=952
-  dMRR (by repo)         +0.1320  95% CI [0.1046, 0.1571]  boot p=0.0002  rand p=0.0005  n=952
-  dTop10 (by query)      +0.1218  95% CI [0.0903, 0.1544]  boot p=0.0002  rand p=0.0001  n=952
-  dTop10 (by repo)       +0.1218  95% CI [0.0688, 0.1673]  boot p=0.0002  rand p=0.0023  n=952
-  dNDCG10 (by query)     +0.1307  95% CI [0.1098, 0.1520]  boot p=0.0002  rand p=0.0001  n=952
-  dNDCG10 (by repo)      +0.1307  95% CI [0.0904, 0.1678]  boot p=0.0002  rand p=0.0005  n=952
-  better 570 / worse 226 / tied 156
-  nDCG first page truncated on 0 of 952 queries
-  hay candidate cap hit on 0 of 952 queries
+paired over 951 queries in 12 repositories
+  MRR      rg 0.2656  ->  hay 0.4036
+  top-10   rg 0.4606  ->  hay 0.6004
+  nDCG@10  rg 0.3733  ->  hay 0.5033
+  dMRR (by query)        +0.1380  95% CI [0.1120, 0.1646]  boot p=0.0002  rand p=0.0001  observations=951  clusters=951
+  dMRR (by repo)         +0.1380  95% CI [0.1106, 0.1619]  boot p=0.0002  rand p=0.0005  observations=951  clusters=12
+  dTop10 (by query)      +0.1399  95% CI [0.1073, 0.1735]  boot p=0.0002  rand p=0.0001  observations=951  clusters=951
+  dTop10 (by repo)       +0.1399  95% CI [0.0844, 0.1845]  boot p=0.0002  rand p=0.0005  observations=951  clusters=12
+  dNDCG10 (by query)     +0.1300  95% CI [0.1092, 0.1517]  boot p=0.0002  rand p=0.0001  observations=951  clusters=951
+  dNDCG10 (by repo)      +0.1300  95% CI [0.0912, 0.1667]  boot p=0.0002  rand p=0.0005  observations=951  clusters=12
+  better 557 / worse 235 / tied 159
+  nDCG first page truncated on 0 of 951 queries
+  hay candidate cap hit on 0 of 951 queries
 
-  GATE (DESIGN-hay.md, median across 12 repos): MRR 0.3870 (need >= 0.50)  top-10 0.5816 (need >= 0.80)  ->  FAIL
-  rg for reference: median MRR 0.2645  top-10 0.4903  ·  repos where hay is worse than rg: 0
+  GATE (DESIGN-hay.md, median across 12 repos): MRR 0.3810 (need >= 0.50)  top-10 0.5916 (need >= 0.80)  ->  FAIL
+  rg for reference: median MRR 0.2645  top-10 0.4934  ·  repos where hay is worse than rg: 0
 ```
 
 **Three measures, because each is blind to something.** MRR is the rank of the first answer, and
@@ -340,7 +340,7 @@ some-project: 32 prose files, 8 never opened by any agent (base rate 25%)
 ```
 
 **"never opened by any agent"** is the number that matters. Across the repos measured here it was
-**76%** — three quarters of all documentation had never been read by the thing it was written for.
+**78%** — more than three quarters of all documentation had never been read by the thing it was written for.
 The heuristics below it (`lift ~1.1`) are barely better than guessing, which is the finding: you
 do not need a clever detector when you can just observe what nothing ever opens.
 
@@ -404,10 +404,10 @@ bun measure-mrr.ts --min-queries 60 --compare --dump-pairs corpus/pairs.json
 bun categorize-misses.ts        # counted taxonomy -> evidence/error-taxonomy.json (counts only)
 ```
 
-The dump carries real queries and paths, so `--dump-pairs` refuses to write outside gitignored
-`corpus/` unless you insist with `--i-know-this-is-private`. The taxonomy artifact in `evidence/`
-is category counts only. Diagnose an individual query with `hay --explain -e '<query>'` — the
-bracketed breakdown says which signal put each line where it is.
+The dump carries real queries and paths, so `--dump-pairs` only writes beneath gitignored
+`corpus/`, using private directory/file modes and rejecting traversal or symlinked parents. The
+taxonomy artifact in `evidence/` is category counts only. Diagnose an individual query with
+`hay --explain -e '<query>'` — the bracketed breakdown says which signal put each line where it is.
 
 **External validity** runs hay against a public, agent-shaped localization benchmark
 (SWE-Explore-Bench, arXiv 2606.07297 — issues from SWE-bench Verified/Multilingual, gold files
@@ -418,9 +418,11 @@ bun swe-explore.ts --sample 100     # downloads instance list, issues, repo snap
 ```
 
 Everything it writes to `evidence/` is public data — instance ids, aggregates, intervals — and
-the sampled instance list is committed so a rerun scores exactly the same set. Read the `claim`
-field before quoting a number: it tests reordering under identical queries, not issue
-localization.
+the sampled instance list is committed so a rerun scores exactly the same set. Archive downloads
+and expanded contents have independent byte caps; member count, path depth, compression ratio,
+links, special entries, and traversal are rejected before the temporary checkout is promoted.
+Read the `claim` field before quoting a number: it tests reordering under identical queries, not
+issue localization.
 
 Full method, limits and the list of everything that went wrong: [DESIGN-hay.md](DESIGN-hay.md) and
 the tickets under [`docs/method/issues/`](docs/method/issues/).
@@ -444,6 +446,7 @@ bun swe-explore.ts --selftest
 bun benchmark.ts --selftest
 bun benchmark-report.ts --selftest
 bun explainer-html.ts --selftest
+bash install.sh --selftest                    # exact branch/tag/commit; invalid ref refuses
 ```
 
 The typecheck gate is not optional politeness: bun executes TypeScript by stripping the types,
