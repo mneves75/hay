@@ -271,9 +271,9 @@ export const TOOLS: Tool[] = [
   },
   {
     id: "ast-grep",
-    label: "ast-grep --threads 1 (structural)",
+    label: "ast-grep (structural snapshot)",
     bin: "ast-grep",
-    args: (q, lang) => ["--lang", astLang(lang), "-p", q, "--json=stream", "--threads", "1", "."],
+    args: (q, lang) => ["--lang", astLang(lang), "-p", q, "--json=stream", "."],
     parse: (line) => {
       try {
         const o = JSON.parse(line);
@@ -285,7 +285,7 @@ export const TOOLS: Tool[] = [
     scope: "parsed source of one language",
     ranked: false,
     deterministic: false,
-    note: "matches identifier nodes, so comments and strings never appear — precision, not ranking; one thread removes scheduler variance but does not define traversal order",
+    note: "matches identifier nodes, so comments and strings never appear — precision, not ranking; no stable traversal-order contract",
   },
 ];
 
@@ -835,10 +835,6 @@ if (import.meta.main) {
     }
     const ugrepArgs = TOOLS.find((t) => t.id === "ugrep")!.args("q", "rust");
     if (!ugrepArgs.includes("--sort=name")) throw new Error("ugrep needs explicit name sorting before inference");
-    const astArgs = TOOLS.find((t) => t.id === "ast-grep")!.args("q", "rust");
-    const threads = astArgs.indexOf("--threads");
-    if (threads === -1 || astArgs[threads + 1] !== "1")
-      throw new Error("ast-grep snapshots must remove scheduler variance with one thread");
     if (!TOOLS.find((t) => t.id === "hay")!.deterministic || !TOOLS.find((t) => t.id === "rg")!.deterministic)
       throw new Error("hay and its baseline need stable rank-order contracts");
     for (const id of ["ag", "grep", "cs", "ast-grep"]) {

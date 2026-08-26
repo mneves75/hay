@@ -400,7 +400,7 @@ const CAPABILITIES: { id: string; ranked: string; ignore: string; deterministic:
   { id: "grep", ranked: "no", ignore: "none", deterministic: "no", json: "no", index: "none" },
   { id: "git-grep", ranked: "no", ignore: "tracked only", deterministic: "yes", json: "no", index: "git" },
   { id: "cs", ranked: "yes", ignore: "own rules", deterministic: "no contract", json: "yes", index: "none" },
-  { id: "ast-grep", ranked: "no", ignore: "gitignore", deterministic: "no (--threads 1 snapshot)", json: "yes", index: "parses per run" },
+  { id: "ast-grep", ranked: "no", ignore: "gitignore", deterministic: "no contract", json: "yes", index: "parses per run" },
 ];
 
 const NOT_BENCHMARKED = [
