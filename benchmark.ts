@@ -125,6 +125,8 @@ export type Tool = {
   /** What the tool walks by default. */
   scope: string;
   ranked: boolean;
+  /** Whether this exact invocation guarantees stable rank order for a fixed tree. */
+  deterministic: boolean;
   note?: string;
 };
 
@@ -194,6 +196,7 @@ export const TOOLS: Tool[] = [
     parse: plain,
     scope: "gitignore-aware",
     ranked: true,
+    deterministic: true,
   },
   {
     id: "rg",
@@ -203,15 +206,17 @@ export const TOOLS: Tool[] = [
     parse: plain,
     scope: "gitignore-aware",
     ranked: false,
+    deterministic: true,
   },
   {
     id: "ugrep",
-    label: "ugrep",
+    label: "ugrep --sort=name",
     bin: "ugrep",
-    args: (q) => ["-rnF", "--ignore-files", "-e", q, "."],
+    args: (q) => ["-rnF", "--ignore-files", "--sort=name", "-e", q, "."],
     parse: plain,
     scope: "gitignore-aware",
     ranked: false,
+    deterministic: true,
   },
   {
     id: "ag",
@@ -221,6 +226,7 @@ export const TOOLS: Tool[] = [
     parse: plain,
     scope: "own ignore rules",
     ranked: false,
+    deterministic: false,
   },
   {
     id: "grep",
@@ -231,6 +237,7 @@ export const TOOLS: Tool[] = [
     parse: plain,
     scope: "everything but .git",
     ranked: false,
+    deterministic: false,
     note: ".git excluded by hand; grep has no ignore support, and without this it searches packfiles",
   },
   {
@@ -241,6 +248,7 @@ export const TOOLS: Tool[] = [
     parse: plain,
     scope: "tracked files only",
     ranked: false,
+    deterministic: true,
     note: "cannot see untracked files at all",
   },
   {
@@ -258,13 +266,14 @@ export const TOOLS: Tool[] = [
     parse: plain,
     scope: "own ignore rules",
     ranked: true,
-    note: "ranks FILES (one line each), so line-rank comparisons read favourably for it",
+    deterministic: false,
+    note: "ranks FILES (one line each), so line-rank comparisons read favourably for it; no stable-order contract",
   },
   {
     id: "ast-grep",
-    label: "ast-grep (structural)",
+    label: "ast-grep --threads 1 (structural)",
     bin: "ast-grep",
-    args: (q, lang) => ["--lang", astLang(lang), "-p", q, "--json=stream", "."],
+    args: (q, lang) => ["--lang", astLang(lang), "-p", q, "--json=stream", "--threads", "1", "."],
     parse: (line) => {
       try {
         const o = JSON.parse(line);
@@ -275,7 +284,8 @@ export const TOOLS: Tool[] = [
     },
     scope: "parsed source of one language",
     ranked: false,
-    note: "matches identifier nodes, so comments and strings never appear — precision, not ranking",
+    deterministic: false,
+    note: "matches identifier nodes, so comments and strings never appear — precision, not ranking; one thread removes scheduler variance but does not define traversal order",
   },
 ];
 
@@ -576,6 +586,8 @@ export type ToolScore = {
   tool: string;
   label: string;
   available: boolean;
+  /** True only when the benchmark invocation has a stable rank-order contract. */
+  deterministic: boolean;
   queries: number;
   mrr: number;
   top10: number;
@@ -724,6 +736,7 @@ async function runDocsTrack(
 ): Promise<DocsTrackPayload> {
   const tools = TOOLS.filter((tool): tool is Tool & { id: DocsTool } => tool.id === "hay" || tool.id === "rg");
   if (tools.length !== 2) throw new Error("docs track requires exactly the existing hay and rg tool definitions");
+  if (!tools.every((tool) => tool.deterministic)) throw new Error("docs track requires deterministic rank order");
   for (const tool of tools) {
     if (!resolveBin(tool)) throw new Error(`docs track requires ${tool.id}; build or install it first`);
   }
@@ -820,6 +833,18 @@ if (import.meta.main) {
       if (sort === -1 || argv[sort + 1] !== "path")
         throw new Error("the rank baseline must be deterministic ripgrep --sort path");
     }
+    const ugrepArgs = TOOLS.find((t) => t.id === "ugrep")!.args("q", "rust");
+    if (!ugrepArgs.includes("--sort=name")) throw new Error("ugrep needs explicit name sorting before inference");
+    const astArgs = TOOLS.find((t) => t.id === "ast-grep")!.args("q", "rust");
+    const threads = astArgs.indexOf("--threads");
+    if (threads === -1 || astArgs[threads + 1] !== "1")
+      throw new Error("ast-grep snapshots must remove scheduler variance with one thread");
+    if (!TOOLS.find((t) => t.id === "hay")!.deterministic || !TOOLS.find((t) => t.id === "rg")!.deterministic)
+      throw new Error("hay and its baseline need stable rank-order contracts");
+    for (const id of ["ag", "grep", "cs", "ast-grep"]) {
+      if (TOOLS.find((t) => t.id === id)!.deterministic)
+        throw new Error("a snapshot-only tool was marked deterministic");
+    }
     // Ground truth with the wrong grammar is garbage that parses: every corpus lang must be
     // known, and an unknown one must refuse rather than fall back to Rust.
     for (const c of CORPORA) astLang(c.lang);
@@ -834,7 +859,7 @@ if (import.meta.main) {
     const exitFixture: Tool = {
       id: "exit-fixture", label: "exit fixture", bin: bunBin,
       args: () => ["-e", "console.log('noise.ts:1:x'); console.error('incomplete'); process.exit(2)"],
-      parse: plain, scope: "fixture", ranked: false,
+      parse: plain, scope: "fixture", ranked: false, deterministic: true,
     };
     let incompleteThrew = false;
     try { await rankOf(exitFixture, process.cwd(), { symbol: "x", answer: "answer.ts", occurrences: 1 }, "ts"); }
@@ -895,7 +920,7 @@ if (import.meta.main) {
       const capTool: Tool = {
         id: "cap-fixture", label: "cap fixture", bin: bun,
         args: () => ["-e", `for (let i = 0; i < ${RANK_CAP}; i++) console.log('noise.ts:' + i + ':x'); console.log('answer.md:1:x')`],
-        parse: plain, scope: "fixture", ranked: false,
+        parse: plain, scope: "fixture", ranked: false, deterministic: true,
       };
       const capped = await rankOf(capTool, fixture, { symbol: "plainword", answer: "answer.md", occurrences: 3 }, "rust");
       eq(capped, { rank: null, scanned: RANK_CAP, timedOut: false, truncated: true }, "docs result-line cap is explicit");
@@ -1008,6 +1033,7 @@ if (import.meta.main) {
         tool: t.id,
         label: t.label,
         available: resolveBin(t) !== null,
+        deterministic: t.deterministic,
         queries: rs.length,
         mrr: mean(rr),
         top10: rs.filter((r) => r.rank !== null && r.rank <= 10).length / (rs.length || 1),
@@ -1015,7 +1041,7 @@ if (import.meta.main) {
         unreachable: rs.filter((r) => r.rank === null).length / (rs.length || 1),
         timeouts: rs.filter((r) => r.timedOut).length,
       };
-      if (t.id !== "rg" && score.available && rs.length > 0) {
+      if (t.id !== "rg" && score.available && score.deterministic && rs.length > 0) {
         const diffs = rr.map((v, i) => [v - (baseRr[i] ?? 0)]);
         score.vsRipgrep = bootstrapCI(diffs);
         score.vsRipgrepRandP = randomizationP(diffs);

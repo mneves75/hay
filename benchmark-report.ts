@@ -12,7 +12,7 @@
 type Interval = { mean: number; lo: number; hi: number; p: number; n: number; clusters: number };
 type Timing = { medianMs: number | null; minMs: number | null; peakRssMb: number | null; timedOut: boolean };
 type ToolScore = {
-  tool: string; label: string; available: boolean; queries: number;
+  tool: string; label: string; available: boolean; deterministic: boolean; queries: number;
   mrr: number; top10: number; medianRank: number | null; unreachable: number; timeouts: number;
   vsRipgrep?: Interval;
   vsRipgrepRandP?: number;
@@ -76,6 +76,13 @@ export function delta(i: Interval | undefined): string {
   if (!i) return "baseline";
   const sign = i.mean >= 0 ? "+" : "";
   return `${sign}${i.mean.toFixed(3)} [${i.lo.toFixed(3)}, ${i.hi.toFixed(3)}]`;
+}
+
+/** Render the baseline, a valid interval, or an explicitly non-inferential snapshot. */
+export function deltaCell(t: { tool: string; deterministic: boolean; vsRipgrep?: Interval }): string {
+  if (t.tool === "rg") return "baseline";
+  if (!t.deterministic) return "snapshot only";
+  return t.vsRipgrep ? delta(t.vsRipgrep) : "—";
 }
 
 /** An interval that excludes zero is a detected difference; one that spans it is not. */
@@ -186,11 +193,11 @@ export function validatePayload(d: Payload): Payload {
       bad(`${corpus.corpus}.provenance`, corpus.provenance, "40-hex revision and dirty boolean");
     if (corpus.provenance.dirty) bad(`${corpus.corpus}.provenance.dirty`, true, "clean corpus");
     const baseline = corpus.tools.find((tool) => tool.tool === "rg");
-    if (!baseline || !baseline.available) bad(`${corpus.corpus}.tools`, corpus.tools, "available rg baseline");
+    if (!baseline || !baseline.available || !baseline.deterministic) bad(`${corpus.corpus}.tools`, corpus.tools, "available deterministic rg baseline");
     const baselineMrr = baseline!.mrr;
     for (const tool of corpus.tools) {
-      if (typeof tool.tool !== "string" || typeof tool.label !== "string" || typeof tool.available !== "boolean")
-        bad(`${corpus.corpus}.tool`, tool, "tool identity and availability");
+      if (typeof tool.tool !== "string" || typeof tool.label !== "string" || typeof tool.available !== "boolean" || typeof tool.deterministic !== "boolean")
+        bad(`${corpus.corpus}.tool`, tool, "tool identity, availability, and deterministic-order contract");
       integer(tool.queries, `${corpus.corpus}.${tool.tool}.queries`);
       if (tool.queries !== corpus.queries) bad(`${corpus.corpus}.${tool.tool}.queries`, tool.queries, `corpus query count ${corpus.queries}`);
       probability(tool.mrr, `${corpus.corpus}.${tool.tool}.mrr`);
@@ -205,11 +212,11 @@ export function validatePayload(d: Payload): Payload {
         if (rank < 1 || rank > d.rankCap)
           bad(`${corpus.corpus}.${tool.tool}.medianRank`, rank, `number in [1, ${d.rankCap}]`);
       }
-      const comparable = tool.available && tool.tool !== "rg" && corpus.queries > 0;
+      const comparable = tool.available && tool.deterministic && tool.tool !== "rg" && corpus.queries > 0;
       if (comparable && (!tool.vsRipgrep || typeof tool.vsRipgrepRandP !== "number"))
         bad(`${corpus.corpus}.${tool.tool}`, tool, "paired interval and randomization p");
       if (!comparable && (tool.vsRipgrep || tool.vsRipgrepRandP !== undefined))
-        bad(`${corpus.corpus}.${tool.tool}`, tool, "no comparison for baseline, unavailable tool, or empty corpus");
+        bad(`${corpus.corpus}.${tool.tool}`, tool, "no comparison for baseline, unavailable or nondeterministic tool, or empty corpus");
       if (tool.vsRipgrep) {
         const interval = tool.vsRipgrep;
         for (const key of ["mean", "lo", "hi"] as const) {
@@ -388,12 +395,12 @@ export function validateDocsPayload(d: DocsPayload): DocsPayload {
 const CAPABILITIES: { id: string; ranked: string; ignore: string; deterministic: string; json: string; index: string }[] = [
   { id: "hay", ranked: "yes", ignore: "gitignore", deterministic: "yes", json: "rg-shaped", index: "none" },
   { id: "rg", ranked: "no", ignore: "gitignore", deterministic: "yes (--sort path)", json: "yes", index: "none" },
-  { id: "ugrep", ranked: "no", ignore: "opt-in", deterministic: "yes", json: "yes", index: "none" },
+  { id: "ugrep", ranked: "no", ignore: "opt-in", deterministic: "yes (--sort=name)", json: "yes", index: "none" },
   { id: "ag", ranked: "no", ignore: "own rules", deterministic: "no", json: "no", index: "none" },
-  { id: "grep", ranked: "no", ignore: "none", deterministic: "yes", json: "no", index: "none" },
+  { id: "grep", ranked: "no", ignore: "none", deterministic: "no", json: "no", index: "none" },
   { id: "git-grep", ranked: "no", ignore: "tracked only", deterministic: "yes", json: "no", index: "git" },
-  { id: "cs", ranked: "yes", ignore: "own rules", deterministic: "yes", json: "yes", index: "none" },
-  { id: "ast-grep", ranked: "no", ignore: "gitignore", deterministic: "yes", json: "yes", index: "parses per run" },
+  { id: "cs", ranked: "yes", ignore: "own rules", deterministic: "no contract", json: "yes", index: "none" },
+  { id: "ast-grep", ranked: "no", ignore: "gitignore", deterministic: "no (--threads 1 snapshot)", json: "yes", index: "parses per run" },
 ];
 
 const NOT_BENCHMARKED = [
@@ -412,7 +419,7 @@ const NOT_BENCHMARKED = [
 // thing these plots exist to show — an interval that touches zero. Every chart carries its own
 // <title>/<desc>, and the full data table sits directly below each one.
 
-/** Tools that ever beat ripgrep somewhere by BOTH tests; everything else never leaves the table. */
+/** Selected product and nearest alternatives; only deterministic rows enter inferential charts. */
 export const CHART_TOOLS = ["hay", "ast-grep", "cs"];
 
 export const geomean = (xs: number[]): number =>
@@ -431,7 +438,7 @@ export function deltaRows(d: Payload): DeltaRow[] {
     if (thin(c)) continue;
     for (const id of CHART_TOOLS) {
       const t = c.tools.find((x) => x.tool === id);
-      if (!t || !t.available || !t.vsRipgrep) continue;
+      if (!t || !t.available || !t.deterministic || !t.vsRipgrep) continue;
       rows.push({
         corpus: c.corpus, tool: id, label: t.label,
         mean: t.vsRipgrep.mean, lo: t.vsRipgrep.lo, hi: t.vsRipgrep.hi,
@@ -528,11 +535,11 @@ the experience falls.</p>
 <div class="fstep">
 <h3>5 · Same questions, then shuffle</h3>
 <p>Every tool runs on <strong>identical queries</strong>, so hard questions cancel out — you weigh
-yourself on the same scale before and after. Then each per-query difference is resampled with
-replacement ten thousand times (the bootstrap) to see how much the headline wobbles, and Fisher's
-randomization test asks the same question a second way by flipping signs at random.
-<strong>A difference is claimed only when both methods agree</strong> — the bootstrap alone runs
-optimistic at small samples, which is most of these corpora.</p>
+yourself on the same scale before and after. For an invocation that guarantees stable order, each
+per-query difference is then resampled ten thousand times (the bootstrap), and Fisher's
+randomization test asks the same question by flipping signs at random. <strong>A difference is
+claimed only when both methods agree.</strong> Tools without a stable-order contract remain visible
+as descriptive snapshots; running statistics over a scheduler accident would manufacture precision.</p>
 </div>
 
 <div class="fstep">
@@ -614,8 +621,8 @@ ${mark(X(r.mean), y, 4.5, fill)}
     return `${MARK[t]!(lx, H + 2, 4.5, "var(--panel)")}<text x="${lx + 12}" y="${H + 6}" class="legend">${esc(t)}</text>`;
   }).join("");
   return `<svg viewBox="0 0 ${W} ${H + 22}" width="100%" role="img" aria-labelledby="deltatitle deltadesc" class="chart">
-<title id="deltatitle">How much each tool beats ripgrep --sort path, per repository</title>
-<desc id="deltadesc">Horizontal dot plot. Each mark is a tool's mean improvement in mean reciprocal rank over deterministic ripgrep --sort path, with a whisker showing the 95% bootstrap interval. The vertical line at zero is ripgrep itself.</desc>
+<title id="deltatitle">How much each stable-order tool beats ripgrep --sort path, per repository</title>
+<desc id="deltadesc">Horizontal dot plot. Each mark is a stable-order tool's mean improvement in mean reciprocal rank over deterministic ripgrep --sort path, with a whisker showing the 95% bootstrap interval. The vertical line at zero is ripgrep itself.</desc>
 ${g.join("\n")}${legend}
 <text x="${padL + CHART_TOOLS.length * 130}" y="${H + 6}" class="legend">filled = both statistical tests agree</text></svg>`;
 }
@@ -655,7 +662,7 @@ export function chartTop10(d: Payload): string {
   }
   return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-labelledby="t10title t10desc" class="chart">
 <title id="t10title">Share of queries answered within the first ten results</title>
-<desc id="t10desc">Grouped horizontal bars per repository: the accent bar is hay; muted bars are ast-grep and codespelunker; ripgrep is the implicit baseline axis.</desc>
+<desc id="t10desc">Grouped horizontal bars per repository: the accent bar is hay; muted bars are ast-grep and codespelunker descriptive snapshots; ripgrep is the implicit baseline axis.</desc>
 ${g.join("\n")}</svg>`;
 }
 
@@ -756,8 +763,8 @@ export function markdown(d: Payload, docs?: DocsPayload): string {
   p("> ### Read this before the numbers");
   p("> `hay` is built to rank declarations first, and this benchmark's ground truth *is* the");
   p("> declaration. It is measuring the thing `hay` optimises for, so it should win, and a win here");
-  p("> is weaker evidence than it looks. The number worth reading is the margin — and whether");
-  p("> `ast-grep`, which actually parses the code, beats a text tool with priors anyway.");
+  p("> is weaker evidence than it looks. Read inferential margins only for invocations with an");
+  p("> explicit stable-order contract; every unordered tool remains visible as a snapshot.");
   p(">");
   p("> The project's other evaluation does not have this problem: it uses real agent searches paired");
   p("> with the files the agent opened next, so the ground truth was not designed around the tool.");
@@ -779,21 +786,23 @@ export function markdown(d: Payload, docs?: DocsPayload): string {
   p("  seeded, so the same corpus yields the same queries on every run.");
   p(`- **Metric** — reciprocal rank of the first result line landing in the declaring file, capped`);
   p(`  at ${d.rankCap} results. Mean reciprocal rank and the share answered within the first ten.`);
-  p("- **Difference** — absolute, against deterministic ripgrep `--sort path`, with a 95% paired bootstrap");
-  p("  interval over per-query reciprocal ranks (10,000 replicates, fixed seed). An interval that");
+  p("- **Difference** — for stable-order invocations only: absolute, against deterministic ripgrep");
+  p("  `--sort path`, with a 95% paired bootstrap interval over per-query reciprocal ranks");
+  p("  (10,000 replicates, fixed seed). Unordered tools are descriptive snapshots. An interval that");
   p("  spans zero is not a detected difference, whatever the point estimate suggests.");
   p("- **Significance** — Fisher's paired randomization test on the same differences, reported");
   p("  beside the interval. Smucker et al. (CIKM 2007) use the randomization test as the reference");
   p("  against which the bootstrap and the t-test are validated, and their follow-up (SIGIR 2009)");
   p("  finds the bootstrap biased toward smaller p-values at small samples — which is most of the");
-  p("  corpora here. Where the two disagree, believe the randomization test.");
+  p("  corpora here. Where the two disagree, believe the randomization test. Neither test is run");
+  p("  for a tool that cannot guarantee repeatable rank order.");
   p("- **Flag parity** — every tool is asked for the same job: recursive, fixed-string,");
   p("  case-sensitive, `path:line:text`. Filtering is deliberately *not* normalised across tools,");
   p("  because what a tool skips is a real property of it; the file counts each tool sees are");
   p("  reported per corpus. The **one exception is ripgrep**, which is given");
   p("  `--sort path --no-ignore-dot --no-ignore-global --no-ignore-exclude` so its rank order is");
-  p("  deterministic and it walks exactly what `hay`");
-  p("  walks. `hay` disables those sources internally so operator-local state cannot change");
+  p("  deterministic and it walks exactly what `hay` walks. ugrep gets its documented `--sort=name`");
+  p("  mode for the same reason. `hay` disables those sources internally so operator-local state cannot change");
   p("  results; without the flags the head-to-head measured which files were searched rather than");
   p("  how they were ranked — 231 files against 225 on the ripgrep corpus, which ships a `.ignore`.");
   p("- **Invocation** — every binary is called by absolute path. On the test machine `grep` is a");
@@ -859,11 +868,12 @@ export function markdown(d: Payload, docs?: DocsPayload): string {
     for (const t of [...c.tools].sort((a, b) => b.mrr - a.mrr)) {
       if (!t.available) { p(`| ${t.label} | not installed | | | | | |`); continue; }
       const flag = !thin(c) && detected(t) ? " **" : " ";
-      p(`| ${t.label} | ${num(t.mrr)} | ${pct(t.top10)} | ${t.medianRank ?? "—"} | ${pct(t.unreachable)} |${flag}${delta(t.vsRipgrep)}${flag.trim() ? "**" : ""} | ${randP(t)} |`);
+      p(`| ${t.label} | ${num(t.mrr)} | ${pct(t.top10)} | ${t.medianRank ?? "—"} | ${pct(t.unreachable)} |${flag}${deltaCell(t)}${flag.trim() ? "**" : ""} | ${randP(t)} |`);
     }
     p();
     p("Bold = **both** tests agree the difference is real: the interval excludes zero *and* the");
-    p("randomization test puts it under 0.05.");
+    p("randomization test puts it under 0.05. `snapshot only` means the tool has no stable-order");
+    p("contract, so its point estimates are shown but no confidence interval or p-value is computed.");
     const split = c.tools.filter(disputed);
     if (split.length && !thin(c)) {
       p();
@@ -909,6 +919,8 @@ export function markdown(d: Payload, docs?: DocsPayload): string {
   p("  important caveat on this page.");
   p("- **Definition-finding is not all of search.** An agent also asks where something is *used*,");
   p("  what calls what, and where a behaviour lives with no symbol to name. None of that is here.");
+  p("- **Unordered tools are snapshots, not inference.** Their MRR and top-10 values describe this");
+  p("  run only; scheduler or traversal order may change them on the same immutable corpus.");
   p("- **One machine, one filesystem, macOS only.**");
   if (d.load) {
     p(`- **The machine was busy.** Load average ranged ${d.load.min.toFixed(1)}–${d.load.max.toFixed(1)}` +
@@ -949,14 +961,14 @@ export function html(d: Payload, docs?: DocsPayload): string {
     const rows = [...c.tools].sort((a, b) => b.mrr - a.mrr).map((t) => {
       if (!t.available) return `<tr class="absent"><th scope="row">${esc(t.label)}</th><td colspan="6">not installed</td></tr>`;
       const sig = !thin(c) && detected(t);
-      const dir = !t.vsRipgrep ? "base" : t.vsRipgrep.mean > 0 ? "up" : "down";
+      const dir = t.tool === "rg" ? "base" : !t.deterministic || !t.vsRipgrep ? "snapshot" : t.vsRipgrep.mean > 0 ? "up" : "down";
       return `<tr${t.tool === "hay" ? ' class="subject"' : ""}>
   <th scope="row">${esc(t.label)}</th>
   <td class="n">${num(t.mrr)}${bar(t.mrr)}</td>
   <td class="n">${pct(t.top10)}</td>
   <td class="n">${t.medianRank ?? "—"}</td>
   <td class="n">${pct(t.unreachable)}</td>
-  <td class="d ${dir}${sig ? " sig" : ""}">${esc(delta(t.vsRipgrep))}</td>
+  <td class="d ${dir}${sig ? " sig" : ""}">${esc(deltaCell(t))}</td>
   <td class="n">${esc(randP(t))}</td>
 </tr>`;
     }).join("\n");
@@ -982,6 +994,7 @@ ${thin(c) ? `<p class="thin-note"><strong>Too few queries to conclude anything (
   <th scope="col" class="n">randomization p</th>
 </tr></thead>
 <tbody>${rows}</tbody></table></div>
+<p class="meta"><code>snapshot only</code> means the invocation has no stable-order contract: point estimates are shown, but confidence intervals and p-values are deliberately omitted.</p>
 ${perf}
 </section>`;
   };
@@ -1176,8 +1189,8 @@ table.rr th{font-family:"IBM Plex Mono",monospace;font-size:.72rem;text-transfor
   <h2>Read this before the numbers</h2>
   <p><code>hay</code> is built to rank declarations first, and this benchmark's ground truth <em>is</em>
   the declaration. It measures the thing <code>hay</code> optimises for, so it should win — and a win
-  here is weaker evidence than it looks. What is worth reading is the margin, and whether
-  <code>ast-grep</code>, which actually parses the code, beats a text tool with priors anyway.</p>
+  here is weaker evidence than it looks. Read inferential margins only for invocations with an
+  explicit stable-order contract; every unordered tool remains visible as a descriptive snapshot.</p>
   <p>The project's other evaluation does not have this problem: real agent searches paired with the
   files the agent opened next, so the ground truth was not designed around the tool. It is also
   unreproducible by anyone else, because those transcripts are private. Neither evaluation is
@@ -1192,13 +1205,13 @@ difference is real; a hollow mark means they disagree or the interval touches ze
 cases the tables refuse to call detected. The vertical line is ripgrep itself.</p>
 ${chartDelta(d)}
 <figcaption><strong>Read it as:</strong> further right = answers higher up the list than ripgrep.
-hay (circles) wins by construction here — the ground truth <em>is</em> a declaration ranking, which
-is what hay optimises. The honest comparison is the margin, and whether ast-grep, which parses
-code rather than scoring text, keeps pace.</figcaption>
+hay (circles) is favoured by construction here — the ground truth <em>is</em> a declaration ranking,
+which is what hay optimises. Only stable-order invocations enter this inferential chart; unordered
+tools remain visible as descriptive snapshots in the tables and first-page chart.</figcaption>
 </figure>
 <figure class="chartcard" tabindex="0">
 <h2 style="margin-top:.25rem">The first page of results</h2>
-<p>Agents read roughly ten results. Share of queries answered within them:</p>
+<p>Agents read roughly ten results. Share of queries answered within them; bars for unordered tools are descriptive snapshots:</p>
 ${chartTop10(d)}
 </figure>
 <figure class="chartcard" tabindex="0">
@@ -1215,8 +1228,8 @@ ${FEYNMAN}
   <li><strong>Ground truth</strong> — ${esc(d.groundTruth)}. A symbol declared in more than one place is discarded: with no single right answer, scoring against an arbitrary one is noise.</li>
   <li><strong>Queries</strong> — symbols with 5–2,000 occurrences, sampled with a fixed seed so the same corpus yields the same queries every run.</li>
   <li><strong>Metric</strong> — reciprocal rank of the first result line in the declaring file, capped at ${d.rankCap}.</li>
-  <li><strong>Difference</strong> — absolute, against deterministic ripgrep <code>--sort path</code>, 95% paired bootstrap interval over per-query reciprocal ranks, 10,000 replicates, fixed seed. An interval spanning zero is not a detected difference.</li>
-  <li><strong>Flag parity</strong> — every tool asked for the same job. Filtering is deliberately not normalised across tools: what a tool skips is a real property of it, so the file counts it sees are reported instead. The one exception is ripgrep, given <code>--sort path --no-ignore-dot --no-ignore-global --no-ignore-exclude</code> so its rank order is deterministic and it walks exactly what <code>hay</code> walks; without it the head-to-head measured which files were searched rather than how they were ranked.</li>
+  <li><strong>Difference</strong> — only for stable-order invocations: absolute, against deterministic ripgrep <code>--sort path</code>, 95% paired bootstrap interval over per-query reciprocal ranks, 10,000 replicates, fixed seed. Unordered tools remain descriptive snapshots. An interval spanning zero is not a detected difference.</li>
+  <li><strong>Flag parity</strong> — every tool asked for the same job. Filtering is deliberately not normalised across tools: what a tool skips is a real property of it, so the file counts it sees are reported instead. Ripgrep gets <code>--sort path --no-ignore-dot --no-ignore-global --no-ignore-exclude</code> so its order is deterministic and it walks exactly what <code>hay</code> walks; ugrep gets its documented <code>--sort=name</code>. Without these controls, the head-to-head changes with traversal scheduling instead of ranking quality.</li>
   <li><strong>Invocation</strong> — absolute paths only. On this machine <code>grep</code> is a shell function resolving to ugrep, so calling tools by name would have measured the wrong program.</li>
 </ul>
 
@@ -1237,6 +1250,7 @@ ${docs ? `${docsHtml(docs)}\n\n` : ""}${d.corpora.map(corpusSection).join("\n")}
   <li><strong>Definition-finding is not all of search.</strong> An agent also asks where something is used, what calls what, and where a behaviour lives with no symbol to name it. None of that is measured.</li>
   ${d.load ? `<li><strong>The machine was busy.</strong> Load average ranged ${d.load.min.toFixed(1)}–${d.load.max.toFixed(1)} (median ${d.load.median.toFixed(1)}) over ${d.load.samples} samples on ${d.machine.cpus} cores. Ranking is unaffected, but read the timings as indicative and trust ratios more than absolutes.</li>` : ""}
   <li><strong>Ground truth is a parser's opinion.</strong> Declaration forms the patterns miss are absent rather than wrong.</li>
+  <li><strong>Unordered tools are snapshots, not inference.</strong> Their MRR and top-10 values describe this run only; scheduler or traversal order may change them on the same immutable corpus.</li>
   <li><strong>One machine, one filesystem, macOS.</strong></li>
 </ul>
 
@@ -1286,6 +1300,9 @@ if (import.meta.main) {
     eq(num(0.3966), "0.397", "three decimals");
     eq(num(null), "—", "missing value");
     eq(delta(undefined), "baseline", "the baseline has no difference from itself");
+    eq(deltaCell({ tool: "rg", deterministic: true }), "baseline", "baseline cell");
+    eq(deltaCell({ tool: "ag", deterministic: false }), "snapshot only", "unordered tools do not get inference");
+    eq(deltaCell({ tool: "hay", deterministic: true }), "—", "missing deterministic comparison is not mislabeled baseline");
     // 0.1475 renders as 0.147, not 0.148: it is not exactly representable in binary and toFixed
     // rounds the stored value, which is below the decimal midpoint. Pinned so a future change to
     // the formatter cannot quietly shift a published interval bound.
@@ -1329,15 +1346,15 @@ if (import.meta.main) {
     // ── charts ──
     eq(geomean([2, 8]), 4, "geometric mean of 2 and 8 is 4");
     eq(Number.isNaN(geomean([])), true, "empty geomean is not a number, never a fake 1.0×");
-    const mkCorpus = (name: string, queries: number, tools: Partial<Record<string, { mrr?: number; top10?: number; ms?: number | null; available?: boolean; vs?: [number, number, number] }>>): CorpusReport => ({
+    const mkCorpus = (name: string, queries: number, tools: Partial<Record<string, { mrr?: number; top10?: number; ms?: number | null; available?: boolean; deterministic?: boolean; vs?: [number, number, number] }>>): CorpusReport => ({
       corpus: name, lang: "rust", files: { onDisk: 1, rgVisible: 1, gitTracked: 1 },
       symbolsUniquelyDeclared: 1, queries,
       provenance: { revision: "b".repeat(40), dirty: false },
       tools: Object.entries(tools).map(([tool, v]) => ({
-        tool, label: tool, available: v?.available ?? true, queries: 1,
+        tool, label: tool, available: v?.available ?? true, deterministic: v?.deterministic ?? true, queries: 1,
         mrr: v?.mrr ?? 0.5, top10: v?.top10 ?? 0.8, medianRank: null, unreachable: 0, timeouts: 0,
-        vsRipgrep: v?.vs ? { mean: v.vs[0], lo: v.vs[1], hi: v.vs[2], p: 0, n: queries, clusters: queries } : undefined,
-        ...(tool === "hay" && v?.vs ? { vsRipgrepRandP: 0.001 } : {}),
+        vsRipgrep: v?.deterministic !== false && v?.vs ? { mean: v.vs[0], lo: v.vs[1], hi: v.vs[2], p: 0, n: queries, clusters: queries } : undefined,
+        ...(v?.deterministic !== false && tool === "hay" && v?.vs ? { vsRipgrepRandP: 0.001 } : {}),
       })),
       perf: [0, 1, 2].map((i) => ({ query: `q${i}`, results: {
         rg: { medianMs: v_ms("rg"), minMs: 1, peakRssMb: null, timedOut: false },
@@ -1354,7 +1371,7 @@ if (import.meta.main) {
       task: "t", groundTruth: "g", rankCap: 50, machine: { loadavg: "1", cpus: 1 }, versions: {},
       generatedAt: "2026-08-26T00:00:00.000Z",
       corpora: [
-        mkCorpus("real", 30, { hay: { vs: [0.3, 0.2, 0.4] }, "ast-grep": { vs: [0.1, -0.05, 0.25] }, cs: { vs: [0.15, 0.06, 0.24] } }),
+        mkCorpus("real", 30, { hay: { vs: [0.3, 0.2, 0.4] }, "ast-grep": { deterministic: false }, cs: { deterministic: false } }),
         mkCorpus("thin", 3, { hay: { vs: [0.9, 0.8, 1.0] } }),
         mkCorpus("absent", 28, { hay: { available: false, vs: [0.9, 0.8, 1.0] } }),
       ],
@@ -1449,6 +1466,17 @@ if (import.meta.main) {
     Reflect.deleteProperty(missingGeneratedAt, "generatedAt");
     try { validatePayload(missingGeneratedAt); throw new Error("validator accepted a missing timestamp"); }
     catch (e) { if (!String(e).includes("tampered")) throw e; }
+    const missingDeterminism = structuredClone(committedEvidence);
+    Reflect.deleteProperty(missingDeterminism.corpora[0]!.tools[0]!, "deterministic");
+    try { validatePayload(missingDeterminism); throw new Error("validator accepted missing rank-order metadata"); }
+    catch (e) { if (!String(e).includes("tampered")) throw e; }
+    const snapshotWithInference = structuredClone(committedEvidence);
+    const snapshot = snapshotWithInference.corpora.flatMap((corpus) => corpus.tools).find((tool) => tool.available && !tool.deterministic)!;
+    const reference = snapshotWithInference.corpora[0]!.tools.find((tool) => tool.tool === "hay")!;
+    snapshot.vsRipgrep = structuredClone(reference.vsRipgrep!);
+    snapshot.vsRipgrepRandP = reference.vsRipgrepRandP;
+    try { validatePayload(snapshotWithInference); throw new Error("validator accepted inference for an unordered snapshot"); }
+    catch (e) { if (!String(e).includes("tampered")) throw e; }
     const missingProvenance = structuredClone(committedEvidence);
     Reflect.deleteProperty(missingProvenance.corpora[0]!, "provenance");
     try { validatePayload(missingProvenance); throw new Error("validator accepted missing provenance"); }
@@ -1470,8 +1498,7 @@ if (import.meta.main) {
     catch (e) { if (!String(e).includes("tampered")) throw e; }
     // Thin corpus and unavailable tools must vanish from summary charts, or the picture would
     // assert more than the tables do.
-    eq(deltaRows(payload).map((r) => `${r.corpus}:${r.tool}`), ["real:hay", "real:ast-grep", "real:cs"], "delta rows drop thin/absent");
-    eq(deltaRows(payload).find((r) => r.corpus === "real" && r.tool === "ast-grep")?.detected, false, "interval spanning zero is hollow");
+    eq(deltaRows(payload).map((r) => `${r.corpus}:${r.tool}`), ["real:hay"], "delta rows drop thin, absent, and unordered snapshots");
     eq(timeRatios(payload).map((r) => r.tool), ["hay", "ugrep"], "only tools with measurable timings appear");
     eq(timeRatios(payload)[0]!.ratio, 0.5, "hay at half of ripgrep's time");
     eq(timeRatios(payload).every((row) => row.samples === 6), true, "timing rows share one complete paired cohort");
