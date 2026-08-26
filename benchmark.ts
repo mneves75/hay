@@ -223,15 +223,6 @@ export const TOOLS: Tool[] = [
     ranked: false,
   },
   {
-    id: "ack",
-    label: "ack",
-    bin: "ack",
-    args: (q) => ["--nocolor", "--literal", "--nogroup", "--match", q, "."],
-    parse: plain,
-    scope: "known source types only",
-    ranked: false,
-  },
-  {
     id: "grep",
     label: "BSD grep",
     bin: "grep",

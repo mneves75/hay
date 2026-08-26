@@ -390,7 +390,6 @@ const CAPABILITIES: { id: string; ranked: string; ignore: string; deterministic:
   { id: "rg", ranked: "no", ignore: "gitignore", deterministic: "yes (--sort path)", json: "yes", index: "none" },
   { id: "ugrep", ranked: "no", ignore: "opt-in", deterministic: "yes", json: "yes", index: "none" },
   { id: "ag", ranked: "no", ignore: "own rules", deterministic: "no", json: "no", index: "none" },
-  { id: "ack", ranked: "no", ignore: "file types", deterministic: "yes", json: "no", index: "none" },
   { id: "grep", ranked: "no", ignore: "none", deterministic: "yes", json: "no", index: "none" },
   { id: "git-grep", ranked: "no", ignore: "tracked only", deterministic: "yes", json: "no", index: "git" },
   { id: "cs", ranked: "yes", ignore: "own rules", deterministic: "yes", json: "yes", index: "none" },
@@ -398,6 +397,7 @@ const CAPABILITIES: { id: string; ranked: string; ignore: string; deterministic:
 ];
 
 const NOT_BENCHMARKED = [
+  ["ack", "excluded after the pinned 0.1.4 probe hit the 60 s cap on 52 of 113 rank queries and 5 of 13 full-search timings; mostly censored ranks cannot support comparison"],
   ["zoekt", "trigram index server; needs a build step and a daemon, so it is a different product category"],
   ["Google codesearch (csearch)", "trigram index; not installed on the test machine"],
   ["Sourcegraph, GitHub code search", "hosted services, not comparable on a local tree"],
