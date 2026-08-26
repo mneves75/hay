@@ -555,10 +555,18 @@ async function time(tool: Tool, root: string, query: string, lang: string, reps:
       if (proc.pid) Bun.spawnSync([Bun.which("pkill") ?? "/usr/bin/pkill", "-P", String(proc.pid)]);
       proc.kill("SIGKILL");
     }, TIMEOUT_MS);
-    const err = await Promise.race([
-      new Response(proc.stderr).text(),
-      new Promise<string>((r) => setTimeout(() => r(""), TIMEOUT_MS + 5_000)),
-    ]);
+    let pipeTimer: ReturnType<typeof setTimeout> | undefined;
+    const pipeDeadline = new Promise<string>((resolve) => {
+      pipeTimer = setTimeout(() => resolve(""), TIMEOUT_MS + 5_000);
+    });
+    let err: string;
+    try {
+      err = await Promise.race([new Response(proc.stderr).text(), pipeDeadline]);
+    } finally {
+      // Promise.race does not cancel its loser. Leaving this timer alive made a successful full
+      // benchmark linger for 65 seconds after writing its artifact.
+      if (pipeTimer !== undefined) clearTimeout(pipeTimer);
+    }
     const code = await proc.exited;
     finished = true;
     clearTimeout(timer);
