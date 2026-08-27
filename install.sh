@@ -8,7 +8,8 @@
 # Env overrides:
 #   HAY_REPO    source repository (default: https://github.com/mneves75/hay.git)
 #   HAY_REF     branch/tag/commit to build (default: main)
-#   CARGO_TARGET_DIR  passed through to cargo if you set it
+#   CARGO_INSTALL_ROOT  install root (default: CARGO_HOME, then ~/.cargo)
+#   CARGO_TARGET_DIR   passed through to cargo if you set it
 set -euo pipefail
 
 need() { command -v "$1" >/dev/null 2>&1 || { echo "hay installer: missing '$1' ($2)" >&2; exit 2; }; }
@@ -25,8 +26,18 @@ checkout_source() {
   [ "$(git -C "$destination" rev-parse HEAD)" = "$(git -C "$destination" rev-parse 'FETCH_HEAD^{commit}')" ]
 }
 
+resolved_install_root() {
+  printf "%s\n" "${CARGO_INSTALL_ROOT:-${CARGO_HOME:-$HOME/.cargo}}"
+}
+
+cargo_install() {
+  local source_path="$1" install_root="$2"
+  cargo install --locked --path "$source_path" --force --root "$install_root"
+}
+
 installer_selftest() (
   local root source checkout first second
+  local -a captured_args=()
   root="$(mktemp -d)"
   trap 'chmod -R u+w "$root"; rm -r "$root"' EXIT
   source="$root/source"
@@ -62,6 +73,21 @@ installer_selftest() (
     echo "installer selftest: option-like ref unexpectedly succeeded" >&2
     return 1
   fi
+  [ "$(CARGO_INSTALL_ROOT="$root/custom" CARGO_HOME="$root/cargo-home" HOME="$root/home" resolved_install_root)" = "$root/custom" ]
+  [ "$(CARGO_INSTALL_ROOT="" CARGO_HOME="$root/cargo-home" HOME="$root/home" resolved_install_root)" = "$root/cargo-home" ]
+  [ "$(CARGO_INSTALL_ROOT="" CARGO_HOME="" HOME="$root/home" resolved_install_root)" = "$root/home/.cargo" ]
+
+  cargo() { captured_args=("$@"); }
+  cargo_install "$root/package" "$root/install"
+  [ "${#captured_args[@]}" -eq 7 ]
+  [ "${captured_args[0]}" = install ]
+  [ "${captured_args[1]}" = --locked ]
+  [ "${captured_args[2]}" = --path ]
+  [ "${captured_args[3]}" = "$root/package" ]
+  [ "${captured_args[4]}" = --force ]
+  [ "${captured_args[5]}" = --root ]
+  [ "${captured_args[6]}" = "$root/install" ]
+
   echo "installer selftest ok"
 )
 
@@ -93,11 +119,13 @@ if ! checkout_source "$REPO" "$REF" "$dir"; then
 fi
 echo "==> source commit $(git -C "$dir" rev-parse HEAD)"
 
-# cargo install ignores where the cargo binary lives; it targets
-# $CARGO_INSTALL_ROOT, else $CARGO_HOME, else ~/.cargo — always <root>/bin.
-bin_dir="${CARGO_INSTALL_ROOT:-${CARGO_HOME:-$HOME/.cargo}}/bin"
+# Resolve the destination once and pass it back to Cargo explicitly. Cargo config can also set
+# install.root; without --root, Cargo could install there while this script verified another path.
+# Set CARGO_INSTALL_ROOT to customize the installer destination deterministically.
+install_root="$(resolved_install_root)"
+bin_dir="$install_root/bin"
 echo "==> installing to $bin_dir"
-cargo install --locked --path "$dir/hay" --force
+cargo_install "$dir/hay" "$install_root"
 
 installed="$bin_dir/hay"
 if [ -x "$installed" ]; then
