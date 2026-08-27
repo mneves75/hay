@@ -319,7 +319,7 @@ fn explain_prints_a_per_signal_breakdown() {
     let first = stdout.lines().next().unwrap();
     assert!(
         predicate::str::is_match(
-            r"^ *[0-9.+-]+ \[def [+-][0-9.]+ path [+-][0-9.]+ tf [+-][0-9.]+\]  "
+            r"^ *[0-9.+-]+ \[def [+-][0-9.]+ path [+-][0-9.]+ word [+-][0-9.]+ tf [+-][0-9.]+\]  "
         )
         .unwrap()
         .eval(first),
@@ -336,4 +336,44 @@ fn explain_prints_a_per_signal_breakdown() {
         mention.contains("[def +0.0"),
         "mention must not score as a definition: {mention}"
     );
+}
+
+#[test]
+fn a_non_ascii_query_does_not_crash_the_ranker() {
+    // Found in review and reproduced here first: scanning a line for a multibyte query advanced
+    // one BYTE past a rejected occurrence, so `hay -F -e 'éé'` over `let x = aéé` sliced inside a
+    // character and exited 2 with "ranking thread panicked" — on a search ripgrep answers.
+    let d = tempfile::Builder::new().prefix("utf8").tempdir().unwrap();
+    write(d.path(), "f.txt", "let x = aéé\n");
+    hay()
+        .args(["-F", "-e", "éé", "."])
+        .current_dir(d.path())
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("aéé"))
+        .stderr(predicate::str::contains("panic").not());
+}
+
+#[test]
+fn results_are_interleaved_by_file_and_the_flag_turns_it_off() {
+    // The first page is worth more as several files than as several lines of one file: an agent
+    // opens files. `--no-diversify` must restore strict score order, or the signal could not be
+    // ablated like every other ranking decision.
+    let d = tempfile::Builder::new().prefix("diversify").tempdir().unwrap();
+    fs::create_dir_all(d.path().join("src")).unwrap();
+    write(d.path(), "src/a.ts", "const session = 1\nuse(session)\nuse(session)\n");
+    write(d.path(), "src/b.ts", "use(session)\n");
+    let files = |args: &[&str]| -> Vec<String> {
+        let out = hay().args(args).current_dir(d.path()).assert().success();
+        normalize(&String::from_utf8(out.get_output().stdout.clone()).unwrap())
+            .lines()
+            .map(|l| l.split(':').next().unwrap().to_string())
+            .collect()
+    };
+    let interleaved = files(&["-F", "session", "."]);
+    assert_eq!(interleaved[1], "./src/b.ts", "b.ts must not wait behind a.ts: {interleaved:?}");
+    let strict = files(&["--no-diversify", "-F", "session", "."]);
+    assert_eq!(strict[1], "./src/a.ts", "--no-diversify keeps score order: {strict:?}");
+    // `-l` prints the same file order either way: diversification is a layout, not a re-ranking.
+    assert_eq!(files(&["-l", "-F", "session", "."]), files(&["-l", "--no-diversify", "-F", "session", "."]));
 }

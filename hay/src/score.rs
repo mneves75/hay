@@ -144,6 +144,17 @@ fn is_ident_char(c: char) -> bool {
     c.is_alphanumeric() || c == '_'
 }
 
+/// Where to resume a `find` scan after a rejected occurrence at byte `i`.
+///
+/// `i + 1` is the obvious spelling and it PANICS: on `a\u{e9}\u{e9}` searching for `\u{e9}\u{e9}`,
+/// the first occurrence starts inside a word so the scan advances to a byte in the middle of a
+/// two-byte character, and slicing there aborts the ranking thread. Reproduced with
+/// `hay -F -e 'éé'` on a line containing `aéé`: exit 2, "ranking thread panicked", on a search
+/// ripgrep answers normally. Every scan of this shape must step by a whole character.
+fn next_scan_start(s: &str, i: usize) -> usize {
+    i + s[i..].chars().next().map_or(1, char::len_utf8)
+}
+
 /// Does this line look like it *declares* the query rather than merely mentioning it?
 ///
 /// Scans tokens before the match for a declaration keyword. Also treats `query:` / `query =` at
@@ -165,7 +176,7 @@ pub fn looks_like_definition(line: &str, query: &str) -> bool {
             at = Some(i);
             break;
         }
-        from = i + 1;
+        from = next_scan_start(&lower, i);
     }
     let Some(at) = at else {
         return false;
@@ -309,15 +320,56 @@ fn looks_like_typed_declaration(lower: &str, at: usize, q: &str) -> bool {
     !CONTROL.contains(&prev)
 }
 
+/// How exactly the match sits inside the line's identifiers.
+///
+/// Pre-registered in DESIGN-hay.md ("exact case/word match > substring — free from the matcher")
+/// and never implemented until 0.2.0. Under the case-insensitive substring search agents actually
+/// run, `auth` matches `oauthToken`, `authenticate` and `auth`; only the last is the concept the
+/// query names, and the middle one at least starts with it.
+///
+/// 1.0 for a whole identifier, 0.5 when the query starts one, 0 when it is buried inside a longer
+/// name. Never negative: bounded retention drops candidates on prescore, and a signal that can
+/// subtract would make a dropped line able to outrank a kept one.
+pub fn word_affinity(line: &str, query: &str) -> f64 {
+    let lower = line.to_ascii_lowercase();
+    let q = query.to_ascii_lowercase();
+    if q.is_empty() {
+        return 0.0;
+    }
+    let mut best: f64 = 0.0;
+    let mut from = 0;
+    while let Some(i) = lower[from..].find(&q).map(|i| i + from) {
+        let end = i + q.len();
+        let before_is_ident = lower[..i].chars().next_back().is_some_and(is_ident_char);
+        let after_is_ident = lower[end..].chars().next().is_some_and(is_ident_char);
+        if !before_is_ident {
+            best = best.max(if after_is_ident { 0.5 } else { 1.0 });
+        }
+        if best >= 1.0 {
+            break;
+        }
+        from = next_scan_start(&lower, i);
+    }
+    best
+}
+
 /// Weights. Named constants rather than magic numbers so ablation can zero them individually.
 /// Only signals that measurably improve MRR are here. `exact_case` (matching the query's own
 /// casing) and `comment_penalty` (down-ranking comment lines) were implemented, ablated against
 /// the real test collection, contributed +0.000 each, and were deleted rather than kept because
 /// they sounded sensible.
+///
+/// `filename` — a bonus for a file whose own name is the query — was added in this cycle, ablated
+/// on both public sets, and deleted: +0.008 MRR on openclaw, +0.000 on ripgrep, -0.002 on
+/// alamofire, and **-0.014 on SWE-Explore**, the one public agent-shaped benchmark. It is the
+/// highest-weighted field in every published lexical code retriever (BM25F over filename), it
+/// scored +0.033 in a simulation on the private evaluation corpus, and it still does not ship,
+/// because the evaluation set does not get a vote and the development sets said no.
 #[derive(Debug)]
 pub struct Weights {
     pub definition: f64,
     pub path: f64,
+    pub word: f64,
     pub term_frequency: f64,
 }
 
@@ -326,6 +378,7 @@ impl Default for Weights {
         Self {
             definition: 6.0,
             path: 1.0,
+            word: 1.0,
             term_frequency: 0.5,
         }
     }
@@ -346,6 +399,7 @@ pub struct LineInput<'a> {
 pub struct ScoreBreakdown {
     pub definition: f64,
     pub path: f64,
+    pub word: f64,
     pub tf: f64,
     pub total: f64,
 }
@@ -359,6 +413,7 @@ pub fn explain_line(inp: &LineInput, w: &Weights) -> ScoreBreakdown {
         0.0
     };
     let path = w.path * path_weight(classify_path(inp.path));
+    let word = w.word * word_affinity(inp.line, inp.query);
     // Saturating AND capped. Uncapped, ln(1+n) on a half-million-match query reaches ~6.5 and can
     // outweigh the definition signal (6.0) — which would also make bounded retention by prescore
     // unsound, since a dropped candidate could out-score a kept one purely on frequency.
@@ -367,8 +422,9 @@ pub fn explain_line(inp: &LineInput, w: &Weights) -> ScoreBreakdown {
     ScoreBreakdown {
         definition,
         path,
+        word,
         tf,
-        total: definition + path + tf,
+        total: definition + path + word + tf,
     }
 }
 
@@ -686,11 +742,43 @@ mod tests {
             file_matches: 7,
         };
         let b = explain_line(&inp, &w);
-        assert!((b.definition + b.path + b.tf - b.total).abs() < 1e-12);
+        assert!((b.definition + b.path + b.word + b.tf - b.total).abs() < 1e-12);
         assert!((b.total - score_line(&inp, &w)).abs() < 1e-12);
-        assert!(b.definition > 0.0 && b.path > 0.0 && b.tf > 0.0);
+        assert!(b.definition > 0.0 && b.path > 0.0 && b.tf > 0.0 && b.word > 0.0);
     }
 
+    /// Found by review, reproduced from the command line: a non-ASCII query whose first occurrence
+    /// sits inside a word made both scans advance by one BYTE into the middle of a character, and
+    /// slicing there panicked the ranking thread — `hay -F -e 'éé'` over a file containing
+    /// `let x = aéé` exited 2 with "ranking thread panicked" on a search ripgrep answers.
+    #[test]
+    fn a_multibyte_query_buried_in_a_word_does_not_panic() {
+        assert!(!looks_like_definition("let x = aéé", "éé"));
+        assert_eq!(word_affinity("let x = aéé", "éé"), 0.0);
+        // The same query where it IS declared still scores as one.
+        assert!(looks_like_definition("const éé = 1", "éé"));
+        assert_eq!(word_affinity("const éé = 1", "éé"), 1.0);
+        // Multibyte characters either side of the match, and a query that is one character.
+        assert_eq!(word_affinity("çé", "é"), 0.0);
+        assert!(!looks_like_definition("çé", "é"));
+    }
+
+    #[test]
+    fn a_whole_identifier_beats_a_buried_substring() {
+        assert_eq!(word_affinity("const auth = 1", "auth"), 1.0);
+        assert_eq!(word_affinity("call(auth)", "auth"), 1.0);
+        // Starts an identifier: still the concept, one derivation away.
+        assert_eq!(word_affinity("authenticate(user)", "auth"), 0.5);
+        // Buried inside a longer name: `oauthToken` is not what `auth` was asking for.
+        assert_eq!(word_affinity("const oauthToken = 1", "auth"), 0.0);
+        // The best occurrence on the line wins, whichever order they appear in.
+        assert_eq!(word_affinity("oauthToken = auth", "auth"), 1.0);
+        assert_eq!(word_affinity("auth = oauthToken", "auth"), 1.0);
+        // Case-insensitive, like the search that produced the match.
+        assert_eq!(word_affinity("const Auth = 1", "auth"), 1.0);
+        assert_eq!(word_affinity("", "auth"), 0.0);
+        assert_eq!(word_affinity("anything", ""), 0.0);
+    }
     /// Zeroing a weight must actually disable that signal — ablation depends on it.
     #[test]
     fn weights_are_ablatable() {
