@@ -35,11 +35,11 @@ import {
   symlinkSync, writeFileSync, type Stats,
 } from "node:fs";
 import { homedir, tmpdir } from "node:os";
-import { join, posix } from "node:path";
+import { join, posix, resolve } from "node:path";
 import { create as createTar, Unpack, type ReadEntry } from "tar";
 
 import {
-  ResultScan, bootstrapCI, mean, mulberry32, randomizationP, rankOfAnswer,
+  ResultScan, bootstrapCI, mean, mulberry32, randomizationP, rankOfAnswer, setHayFlags,
 } from "./measure-mrr.ts";
 
 const cacheHome = process.env["XDG_CACHE_HOME"] ?? join(homedir(), ".cache");
@@ -189,11 +189,13 @@ const MAX_DECOMPRESSION_RATIO = 200;
 export type ArchiveLimits = { expandedBytes: number; members: number; depth: number };
 type ArchiveGuard = ((path: string, entry: ReadEntry | Stats) => boolean) & {
   violation: () => string | null;
+  /** Members dropped without failing the archive — links, which are never written to disk. */
+  skipped: () => number;
 };
 
 /** Validate every archive member before the maintained parser writes it to disk. */
 export function archiveEntryGuard(limits: ArchiveLimits): ArchiveGuard {
-  let members = 0, expandedBytes = 0, violation: string | null = null;
+  let members = 0, expandedBytes = 0, skipped = 0, violation: string | null = null;
   const reject = (message: string): false => { violation ??= message; return false; };
   const guard = ((path: string, entry: ReadEntry | Stats): boolean => {
     if (violation) return false;
@@ -209,6 +211,16 @@ export function archiveEntryGuard(limits: ArchiveLimits): ArchiveGuard {
       components.some((component) => component === "" || component === "." || component === "..") ||
       components.length > limits.depth
     ) return reject("unsafe archive path depth");
+    // Links are DROPPED, not fatal. A symlink in an untrusted archive is the classic escape, so
+    // none is ever written — but rejecting the whole tarball for containing one threw away 21 of
+    // the 97 committed SWE-Explore instances on a clean machine (django, sympy and friends all
+    // ship symlinks), which is the external-validity evidence disappearing over a member nothing
+    // here would have read: ripgrep does not follow symlinks by default, so the extracted tree is
+    // identical for the measurement with the links absent. Counted, per invariant 7.
+    if (entry.type === "SymbolicLink" || entry.type === "Link") {
+      skipped++;
+      return false;
+    }
     if (entry.type !== "File" && entry.type !== "OldFile" && entry.type !== "Directory") {
       return reject("unsupported archive entry type");
     }
@@ -222,6 +234,7 @@ export function archiveEntryGuard(limits: ArchiveLimits): ArchiveGuard {
     return true;
   }) as ArchiveGuard;
   guard.violation = () => violation;
+  guard.skipped = () => skipped;
   return guard;
 }
 
@@ -254,6 +267,9 @@ export async function extractSafeArchive(
       maxDecompressionRatio: MAX_DECOMPRESSION_RATIO,
       filter: (path, entry) => {
         if (guard(path, entry)) return true;
+        // A dropped link is not a violation: the guard says so by leaving `violation` unset, and
+        // extraction continues without it.
+        if (guard.violation() === null) return false;
         const error = new Error(guard.violation() ?? "archive safety limit exceeded");
         input.destroy();
         unpack.abort(error);
@@ -531,11 +547,15 @@ if (import.meta.main) {
         symlinkSync("/tmp", join(linkSource, "root/link"));
         const linkArchive = join(archiveRoot, "link.tar.gz");
         await createTar({ cwd: linkSource, file: linkArchive, gzip: true }, ["root"]);
-        rejected = false;
-        try {
-          await extractSafeArchive(linkArchive, linkDest, { expandedBytes: 1024, members: 10, depth: 4 });
-        } catch { rejected = true; }
-        eq(rejected, true, "archive links are rejected");
+        // A link must never reach disk, and must not cost us the rest of the archive: the guard
+        // drops it and extraction completes. Both halves are asserted — dropping it silently
+        // while still writing it would pass a test that only checked the exit path.
+        await extractSafeArchive(linkArchive, linkDest, { expandedBytes: 1024, members: 10, depth: 4 });
+        eq(existsSync(join(linkDest, "root/link")), false, "an archive link is never written");
+        const guardedLinks = archiveEntryGuard({ expandedBytes: 1024, members: 10, depth: 4 });
+        eq(guardedLinks("root/link", { type: "SymbolicLink", size: 0 } as unknown as ReadEntry), false, "a link member is filtered out");
+        eq(guardedLinks.violation(), null, "a dropped link does not fail the archive");
+        eq(guardedLinks.skipped(), 1, "dropped links are counted, never absorbed");
       }
     } finally {
       rmSync(archiveRoot, { recursive: true, force: true });
@@ -556,6 +576,20 @@ if (import.meta.main) {
   const sampleSize = Number(flag("--sample", "100"));
   const budgetMb = Number(flag("--budget-mb", "500"));
   const perLang = 20;
+  // Ablation: `--ablate no-filename,no-word` turns hay signals off on the one public, agent-shaped
+  // set this project has. It writes its own `--out`, never `evidence/swe-explore.json`, and the
+  // flags go into the payload — an ablation must not be able to impersonate the headline run.
+  const ablate = flag("--ablate", "").split(",").filter(Boolean);
+  const outPath = flag("--out", "evidence/swe-explore.json");
+  if (ablate.length > 0) {
+    setHayFlags(ablate.map((f) => `--${f}`));
+    // Resolved, not string-compared: `./evidence/swe-explore.json` is the same file, and a check
+    // that only rejects one spelling of a path is not a check.
+    if (resolve(outPath) === resolve("evidence/swe-explore.json")) {
+      console.error("--ablate needs its own --out: an ablation is not the published run");
+      process.exit(2);
+    }
+  }
 
   mkdirSync(`${CACHE}/checkouts`, { recursive: true });
   if (!existsSync(`${CACHE}/bench.final.public.jsonl`)) {
@@ -693,6 +727,8 @@ if (import.meta.main) {
     claim: "given identical mechanically-derived queries, does hay's reordering surface gold files earlier than rg's path order — this does not measure issue localization",
     qderive: QDERIVE_VERSION,
     seed: SEED,
+    // Empty in the published run; an ablation records exactly which signals it turned off.
+    hayAblation: ablate,
     instances: results.length,
     byLanguage: byLang,
     excluded: { noPublicIssueText: excludedNoIssue, repoSkipped: skippedRepo, noDerivableQueries: skippedNoQueries, noVisibleGold: skippedNoGold },
@@ -727,6 +763,6 @@ if (import.meta.main) {
   show("dNDCG10", report.deltaNdcg10);
   console.error(`  excluded: ${JSON.stringify(report.excluded)}`);
 
-  await Bun.write("evidence/swe-explore.json", JSON.stringify(report, null, 2));
-  console.error("\nwrote evidence/swe-explore.json (all public data; sample manifest was not changed while scoring)");
+  await Bun.write(outPath, JSON.stringify(report, null, 2));
+  console.error(`\nwrote ${outPath} (all public data; sample manifest was not changed while scoring)`);
 }

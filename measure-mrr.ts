@@ -72,6 +72,18 @@ let RETRIEVER: Retriever = "rg";
 let HAY_FLAGS: string[] = [];
 
 /**
+ * Extra hay flags for an ablation run, shared by every harness that ranks through `rankOfAnswer`.
+ *
+ * DESIGN-hay.md requires each signal to be measured with and without, and `swe-explore.ts` is the
+ * only public, agent-shaped set this project has — so it must be able to turn a signal off too.
+ * Empty in every published run: harnesses record the flags they set in their payload, so an
+ * ablation can never be mistaken for the headline number.
+ */
+export function setHayFlags(flags: string[]): void {
+  HAY_FLAGS = flags;
+}
+
+/**
  * Pure by design: the retriever is a parameter, not the module global. `pairRepo` used to flip
  * `RETRIEVER` between two awaited calls, which worked only because nothing ran concurrently —
  * and any second harness importing this file would have had to copy the whole parity block below
@@ -796,7 +808,7 @@ if (import.meta.main) {
   }
   // Ablation passthrough: --ablate no-definition,no-path  ->  hay --no-definition --no-path
   if (typeof flags["--ablate"] === "string") {
-    HAY_FLAGS = flags["--ablate"].split(",").filter(Boolean).map((f) => `--${f}`);
+    setHayFlags(flags["--ablate"].split(",").filter(Boolean).map((f) => `--${f}`));
   }
 
   // Said once, before any of it is produced. The per-repo payload carries real search terms from
