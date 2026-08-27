@@ -1,7 +1,30 @@
 import benchmarkPayload from "../../../evidence/benchmark.json";
-import { AbsoluteFill, interpolate, Sequence, spring, useCurrentFrame, useVideoConfig } from "remotion";
+import docsPayload from "../../../evidence/docs-track.json";
+import {
+  AbsoluteFill,
+  interpolate,
+  Sequence,
+  spring,
+  useCurrentFrame,
+  useVideoConfig,
+} from "remotion";
 
-type ToolScore = { tool: string; available: boolean; mrr: number };
+type ToolScore = {
+  tool: string;
+  available: boolean;
+  deterministic: boolean;
+  mrr: number;
+};
+type DocsCorpusReport = {
+  corpus: string;
+  queries: unknown[];
+  delta: {
+    mrr: { mean: number; lo: number; hi: number };
+    randomizationP: number;
+  };
+};
+type DocsPayload = { corpora: DocsCorpusReport[] };
+type DocsResult = { corpora: number; wins: number; regressions: number };
 type CorpusReport = { corpus: string; queries: number; tools: ToolScore[] };
 type BenchmarkPayload = { versions: { hay: string }; corpora: CorpusReport[] };
 type CorpusDatum = { name: string; hay: number; rg: number };
@@ -15,32 +38,69 @@ const corpusNames: Record<string, string> = {
 };
 
 const findTool = (corpus: CorpusReport, tool: string): ToolScore => {
-  const score = corpus.tools.find((candidate) => candidate.tool === tool && candidate.available);
-  if (!score) throw new Error("benchmark evidence missing available " + tool + " score for " + corpus.corpus);
+  const score = corpus.tools.find(
+    (candidate) => candidate.tool === tool && candidate.available,
+  );
+  if (!score)
+    throw new Error(
+      "benchmark evidence missing available " +
+        tool +
+        " score for " +
+        corpus.corpus,
+    );
+  if (!score.deterministic) {
+    throw new Error(
+      "benchmark evidence lacks deterministic order for " +
+        tool +
+        " on " +
+        corpus.corpus,
+    );
+  }
   if (!Number.isFinite(score.mrr) || score.mrr < 0 || score.mrr > 1) {
-    throw new Error("benchmark evidence has invalid " + tool + " MRR for " + corpus.corpus);
+    throw new Error(
+      "benchmark evidence has invalid " + tool + " MRR for " + corpus.corpus,
+    );
   }
   return score;
 };
 
 const deriveCorpora = (payload: BenchmarkPayload): CorpusDatum[] => {
-  const corpora = payload.corpora.filter((corpus) => corpus.queries >= MIN_USABLE_QUERIES);
+  const corpora = payload.corpora.filter(
+    (corpus) => corpus.queries >= MIN_USABLE_QUERIES,
+  );
   if (corpora.length !== 4) {
-    throw new Error("video layout requires exactly four usable benchmark corpora; found " + corpora.length);
+    throw new Error(
+      "video layout requires exactly four usable benchmark corpora; found " +
+        corpora.length,
+    );
   }
   for (const corpus of corpora) {
     const hay = findTool(corpus, "hay");
-    const competitors = corpus.tools.filter((tool) => tool.tool !== "hay" && tool.available);
+    const competitors = corpus.tools.filter(
+      (tool) => tool.tool !== "hay" && tool.available && tool.deterministic,
+    );
     if (competitors.length === 0) {
-      throw new Error("benchmark evidence has no available comparator for " + corpus.corpus);
+      throw new Error(
+        "benchmark evidence has no available deterministic comparator for " +
+          corpus.corpus,
+      );
     }
-    const strongestOther = Math.max(...competitors.map((tool) => {
-      if (!Number.isFinite(tool.mrr) || tool.mrr < 0 || tool.mrr > 1)
-        throw new Error("benchmark evidence has invalid " + tool.tool + " MRR for " + corpus.corpus);
-      return tool.mrr;
-    }));
+    const strongestOther = Math.max(
+      ...competitors.map((tool) => {
+        if (!Number.isFinite(tool.mrr) || tool.mrr < 0 || tool.mrr > 1)
+          throw new Error(
+            "benchmark evidence has invalid " +
+              tool.tool +
+              " MRR for " +
+              corpus.corpus,
+          );
+        return tool.mrr;
+      }),
+    );
     if (hay.mrr <= strongestOther) {
-      throw new Error("benchmark copy unsupported: hay is not first on " + corpus.corpus);
+      throw new Error(
+        "benchmark copy unsupported: hay is not first on " + corpus.corpus,
+      );
     }
   }
   return corpora.map((corpus) => ({
@@ -51,9 +111,47 @@ const deriveCorpora = (payload: BenchmarkPayload): CorpusDatum[] => {
 };
 
 const CORPORA = deriveCorpora(benchmarkPayload as BenchmarkPayload);
-const usableCorpusPhrase = CORPORA.length === 4 ? "four usable corpora" : String(CORPORA.length) + " usable corpora";
-const versionMatch = (benchmarkPayload as BenchmarkPayload).versions.hay.match(/^hay (\d+\.\d+\.\d+)$/);
-if (!versionMatch) throw new Error("video requires an exact stable hay version in benchmark evidence");
+
+const deriveDocsResult = (payload: DocsPayload): DocsResult => {
+  const corpora = payload.corpora.filter(
+    (corpus) => corpus.queries.length >= MIN_USABLE_QUERIES,
+  );
+  if (corpora.length === 0)
+    throw new Error("video requires a usable documentation benchmark");
+  let wins = 0;
+  let regressions = 0;
+  for (const corpus of corpora) {
+    const { mean, lo, hi } = corpus.delta.mrr;
+    const p = corpus.delta.randomizationP;
+    if (
+      ![mean, lo, hi, p].every(Number.isFinite) ||
+      lo > mean ||
+      mean > hi ||
+      p < 0 ||
+      p > 1
+    ) {
+      throw new Error("documentation evidence is invalid for " + corpus.corpus);
+    }
+    const intervalDetected = lo > 0 || hi < 0;
+    if (!intervalDetected || p >= 0.05) continue;
+    if (mean > 0) wins++;
+    if (mean < 0) regressions++;
+  }
+  return { corpora: corpora.length, wins, regressions };
+};
+
+const DOCS_RESULT = deriveDocsResult(docsPayload as DocsPayload);
+const usableCorpusPhrase =
+  CORPORA.length === 4
+    ? "four usable corpora"
+    : String(CORPORA.length) + " usable corpora";
+const versionMatch = (benchmarkPayload as BenchmarkPayload).versions.hay.match(
+  /^hay (\d+\.\d+\.\d+)$/,
+);
+if (!versionMatch)
+  throw new Error(
+    "video requires an exact stable hay version in benchmark evidence",
+  );
 const PUBLIC_VERSION = versionMatch[1];
 
 const C = {
@@ -89,13 +187,55 @@ const TitleScene: React.FC = () => {
   return (
     <AbsoluteFill style={{ justifyContent: "center", alignItems: "center" }}>
       <RuledBg />
-      <div style={{ textAlign: "center", translate: `0 ${interpolate(rise, [0, 1], [40, 0])}px`, opacity: rise }}>
-        <div style={{ fontFamily: mono, fontSize: 26, letterSpacing: "0.24em", textTransform: "uppercase", color: C.accent, marginBottom: 28 }}>
+      <div
+        style={{
+          textAlign: "center",
+          translate: `0 ${interpolate(rise, [0, 1], [40, 0])}px`,
+          opacity: rise,
+        }}
+      >
+        <div
+          style={{
+            fontFamily: mono,
+            fontSize: 26,
+            letterSpacing: "0.24em",
+            textTransform: "uppercase",
+            color: C.accent,
+            marginBottom: 28,
+          }}
+        >
           hay · ranked grep
         </div>
-        <div style={{ fontFamily: mono, fontSize: 190, fontWeight: 700, color: C.accent, letterSpacing: "-0.04em", lineHeight: 1 }}>hay</div>
-        <div style={{ fontFamily: serif, fontSize: 62, color: C.ink, marginTop: 24 }}>A ranked grep for coding agents</div>
-        <div style={{ fontFamily: mono, fontSize: 32, color: C.soft, marginTop: 20 }}>
+        <div
+          style={{
+            fontFamily: mono,
+            fontSize: 190,
+            fontWeight: 700,
+            color: C.accent,
+            letterSpacing: "-0.04em",
+            lineHeight: 1,
+          }}
+        >
+          hay
+        </div>
+        <div
+          style={{
+            fontFamily: serif,
+            fontSize: 62,
+            color: C.ink,
+            marginTop: 24,
+          }}
+        >
+          A ranked grep for coding agents
+        </div>
+        <div
+          style={{
+            fontFamily: mono,
+            fontSize: 32,
+            color: C.soft,
+            marginTop: 20,
+          }}
+        >
           on complete searches, hay returns ripgrep&rsquo;s matches — reordered
         </div>
       </div>
@@ -103,21 +243,82 @@ const TitleScene: React.FC = () => {
   );
 };
 
-const BarRow: React.FC<{ name: string; hay: number; rg: number; delay: number; f: number; fps: number; wMax: number }> = ({
-  name, hay, rg, delay, f, fps, wMax,
-}) => {
-  const grow = spring({ frame: f - delay, fps, config: { damping: 200 }, durationInFrames: 45 });
+const BarRow: React.FC<{
+  name: string;
+  hay: number;
+  rg: number;
+  delay: number;
+  f: number;
+  fps: number;
+  wMax: number;
+}> = ({ name, hay, rg, delay, f, fps, wMax }) => {
+  const grow = spring({
+    frame: f - delay,
+    fps,
+    config: { damping: 200 },
+    durationInFrames: 45,
+  });
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 36, marginBottom: 44 }}>
-      <div style={{ width: 330, textAlign: "right", fontFamily: mono, fontSize: 36, color: C.ink }}>{name}</div>
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 36,
+        marginBottom: 44,
+      }}
+    >
+      <div
+        style={{
+          width: 330,
+          textAlign: "right",
+          fontFamily: mono,
+          fontSize: 36,
+          color: C.ink,
+        }}
+      >
+        {name}
+      </div>
       <div style={{ flex: 1 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 18, marginBottom: 12 }}>
-          <div style={{ width: wMax * rg, height: 26, background: C.mutedBar, borderRadius: 4, opacity: 0.75 }} />
-          <span style={{ fontFamily: mono, fontSize: 28, color: C.faint }}>{rg.toFixed(3)}</span>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 18,
+            marginBottom: 12,
+          }}
+        >
+          <div
+            style={{
+              width: wMax * rg,
+              height: 26,
+              background: C.mutedBar,
+              borderRadius: 4,
+              opacity: 0.75,
+            }}
+          />
+          <span style={{ fontFamily: mono, fontSize: 28, color: C.faint }}>
+            {rg.toFixed(3)}
+          </span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-          <div style={{ width: wMax * hay * grow, height: 44, background: C.accent, borderRadius: 4 }} />
-          <span style={{ fontFamily: mono, fontSize: 40, fontWeight: 700, color: C.accent }}>{(hay * grow).toFixed(3)}</span>
+          <div
+            style={{
+              width: wMax * hay * grow,
+              height: 44,
+              background: C.accent,
+              borderRadius: 4,
+            }}
+          />
+          <span
+            style={{
+              fontFamily: mono,
+              fontSize: 40,
+              fontWeight: 700,
+              color: C.accent,
+            }}
+          >
+            {(hay * grow).toFixed(3)}
+          </span>
         </div>
       </div>
     </div>
@@ -132,14 +333,39 @@ const BenchmarkScene: React.FC = () => {
     <AbsoluteFill style={{ background: C.ground, padding: "90px 110px" }}>
       <RuledBg />
       <div style={{ position: "relative" }}>
-        <div style={{ fontFamily: mono, fontSize: 26, letterSpacing: "0.24em", textTransform: "uppercase", color: C.accent }}>
-          public benchmark · {usableCorpusPhrase} · parser ground truth
+        <div
+          style={{
+            fontFamily: mono,
+            fontSize: 26,
+            letterSpacing: "0.24em",
+            textTransform: "uppercase",
+            color: C.accent,
+          }}
+        >
+          public benchmark · definition finding · parser ground truth
         </div>
-        <div style={{ fontFamily: serif, fontSize: 72, color: C.ink, margin: "18px 0 60px", fontWeight: 600 }}>
+        <div
+          style={{
+            fontFamily: serif,
+            fontSize: 72,
+            color: C.ink,
+            margin: "18px 0 60px",
+            fontWeight: 600,
+          }}
+        >
           Measured corpus by corpus.
         </div>
         {CORPORA.map((c, i) => (
-          <BarRow key={c.name} name={c.name} hay={c.hay} rg={c.rg} delay={i * 18} f={f} fps={fps} wMax={wMax} />
+          <BarRow
+            key={c.name}
+            name={c.name}
+            hay={c.hay}
+            rg={c.rg}
+            delay={i * 18}
+            f={f}
+            fps={fps}
+            wMax={wMax}
+          />
         ))}
         <div
           style={{
@@ -147,10 +373,19 @@ const BenchmarkScene: React.FC = () => {
             fontSize: 30,
             color: C.soft,
             marginTop: 8,
-            opacity: interpolate(f, [110, 130], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }),
+            opacity: interpolate(f, [110, 130], [0, 1], {
+              extrapolateLeft: "clamp",
+              extrapolateRight: "clamp",
+            }),
           }}
         >
-          Final scores: hay ranks first on all four · bars = mean reciprocal rank · full intervals at the live page
+          gold = hay · muted = rg --sort path · hay leads on{" "}
+          {usableCorpusPhrase}
+          <div style={{ marginTop: 12 }}>
+            docs-heading track: {DOCS_RESULT.wins} detected wins ·{" "}
+            {DOCS_RESULT.regressions} detected regressions across{" "}
+            {DOCS_RESULT.corpora} corpora
+          </div>
         </div>
       </div>
     </AbsoluteFill>
@@ -160,16 +395,47 @@ const BenchmarkScene: React.FC = () => {
 const GuaranteeScene: React.FC = () => {
   const f = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const pop = spring({ frame: f - 8, fps, config: { damping: 12, stiffness: 90 } });
+  const pop = spring({
+    frame: f - 8,
+    fps,
+    config: { damping: 12, stiffness: 90 },
+  });
   return (
     <AbsoluteFill style={{ justifyContent: "center", alignItems: "center" }}>
       <RuledBg />
       <div style={{ textAlign: "center", position: "relative" }}>
-        <div style={{ fontFamily: mono, fontSize: 120, color: C.accent, scale: Math.max(pop, 0), display: "inline-block" }}>
+        <div
+          style={{
+            fontFamily: mono,
+            fontSize: 120,
+            color: C.accent,
+            scale: Math.max(pop, 0),
+            display: "inline-block",
+          }}
+        >
           differential: 0 differing
         </div>
-        <div style={{ fontFamily: serif, fontSize: 76, color: C.ink, marginTop: 40 }}>Complete searches match ripgrep exactly.</div>
-        <div style={{ fontFamily: serif, fontSize: 76, color: C.ink, opacity: interpolate(f, [30, 50], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }) }}>
+        <div
+          style={{
+            fontFamily: serif,
+            fontSize: 76,
+            color: C.ink,
+            marginTop: 40,
+          }}
+        >
+          Complete searches match ripgrep exactly.
+        </div>
+        <div
+          style={{
+            fontFamily: serif,
+            fontSize: 76,
+            color: C.ink,
+            opacity: interpolate(f, [30, 50], [0, 1], {
+              extrapolateLeft: "clamp",
+              extrapolateRight: "clamp",
+            }),
+          }}
+        >
           Only the order changes.
         </div>
         <div
@@ -183,7 +449,10 @@ const GuaranteeScene: React.FC = () => {
             borderRadius: 8,
             padding: "18px 34px",
             background: C.ground,
-            opacity: interpolate(f, [60, 80], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }),
+            opacity: interpolate(f, [60, 80], [0, 1], {
+              extrapolateLeft: "clamp",
+              extrapolateRight: "clamp",
+            }),
           }}
         >
           exit 0 found · 1 nothing · 2 incomplete — never silent
@@ -193,23 +462,38 @@ const GuaranteeScene: React.FC = () => {
   );
 };
 
-const EndScene: React.FC = () => {
+const EndScene: React.FC<{ releaseRef: string }> = ({ releaseRef }) => {
   const f = useCurrentFrame();
-  const installCommand = `curl -fsSL https://raw.githubusercontent.com/mneves75/hay/v${PUBLIC_VERSION}/install.sh | HAY_REF=v${PUBLIC_VERSION} bash`;
-  const chars = Math.floor(interpolate(f, [10, 55], [0, installCommand.length], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }));
+  const installCommand = `curl -fsSL https://raw.githubusercontent.com/mneves75/hay/${releaseRef}/install.sh | HAY_REF=${releaseRef} bash`;
+  const chars = Math.floor(
+    interpolate(f, [10, 55], [0, installCommand.length], {
+      extrapolateLeft: "clamp",
+      extrapolateRight: "clamp",
+    }),
+  );
   const cmd = installCommand.slice(0, chars);
   return (
     <AbsoluteFill style={{ justifyContent: "center", alignItems: "center" }}>
       <RuledBg />
       <div style={{ textAlign: "center", position: "relative" }}>
-        <div style={{ fontFamily: mono, fontSize: 46, color: C.accent, letterSpacing: "0.2em" }}>HAY</div>
+        <div
+          style={{
+            fontFamily: mono,
+            fontSize: 46,
+            color: C.accent,
+            letterSpacing: "0.2em",
+          }}
+        >
+          HAY
+        </div>
         <div
           style={{
             marginTop: 40,
             display: "inline-block",
             fontFamily: mono,
-            fontSize: 28,
+            fontSize: 24,
             color: C.ink,
+            whiteSpace: "nowrap",
             background: C.panel,
             border: `1px solid ${C.rule}`,
             borderRadius: 10,
@@ -218,27 +502,59 @@ const EndScene: React.FC = () => {
         >
           <span style={{ color: C.faint }}>$ </span>
           {cmd}
-          <span style={{ color: C.accent, opacity: f % 30 < 15 ? 1 : 0 }}>▌</span>
+          <span style={{ color: C.accent, opacity: f % 30 < 15 ? 1 : 0 }}>
+            ▌
+          </span>
         </div>
-        <div style={{ fontFamily: mono, fontSize: 30, color: C.soft, marginTop: 48 }}>github.com/mneves75/hay · v{PUBLIC_VERSION}</div>
+        <div
+          style={{
+            fontFamily: mono,
+            fontSize: 30,
+            color: C.soft,
+            marginTop: 48,
+          }}
+        >
+          github.com/mneves75/hay · {releaseRef}
+        </div>
       </div>
     </AbsoluteFill>
   );
 };
 
-export const HayBenchmark: React.FC = () => (
-  <AbsoluteFill>
-    <Sequence durationInFrames={90}>
-      <TitleScene />
-    </Sequence>
-    <Sequence from={90} durationInFrames={210}>
-      <BenchmarkScene />
-    </Sequence>
-    <Sequence from={300} durationInFrames={120}>
-      <GuaranteeScene />
-    </Sequence>
-    <Sequence from={420} durationInFrames={120}>
-      <EndScene />
-    </Sequence>
-  </AbsoluteFill>
-);
+type HayBenchmarkProps = { releaseRef?: string };
+
+const releaseRefMatchesVersion = (releaseRef: string, version: string) => {
+  const stableRef = `v${version}`;
+  if (releaseRef === stableRef) return true;
+  const betaPrefix = `${stableRef}-beta`;
+  return (
+    releaseRef.startsWith(betaPrefix) &&
+    /^[1-9][0-9]*$/.test(releaseRef.slice(betaPrefix.length))
+  );
+};
+
+export const HayBenchmark: React.FC<HayBenchmarkProps> = ({
+  releaseRef = `v${PUBLIC_VERSION}`,
+}) => {
+  if (!releaseRefMatchesVersion(releaseRef, PUBLIC_VERSION)) {
+    throw new Error(
+      "video releaseRef must match the benchmark version, optionally with a beta count",
+    );
+  }
+  return (
+    <AbsoluteFill>
+      <Sequence durationInFrames={90}>
+        <TitleScene />
+      </Sequence>
+      <Sequence from={90} durationInFrames={210}>
+        <BenchmarkScene />
+      </Sequence>
+      <Sequence from={300} durationInFrames={120}>
+        <GuaranteeScene />
+      </Sequence>
+      <Sequence from={420} durationInFrames={120}>
+        <EndScene releaseRef={releaseRef} />
+      </Sequence>
+    </AbsoluteFill>
+  );
+};
