@@ -30,12 +30,12 @@
  */
 
 import {
-  chmodSync, createReadStream, existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync,
-  renameSync, rmSync,
+  chmodSync, createReadStream, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync,
+  readdirSync, realpathSync, renameSync, rmSync, statSync,
   symlinkSync, writeFileSync, type Stats,
 } from "node:fs";
 import { homedir, tmpdir } from "node:os";
-import { join, posix, resolve } from "node:path";
+import { basename, dirname, join, posix, resolve } from "node:path";
 import { create as createTar, Unpack, type ReadEntry } from "tar";
 
 import {
@@ -48,6 +48,36 @@ const BENCH_URL = "https://huggingface.co/datasets/SWE-Explore-Bench/SWE-Explore
 const SEED = 20260820;
 /** The derivation rule's identity. Bump it if the rule changes; results are not comparable across versions. */
 export const QDERIVE_VERSION = "qderive-v1";
+/** The one path a published run writes. An ablation must never land here. */
+export const PUBLISHED_EVIDENCE = "evidence/swe-explore.json";
+
+/**
+ * Do two paths name the same file?
+ *
+ * String comparison is not enough and neither is `resolve`, which only normalises syntax (review
+ * finding): the published evidence path could be reached through a symlinked directory, and on the
+ * case-insensitive filesystems this runs on, `EVIDENCE/swe-explore.json` is the same file. Device
+ * and inode settle it when both exist; otherwise fall back to a real-path comparison of the parent
+ * plus a case-insensitive filename, which is the strongest answer available for a file that has
+ * not been created yet.
+ */
+export function namesTheSameFile(a: string, b: string): boolean {
+  try {
+    if (existsSync(a) && existsSync(b)) {
+      const [sa, sb] = [statSync(a), statSync(b)];
+      return sa.dev === sb.dev && sa.ino === sb.ino;
+    }
+  } catch {
+    // fall through to the path comparison
+  }
+  const canonical = (p: string): string => {
+    const full = resolve(p);
+    const dir = dirname(full);
+    const real = existsSync(dir) ? realpathSync(dir) : dir;
+    return join(real, basename(full)).toLowerCase();
+  };
+  return canonical(a) === canonical(b);
+}
 
 type Instance = {
   instance_id: string;
@@ -211,13 +241,20 @@ export function archiveEntryGuard(limits: ArchiveLimits): ArchiveGuard {
       components.some((component) => component === "" || component === "." || component === "..") ||
       components.length > limits.depth
     ) return reject("unsafe archive path depth");
-    // Links are DROPPED, not fatal. A symlink in an untrusted archive is the classic escape, so
+    // SYMBOLIC links are dropped, not fatal. One in an untrusted archive is the classic escape, so
     // none is ever written — but rejecting the whole tarball for containing one threw away 21 of
     // the 97 committed SWE-Explore instances on a clean machine (django, sympy and friends all
     // ship symlinks), which is the external-validity evidence disappearing over a member nothing
     // here would have read: ripgrep does not follow symlinks by default, so the extracted tree is
     // identical for the measurement with the links absent. Counted, per invariant 7.
-    if (entry.type === "SymbolicLink" || entry.type === "Link") {
+    //
+    // HARD links fall through to the fatal branch below (review finding, 2026-08-27): a hard link
+    // is an ordinary file to ripgrep, so dropping one would remove searchable content — possibly a
+    // gold file — while the run went on scoring the archive as complete. `git archive`, which is
+    // what GitHub's codeload endpoint serves, emits only regular files, directories and symlinks,
+    // so this should never fire; if it ever does the archive is refused loudly and counted as a
+    // skipped repository rather than quietly measured with a hole in it.
+    if (entry.type === "SymbolicLink") {
       skipped++;
       return false;
     }
@@ -238,13 +275,20 @@ export function archiveEntryGuard(limits: ArchiveLimits): ArchiveGuard {
   return guard;
 }
 
+/**
+ * Extract the archive, returning how many members were dropped without failing it.
+ *
+ * The count is returned rather than kept private because a counter only the selftest can read is
+ * the exact defect this whole change is about: the harness had been printing `repoSkipped: 22`
+ * into the payload for weeks and nobody read it. It ends up in the published evidence.
+ */
 export async function extractSafeArchive(
   archive: string,
   destination: string,
   limits: ArchiveLimits,
-): Promise<void> {
+): Promise<number> {
   const guard = archiveEntryGuard(limits);
-  await new Promise<void>((resolve, reject) => {
+  await new Promise<void>((resolveExtraction, reject) => {
     let settled = false;
     const input = createReadStream(archive);
     const finish = (error?: Error) => {
@@ -252,7 +296,7 @@ export async function extractSafeArchive(
       settled = true;
       input.destroy();
       if (error) reject(error);
-      else resolve();
+      else resolveExtraction();
     };
     const fail = (error: unknown) => {
       finish(error instanceof Error ? error : new Error(String(error)));
@@ -285,6 +329,7 @@ export async function extractSafeArchive(
     });
     input.pipe(unpack);
   });
+  return guard.skipped();
 }
 
 // ── plumbing ──────────────────────────────────────────────────────────────────
@@ -329,8 +374,16 @@ async function fetchIssues(dataset: string, cacheName: string): Promise<Map<stri
  * enforce nothing (review finding). Extraction lands in a `.tmp` directory promoted only on
  * success: an interrupted run must not leave a half-extracted tree that a later run silently
  * scores as the repository (review finding).
+ *
+ * `droppedLinks` is how many symlink members this checkout's archive omitted. It is recorded in a
+ * sidecar beside the checkout — not inside it, which would put a file into the searched tree —
+ * so a cached repository still reports it and the published count does not silently depend on
+ * whether the cache was warm.
  */
-async function fetchRepo(issue: Issue, budgetMb: number): Promise<string | null> {
+async function fetchRepo(
+  issue: Issue,
+  budgetMb: number,
+): Promise<{ root: string; droppedLinks: number } | null> {
   const coordinates = safeArchiveCoordinates(issue.instance_id, issue.repo, issue.base_commit);
   if (!coordinates) return null;
   const dir = join(CACHE, "checkouts", coordinates.cacheKey);
@@ -341,7 +394,7 @@ async function fetchRepo(issue: Issue, budgetMb: number): Promise<string | null>
     }
     const entries = readdirSync(dir);
     if (entries.length === 1 && lstatSync(join(dir, entries[0]!)).isDirectory()) {
-      return join(dir, entries[0]!);
+      return { root: join(dir, entries[0]!), droppedLinks: readDroppedLinks(dir) };
     }
   }
   const tmp = `${dir}.tmp`;
@@ -353,6 +406,7 @@ async function fetchRepo(issue: Issue, budgetMb: number): Promise<string | null>
   const budget = budgetMb * 1024 * 1024;
   const url = `https://github.com/${coordinates.repo}/archive/${coordinates.commit}.tar.gz`;
   let ok = false;
+  let droppedLinks = 0;
   writeFileSync(archive, "", { mode: 0o600 });
   chmodSync(archive, 0o600);
   const writer = Bun.file(archive).writer();
@@ -373,7 +427,7 @@ async function fetchRepo(issue: Issue, budgetMb: number): Promise<string | null>
       await writer.end();
       writerClosed = true;
       if (!overBudget) {
-        await extractSafeArchive(archive, tmp, {
+        droppedLinks = await extractSafeArchive(archive, tmp, {
           expandedBytes: budget,
           members: MAX_ARCHIVE_MEMBERS,
           depth: MAX_ARCHIVE_DEPTH,
@@ -399,7 +453,30 @@ async function fetchRepo(issue: Issue, budgetMb: number): Promise<string | null>
     return null;
   }
   renameSync(tmp, dir);
-  return join(dir, entries[0]!);
+  writeFileSync(droppedLinksPath(dir), JSON.stringify({ droppedLinks }), { mode: 0o600 });
+  return { root: join(dir, entries[0]!), droppedLinks };
+}
+
+/** Sidecar path for a checkout's dropped-member count — beside the tree, never inside it. */
+function droppedLinksPath(checkoutDir: string): string {
+  return `${checkoutDir}.links.json`;
+}
+
+/**
+ * What a cached checkout omitted, or -1 when the cache predates the sidecar.
+ *
+ * -1 rather than 0: "we do not know" and "nothing was dropped" are different claims, and this
+ * project's whole complaint about itself is publishing the second when it means the first.
+ */
+function readDroppedLinks(checkoutDir: string): number {
+  const path = droppedLinksPath(checkoutDir);
+  if (!existsSync(path)) return -1;
+  try {
+    const value = (JSON.parse(readFileSync(path, "utf8")) as { droppedLinks?: unknown }).droppedLinks;
+    return typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : -1;
+  } catch {
+    return -1;
+  }
 }
 
 // ── main ──────────────────────────────────────────────────────────────────────
@@ -556,6 +633,12 @@ if (import.meta.main) {
         eq(guardedLinks("root/link", { type: "SymbolicLink", size: 0 } as unknown as ReadEntry), false, "a link member is filtered out");
         eq(guardedLinks.violation(), null, "a dropped link does not fail the archive");
         eq(guardedLinks.skipped(), 1, "dropped links are counted, never absorbed");
+        // A HARD link is an ordinary file to ripgrep: dropping one would put a hole in the
+        // measured tree, so it fails the archive instead of being skipped.
+        const guardedHard = archiveEntryGuard({ expandedBytes: 1024, members: 10, depth: 4 });
+        eq(guardedHard("root/hard", { type: "Link", size: 0 } as unknown as ReadEntry), false, "a hard link is not extracted");
+        eq(guardedHard.violation(), "unsupported archive entry type", "a hard link fails the archive");
+        eq(guardedHard.skipped(), 0, "a hard link is not counted as a dropped link");
       }
     } finally {
       rmSync(archiveRoot, { recursive: true, force: true });
@@ -564,6 +647,13 @@ if (import.meta.main) {
     const q = (rr: number, top10: number, ndcg: number): QueryResult => ({ rr, top10, ndcg, truncated: false, results: 1 });
     eq(bestOf([q(0, 0, 0), q(0.5, 1, 0.4)]), { rr: 0.5, top10: 1, ndcg: 0.4 }, "best of queries");
     eq(bestOf([]), { rr: 0, top10: 0, ndcg: 0 }, "no queries, zero score");
+
+    // The ablation guard must not be defeatable by spelling the published path differently —
+    // a check that only rejects one spelling is not a check.
+    eq(namesTheSameFile(PUBLISHED_EVIDENCE, `./${PUBLISHED_EVIDENCE}`), true, "the same file by another spelling");
+    eq(namesTheSameFile(PUBLISHED_EVIDENCE, "evidence/benchmark.json"), false, "different files are different");
+    eq(namesTheSameFile("evidence/nonexistent-a.json", "evidence/nonexistent-b.json"), false, "two paths that do not exist yet");
+    eq(namesTheSameFile("evidence/nonexistent-a.json", "./evidence/../evidence/nonexistent-a.json"), true, "same not-yet-created file");
 
     console.log("selftest ok");
     process.exit(0);
@@ -580,12 +670,10 @@ if (import.meta.main) {
   // set this project has. It writes its own `--out`, never `evidence/swe-explore.json`, and the
   // flags go into the payload — an ablation must not be able to impersonate the headline run.
   const ablate = flag("--ablate", "").split(",").filter(Boolean);
-  const outPath = flag("--out", "evidence/swe-explore.json");
+  const outPath = flag("--out", PUBLISHED_EVIDENCE);
   if (ablate.length > 0) {
     setHayFlags(ablate.map((f) => `--${f}`));
-    // Resolved, not string-compared: `./evidence/swe-explore.json` is the same file, and a check
-    // that only rejects one spelling of a path is not a check.
-    if (resolve(outPath) === resolve("evidence/swe-explore.json")) {
+    if (namesTheSameFile(outPath, PUBLISHED_EVIDENCE)) {
       console.error("--ablate needs its own --out: an ablation is not the published run");
       process.exit(2);
     }
@@ -666,6 +754,9 @@ if (import.meta.main) {
   };
   const results: InstanceResult[] = [];
   let skippedRepo = 0, skippedNoQueries = 0, skippedNoGold = 0;
+  // Symlink members omitted from the measured trees. Published, because a counter only the
+  // selftest can read is the defect this harness was just fixed for.
+  let droppedLinkMembers = 0, checkoutsWithUnknownDrops = 0;
 
   for (const inst of sampled) {
     const issue = issues.get(inst.instance_id)!;
@@ -674,8 +765,12 @@ if (import.meta.main) {
     const queries = deriveQueries(title, body);
     if (queries.length === 0) { skippedNoQueries++; continue; }
 
-    const root = await fetchRepo(issue, budgetMb);
-    if (!root) { skippedRepo++; continue; }
+    const checkout = await fetchRepo(issue, budgetMb);
+    if (!checkout) { skippedRepo++; continue; }
+    const root = checkout.root;
+    // -1 means the cached checkout predates the sidecar, which is a different fact from zero.
+    if (checkout.droppedLinks > 0) droppedLinkMembers += checkout.droppedLinks;
+    else if (checkout.droppedLinks < 0) checkoutsWithUnknownDrops++;
 
     const gold = new Set(
       inst.ground_truth.read_core_files.flatMap((candidate) => {
@@ -732,6 +827,11 @@ if (import.meta.main) {
     instances: results.length,
     byLanguage: byLang,
     excluded: { noPublicIssueText: excludedNoIssue, repoSkipped: skippedRepo, noDerivableQueries: skippedNoQueries, noVisibleGold: skippedNoGold },
+    // Symlink members dropped from the extracted trees, and checkouts cached before this was
+    // recorded. ripgrep does not follow symlinks, so the measured tree is unaffected — but the
+    // omission is stated rather than assumed harmless.
+    archiveLinkMembersDropped: droppedLinkMembers,
+    checkoutsWithUnrecordedDrops: checkoutsWithUnknownDrops,
     mrrRg: mean(results.map((r) => r.rg.rr)),
     mrrHay: mean(results.map((r) => r.hay.rr)),
     top10Rg: mean(results.map((r) => r.rg.top10)),

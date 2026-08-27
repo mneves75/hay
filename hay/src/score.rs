@@ -330,6 +330,17 @@ fn looks_like_typed_declaration(lower: &str, at: usize, q: &str) -> bool {
 /// 1.0 for a whole identifier, 0.5 when the query starts one, 0 when it is buried inside a longer
 /// name. Never negative: bounded retention drops candidates on prescore, and a signal that can
 /// subtract would make a dropped line able to outrank a kept one.
+///
+/// **Case is folded ASCII-only, exactly as `looks_like_definition` folds it, and this is an
+/// approximation rather than the matcher's own semantics.** Review (2026-08-27) raised two cases.
+/// The first — a Unicode case-insensitive search scoring zero — does not occur: `query` here is the
+/// text the searcher actually matched, not the pattern, so `ÉÉ` is looked for as `ÉÉ` and is found.
+/// The second is real: under a case-SENSITIVE search for `Auth`, a separate lowercase `auth`
+/// elsewhere on the line can supply the whole-identifier bonus. The line does use the term as a
+/// standalone word, which is the prior this signal expresses, and both scans deliberately share one
+/// convention — two identifier scans with different case rules would be a trap for the next reader.
+/// Deriving affinity from the match span instead would be exact, and needs the span mapped onto the
+/// lossily-decoded line, which is a different change from this one.
 pub fn word_affinity(line: &str, query: &str) -> f64 {
     let lower = line.to_ascii_lowercase();
     let q = query.to_ascii_lowercase();
