@@ -3,18 +3,1904 @@
   "task": "documentation retrieval: rank of the first result line in the uniquely headed markdown file",
   "groundTruth": "identifier-like token in an ATX heading of exactly one markdown file and present in at least three parity-visible files",
   "meta": {
-    "date": "2026-08-23",
+    "date": "2026-08-27",
     "seed": 20260820,
     "sample": 30,
     "rankCap": 1000,
     "versions": {
-      "hay": "hay 0.1.2",
-      "rg": "ripgrep 15.2.0"
+      "hay": "hay 0.1.4",
+      "rg": "ripgrep 15.2.0 (rev e89fff89ac)"
     }
   },
   "corpora": [
     {
+      "corpus": "linux",
+      "provenance": {
+        "revision": "45c13f3f9e3bb15fd89ff2864c6f627a3b4b4229",
+        "dirty": false
+      },
+      "lang": "c",
+      "eligibleQueries": 75,
+      "queries": [
+        {
+          "token": "Commit",
+          "answer": "rust/pin-init/CONTRIBUTING.md",
+          "occurrences": 341,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 584,
+              "scanned": 584,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 584,
+              "scanned": 584,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Example",
+          "answer": "tools/sched_ext/README.md",
+          "occurrences": 1901,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            },
+            "rg": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            }
+          }
+        },
+        {
+          "token": "llvm",
+          "answer": "tools/sched_ext/README.md",
+          "occurrences": 197,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 608,
+              "scanned": 608,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 553,
+              "scanned": 553,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Compiling",
+          "answer": "tools/sched_ext/README.md",
+          "occurrences": 18,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 6,
+              "scanned": 6,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 21,
+              "scanned": 21,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "for",
+          "answer": "rust/pin-init/README.md",
+          "occurrences": 66208,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            },
+            "rg": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            }
+          }
+        },
+        {
+          "token": "file",
+          "answer": "tools/sched_ext/README.md",
+          "occurrences": 25039,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            },
+            "rg": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            }
+          }
+        },
+        {
+          "token": "Old",
+          "answer": "tools/sched_ext/README.md",
+          "occurrences": 668,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 959,
+              "scanned": 959,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 941,
+              "scanned": 941,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Mode",
+          "answer": "drivers/gpu/drm/amd/display/dc/dml2_0/README.md",
+          "occurrences": 3825,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            },
+            "rg": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            }
+          }
+        },
+        {
+          "token": "Failures",
+          "answer": "tools/sched_ext/README.md",
+          "occurrences": 47,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 67,
+              "scanned": 67,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 61,
+              "scanned": 61,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "quote",
+          "answer": "rust/quote/README.md",
+          "occurrences": 277,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            },
+            "rg": {
+              "rank": 484,
+              "scanned": 484,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Linux",
+          "answer": "rust/pin-init/CONTRIBUTING.md",
+          "occurrences": 9471,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            },
+            "rg": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            }
+          }
+        },
+        {
+          "token": "pin_init",
+          "answer": "rust/pin-init/README.md",
+          "occurrences": 128,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": true,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 34,
+              "scanned": 34,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 382,
+              "scanned": 382,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "needed",
+          "answer": "rust/pin-init/README.md",
+          "occurrences": 8243,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            },
+            "rg": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            }
+          }
+        },
+        {
+          "token": "-derive",
+          "answer": "rust/zerocopy-derive/README.md",
+          "occurrences": 34,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": true,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 66,
+              "scanned": 66,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 48,
+              "scanned": 48,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Help",
+          "answer": "rust/pin-init/CONTRIBUTING.md",
+          "occurrences": 1345,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            },
+            "rg": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            }
+          }
+        },
+        {
+          "token": "vmlinux",
+          "answer": "tools/sched_ext/README.md",
+          "occurrences": 1145,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            },
+            "rg": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            }
+          }
+        },
+        {
+          "token": "alloc",
+          "answer": "rust/pin-init/README.md",
+          "occurrences": 27522,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            },
+            "rg": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            }
+          }
+        },
+        {
+          "token": "Category",
+          "answer": "drivers/gpu/drm/amd/display/dc/dml2_0/README.md",
+          "occurrences": 64,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 151,
+              "scanned": 151,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 17,
+              "scanned": 17,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Library",
+          "answer": "drivers/gpu/drm/amd/display/dc/dml2_0/README.md",
+          "occurrences": 185,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 531,
+              "scanned": 531,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 291,
+              "scanned": 291,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Aside",
+          "answer": "tools/sched_ext/README.md",
+          "occurrences": 39,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 50,
+              "scanned": 50,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 50,
+              "scanned": 50,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Contributing",
+          "answer": "rust/pin-init/CONTRIBUTING.md",
+          "occurrences": 9,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 19,
+              "scanned": 19,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 21,
+              "scanned": 21,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "scx_flatcg",
+          "answer": "tools/sched_ext/README.md",
+          "occurrences": 5,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": true,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 12,
+              "scanned": 12,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 3,
+              "scanned": 3,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Toolchain",
+          "answer": "tools/sched_ext/README.md",
+          "occurrences": 10,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 11,
+              "scanned": 11,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 9,
+              "scanned": 9,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "scx_central",
+          "answer": "tools/sched_ext/README.md",
+          "occurrences": 4,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": true,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 10,
+              "scanned": 10,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 3,
+              "scanned": 3,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Using",
+          "answer": "rust/pin-init/README.md",
+          "occurrences": 1832,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            },
+            "rg": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            }
+          }
+        },
+        {
+          "token": "Feature",
+          "answer": "rust/pin-init/CONTRIBUTING.md",
+          "occurrences": 928,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            },
+            "rg": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            }
+          }
+        },
+        {
+          "token": "Style",
+          "answer": "rust/pin-init/CONTRIBUTING.md",
+          "occurrences": 67,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 178,
+              "scanned": 178,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 54,
+              "scanned": 54,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "function",
+          "answer": "rust/pin-init/README.md",
+          "occurrences": 21637,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            },
+            "rg": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            }
+          }
+        },
+        {
+          "token": "Manual",
+          "answer": "rust/pin-init/README.md",
+          "occurrences": 729,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            },
+            "rg": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            }
+          }
+        },
+        {
+          "token": "and",
+          "answer": "rust/pin-init/CONTRIBUTING.md",
+          "occurrences": 62131,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            },
+            "rg": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            }
+          }
+        }
+      ],
+      "tools": {
+        "hay": {
+          "mrr": 0.019718429152691338,
+          "top10": 0.06666666666666667
+        },
+        "rg": {
+          "mrr": 0.03400961286853756,
+          "top10": 0.1
+        }
+      },
+      "delta": {
+        "mrr": {
+          "mean": -0.014291183715846225,
+          "lo": -0.04073646415700544,
+          "hi": 0.005991024961298555,
+          "p": 0.21257874212578742,
+          "n": 30,
+          "clusters": 30
+        },
+        "randomizationP": 0.2950704929507049
+      },
+      "featureSplits": [
+        {
+          "feature": "flagShaped",
+          "n": 0,
+          "mrr": {
+            "hay": 0,
+            "rg": 0
+          },
+          "deltaMrr": 0
+        },
+        {
+          "feature": "hyphenated",
+          "n": 1,
+          "mrr": {
+            "hay": 0.015151515151515152,
+            "rg": 0.020833333333333332
+          },
+          "deltaMrr": -0.00568181818181818
+        },
+        {
+          "feature": "snakeCase",
+          "n": 3,
+          "mrr": {
+            "hay": 0.07091503267973856,
+            "rg": 0.22309482257126234
+          },
+          "deltaMrr": -0.15217978989152378
+        },
+        {
+          "feature": "upperCase",
+          "n": 0,
+          "mrr": {
+            "hay": 0,
+            "rg": 0
+          },
+          "deltaMrr": 0
+        },
+        {
+          "feature": "camelCase",
+          "n": 0,
+          "mrr": {
+            "hay": 0,
+            "rg": 0
+          },
+          "deltaMrr": 0
+        },
+        {
+          "feature": "pascalCase",
+          "n": 17,
+          "mrr": {
+            "hay": 0.021294795561641416,
+            "rg": 0.01919389123779486
+          },
+          "deltaMrr": 0.0021009043238465544
+        },
+        {
+          "feature": "plainWord",
+          "n": 9,
+          "mrr": {
+            "hay": 0.0001827485380116959,
+            "rg": 0.00043049266294375614
+          },
+          "deltaMrr": -0.00024774412493206024
+        }
+      ],
+      "truncations": {
+        "hay": 15,
+        "rg": 14
+      }
+    },
+    {
+      "corpus": "openclaw",
+      "provenance": {
+        "revision": "a82042f204151680c14f89eb137a6056dfd3e0d2",
+        "dirty": false
+      },
+      "lang": "ts",
+      "eligibleQueries": 2244,
+      "queries": [
+        {
+          "token": "gaps",
+          "answer": "docs/start/onboarding-redesign.md",
+          "occurrences": 111,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 383,
+              "scanned": 383,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 277,
+              "scanned": 277,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "America",
+          "answer": "src/hooks/bundled/session-memory/HOOK.md",
+          "occurrences": 124,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 283,
+              "scanned": 283,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 238,
+              "scanned": 238,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "kills",
+          "answer": "docs/platforms/linux.md",
+          "occurrences": 1777,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            },
+            "rg": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            }
+          }
+        },
+        {
+          "token": "-main",
+          "answer": "docs/tools/multi-agent-sandbox-tools.md",
+          "occurrences": 865,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": true,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            },
+            "rg": {
+              "rank": 440,
+              "scanned": 440,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "VMs",
+          "answer": "docs/vps.md",
+          "occurrences": 12,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 1,
+              "scanned": 1,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 10,
+              "scanned": 10,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Gotcha",
+          "answer": "docs/channels/msteams.md",
+          "occurrences": 4,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 2,
+              "scanned": 2,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 2,
+              "scanned": 2,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Force",
+          "answer": "docs/automation/cron-jobs.md",
+          "occurrences": 425,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            },
+            "rg": {
+              "rank": 98,
+              "scanned": 98,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Recurring",
+          "answer": "docs/cli/cron.md",
+          "occurrences": 23,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 48,
+              "scanned": 48,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 8,
+              "scanned": 8,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "permissionMode",
+          "answer": "docs/tools/acp-agents-setup.md",
+          "occurrences": 128,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": true,
+            "pascalCase": false,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 432,
+              "scanned": 432,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 10,
+              "scanned": 10,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "MIT",
+          "answer": "apps/macos/Sources/OpenClaw/Resources/ProviderIcons/NOTICE.md",
+          "occurrences": 1008,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": true,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            },
+            "rg": {
+              "rank": 182,
+              "scanned": 182,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Silicon",
+          "answer": "docs/install/macos-vm.md",
+          "occurrences": 16,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 28,
+              "scanned": 28,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 10,
+              "scanned": 10,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Perf",
+          "answer": "apps/android/README.md",
+          "occurrences": 90,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 386,
+              "scanned": 386,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 11,
+              "scanned": 11,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "clearer",
+          "answer": "CHANGELOG.md",
+          "occurrences": 29,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 15,
+              "scanned": 15,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 2,
+              "scanned": 2,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "infers",
+          "answer": "docs/cli/tui.md",
+          "occurrences": 100,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 126,
+              "scanned": 126,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 6,
+              "scanned": 6,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "relationship",
+          "answer": "docs/platforms/ios.md",
+          "occurrences": 85,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 274,
+              "scanned": 274,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 12,
+              "scanned": 12,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Short",
+          "answer": "docs/security/THREAT-MODEL-ATLAS.md",
+          "occurrences": 519,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            },
+            "rg": {
+              "rank": 252,
+              "scanned": 252,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "comment",
+          "answer": "skills/trello/SKILL.md",
+          "occurrences": 653,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            },
+            "rg": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            }
+          }
+        },
+        {
+          "token": "highlighting",
+          "answer": "docs/tools/diffs.md",
+          "occurrences": 45,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 65,
+              "scanned": 65,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 28,
+              "scanned": 28,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "containers",
+          "answer": "docs/nodes/index.md",
+          "occurrences": 224,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            },
+            "rg": {
+              "rank": 110,
+              "scanned": 110,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Degraded",
+          "answer": "docs/gateway/secrets.md",
+          "occurrences": 109,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 515,
+              "scanned": 515,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 9,
+              "scanned": 9,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "deliver",
+          "answer": "apps/ios/fastlane/metadata/README.md",
+          "occurrences": 3922,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            },
+            "rg": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            }
+          }
+        },
+        {
+          "token": "Too",
+          "answer": "docs/tools/self-learning.md",
+          "occurrences": 5038,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            },
+            "rg": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            }
+          }
+        },
+        {
+          "token": "Widgets",
+          "answer": "docs/web/dashboard-architecture.md",
+          "occurrences": 46,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 202,
+              "scanned": 202,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 46,
+              "scanned": 46,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "-ack",
+          "answer": "docs/plugins/sdk-overview.md",
+          "occurrences": 145,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": true,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 308,
+              "scanned": 308,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 64,
+              "scanned": 64,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "encryption",
+          "answer": "docs/channels/matrix.md",
+          "occurrences": 166,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 190,
+              "scanned": 190,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 9,
+              "scanned": 9,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Font",
+          "answer": "apps/ios/THIRD_PARTY_FONTS.md",
+          "occurrences": 111,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 574,
+              "scanned": 574,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 374,
+              "scanned": 374,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "-skill",
+          "answer": "docs/tools/skills-config.md",
+          "occurrences": 469,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": true,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            },
+            "rg": {
+              "rank": 108,
+              "scanned": 108,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "delete",
+          "answer": "docs/cli/agents.md",
+          "occurrences": 4897,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            },
+            "rg": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            }
+          }
+        },
+        {
+          "token": "-line",
+          "answer": "docs/releases/2026.7.1.md",
+          "occurrences": 1537,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": true,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": null,
+              "scanned": 1000,
+              "timedOut": false,
+              "truncated": true
+            },
+            "rg": {
+              "rank": 152,
+              "scanned": 152,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "redesign",
+          "answer": "docs/start/onboarding-redesign.md",
+          "occurrences": 13,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 1,
+              "scanned": 1,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 15,
+              "scanned": 15,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        }
+      ],
+      "tools": {
+        "hay": {
+          "mrr": 0.08927931271554804,
+          "top10": 0.1
+        },
+        "rg": {
+          "mrr": 0.07284102219335797,
+          "top10": 0.3
+        }
+      },
+      "delta": {
+        "mrr": {
+          "mean": 0.01643829052219006,
+          "lo": -0.06310787395882908,
+          "hi": 0.11954726439234989,
+          "p": 0.7905209479052094,
+          "n": 30,
+          "clusters": 30
+        },
+        "randomizationP": 0.7071292870712929
+      },
+      "featureSplits": [
+        {
+          "feature": "flagShaped",
+          "n": 0,
+          "mrr": {
+            "hay": 0,
+            "rg": 0
+          },
+          "deltaMrr": 0
+        },
+        {
+          "feature": "hyphenated",
+          "n": 4,
+          "mrr": {
+            "hay": 0.0008116883116883117,
+            "rg": 0.008433983475101896
+          },
+          "deltaMrr": -0.007622295163413584
+        },
+        {
+          "feature": "snakeCase",
+          "n": 0,
+          "mrr": {
+            "hay": 0,
+            "rg": 0
+          },
+          "deltaMrr": 0
+        },
+        {
+          "feature": "upperCase",
+          "n": 1,
+          "mrr": {
+            "hay": 0,
+            "rg": 0.005494505494505495
+          },
+          "deltaMrr": -0.005494505494505495
+        },
+        {
+          "feature": "camelCase",
+          "n": 1,
+          "mrr": {
+            "hay": 0.0023148148148148147,
+            "rg": 0.1
+          },
+          "deltaMrr": -0.0976851851851852
+        },
+        {
+          "feature": "pascalCase",
+          "n": 12,
+          "mrr": {
+            "hay": 0.13094218870236737,
+            "rg": 0.08915059545996705
+          },
+          "deltaMrr": 0.041791593242400324
+        },
+        {
+          "feature": "plainWord",
+          "n": 12,
+          "mrr": {
+            "hay": 0.09179262908137203,
+            "rg": 0.08134942340718514
+          },
+          "deltaMrr": 0.010443205674186898
+        }
+      ],
+      "truncations": {
+        "hay": 12,
+        "rg": 5
+      }
+    },
+    {
       "corpus": "ripgrep",
+      "provenance": {
+        "revision": "3fce3b5bb0236da2df6d99672afb8a719642eca7",
+        "dirty": false
+      },
       "lang": "rust",
       "eligibleQueries": 87,
       "queries": [
@@ -39,8 +1925,8 @@
               "truncated": false
             },
             "rg": {
-              "rank": 1,
-              "scanned": 1,
+              "rank": 3,
+              "scanned": 3,
               "timedOut": false,
               "truncated": false
             }
@@ -67,8 +1953,8 @@
               "truncated": false
             },
             "rg": {
-              "rank": 4,
-              "scanned": 4,
+              "rank": 39,
+              "scanned": 39,
               "timedOut": false,
               "truncated": false
             }
@@ -123,8 +2009,8 @@
               "truncated": false
             },
             "rg": {
-              "rank": 4,
-              "scanned": 4,
+              "rank": 12,
+              "scanned": 12,
               "timedOut": false,
               "truncated": false
             }
@@ -151,8 +2037,8 @@
               "truncated": false
             },
             "rg": {
-              "rank": 2,
-              "scanned": 2,
+              "rank": 24,
+              "scanned": 24,
               "timedOut": false,
               "truncated": false
             }
@@ -179,8 +2065,8 @@
               "truncated": false
             },
             "rg": {
-              "rank": 1,
-              "scanned": 1,
+              "rank": 6,
+              "scanned": 6,
               "timedOut": false,
               "truncated": false
             }
@@ -207,8 +2093,8 @@
               "truncated": false
             },
             "rg": {
-              "rank": 16,
-              "scanned": 16,
+              "rank": 153,
+              "scanned": 153,
               "timedOut": false,
               "truncated": false
             }
@@ -235,8 +2121,8 @@
               "truncated": false
             },
             "rg": {
-              "rank": 1,
-              "scanned": 1,
+              "rank": 3,
+              "scanned": 3,
               "timedOut": false,
               "truncated": false
             }
@@ -263,8 +2149,8 @@
               "truncated": false
             },
             "rg": {
-              "rank": 2,
-              "scanned": 2,
+              "rank": 1,
+              "scanned": 1,
               "timedOut": false,
               "truncated": false
             }
@@ -291,10 +2177,10 @@
               "truncated": true
             },
             "rg": {
-              "rank": null,
-              "scanned": 1000,
+              "rank": 887,
+              "scanned": 887,
               "timedOut": false,
-              "truncated": true
+              "truncated": false
             }
           }
         },
@@ -319,8 +2205,8 @@
               "truncated": false
             },
             "rg": {
-              "rank": 4,
-              "scanned": 4,
+              "rank": 7,
+              "scanned": 7,
               "timedOut": false,
               "truncated": false
             }
@@ -347,8 +2233,8 @@
               "truncated": false
             },
             "rg": {
-              "rank": 170,
-              "scanned": 170,
+              "rank": 100,
+              "scanned": 100,
               "timedOut": false,
               "truncated": false
             }
@@ -375,8 +2261,8 @@
               "truncated": false
             },
             "rg": {
-              "rank": 2,
-              "scanned": 2,
+              "rank": 116,
+              "scanned": 116,
               "timedOut": false,
               "truncated": false
             }
@@ -403,8 +2289,8 @@
               "truncated": false
             },
             "rg": {
-              "rank": 5,
-              "scanned": 5,
+              "rank": 85,
+              "scanned": 85,
               "timedOut": false,
               "truncated": false
             }
@@ -431,8 +2317,8 @@
               "truncated": false
             },
             "rg": {
-              "rank": 7,
-              "scanned": 7,
+              "rank": 9,
+              "scanned": 9,
               "timedOut": false,
               "truncated": false
             }
@@ -459,8 +2345,8 @@
               "truncated": false
             },
             "rg": {
-              "rank": 1,
-              "scanned": 1,
+              "rank": 5,
+              "scanned": 5,
               "timedOut": false,
               "truncated": false
             }
@@ -487,8 +2373,8 @@
               "truncated": false
             },
             "rg": {
-              "rank": 1,
-              "scanned": 1,
+              "rank": 8,
+              "scanned": 8,
               "timedOut": false,
               "truncated": false
             }
@@ -515,8 +2401,8 @@
               "truncated": false
             },
             "rg": {
-              "rank": 18,
-              "scanned": 18,
+              "rank": 33,
+              "scanned": 33,
               "timedOut": false,
               "truncated": false
             }
@@ -543,8 +2429,8 @@
               "truncated": false
             },
             "rg": {
-              "rank": 3,
-              "scanned": 3,
+              "rank": 5,
+              "scanned": 5,
               "timedOut": false,
               "truncated": false
             }
@@ -571,8 +2457,8 @@
               "truncated": true
             },
             "rg": {
-              "rank": 7,
-              "scanned": 7,
+              "rank": 55,
+              "scanned": 55,
               "timedOut": false,
               "truncated": false
             }
@@ -599,8 +2485,8 @@
               "truncated": false
             },
             "rg": {
-              "rank": 1,
-              "scanned": 1,
+              "rank": 16,
+              "scanned": 16,
               "timedOut": false,
               "truncated": false
             }
@@ -627,8 +2513,8 @@
               "truncated": false
             },
             "rg": {
-              "rank": 2,
-              "scanned": 2,
+              "rank": 15,
+              "scanned": 15,
               "timedOut": false,
               "truncated": false
             }
@@ -655,8 +2541,8 @@
               "truncated": false
             },
             "rg": {
-              "rank": 1,
-              "scanned": 1,
+              "rank": 4,
+              "scanned": 4,
               "timedOut": false,
               "truncated": false
             }
@@ -683,8 +2569,8 @@
               "truncated": false
             },
             "rg": {
-              "rank": 1,
-              "scanned": 1,
+              "rank": 2,
+              "scanned": 2,
               "timedOut": false,
               "truncated": false
             }
@@ -711,8 +2597,8 @@
               "truncated": false
             },
             "rg": {
-              "rank": 1,
-              "scanned": 1,
+              "rank": 5,
+              "scanned": 5,
               "timedOut": false,
               "truncated": false
             }
@@ -739,8 +2625,8 @@
               "truncated": true
             },
             "rg": {
-              "rank": 4,
-              "scanned": 4,
+              "rank": 28,
+              "scanned": 28,
               "timedOut": false,
               "truncated": false
             }
@@ -767,8 +2653,8 @@
               "truncated": false
             },
             "rg": {
-              "rank": 1,
-              "scanned": 1,
+              "rank": 12,
+              "scanned": 12,
               "timedOut": false,
               "truncated": false
             }
@@ -795,10 +2681,10 @@
               "truncated": true
             },
             "rg": {
-              "rank": null,
-              "scanned": 1000,
+              "rank": 561,
+              "scanned": 561,
               "timedOut": false,
-              "truncated": true
+              "truncated": false
             }
           }
         },
@@ -823,8 +2709,8 @@
               "truncated": false
             },
             "rg": {
-              "rank": 79,
-              "scanned": 79,
+              "rank": 58,
+              "scanned": 58,
               "timedOut": false,
               "truncated": false
             }
@@ -851,8 +2737,8 @@
               "truncated": false
             },
             "rg": {
-              "rank": 1,
-              "scanned": 1,
+              "rank": 2,
+              "scanned": 2,
               "timedOut": false,
               "truncated": false
             }
@@ -865,19 +2751,20 @@
           "top10": 0.16666666666666666
         },
         "rg": {
-          "mrr": 0.49852145851308177,
-          "top10": 0.7666666666666667
+          "mrr": 0.15222381322040762,
+          "top10": 0.43333333333333335
         }
       },
       "delta": {
         "mrr": {
-          "mean": -0.439846910605623,
-          "lo": -0.5859866936554388,
-          "hi": -0.298296220496631,
-          "p": 0.00019998000199980003,
-          "n": 30
+          "mean": -0.09354926531294878,
+          "lo": -0.17702236344588787,
+          "hi": -0.026199495724884593,
+          "p": 0.0031996800319968005,
+          "n": 30,
+          "clusters": 30
         },
-        "randomizationP": 0.00009999000099990002
+        "randomizationP": 0.0096990300969903
       },
       "featureSplits": [
         {
@@ -894,9 +2781,9 @@
           "n": 1,
           "mrr": {
             "hay": 0.125,
-            "rg": 0.012658227848101266
+            "rg": 0.017241379310344827
           },
-          "deltaMrr": 0.11234177215189874
+          "deltaMrr": 0.10775862068965517
         },
         {
           "feature": "snakeCase",
@@ -912,9 +2799,9 @@
           "n": 1,
           "mrr": {
             "hay": 0.1,
-            "rg": 0.25
+            "rg": 0.14285714285714285
           },
-          "deltaMrr": -0.15
+          "deltaMrr": -0.042857142857142844
         },
         {
           "feature": "camelCase",
@@ -930,27 +2817,31 @@
           "n": 8,
           "mrr": {
             "hay": 0.09209595317241014,
-            "rg": 0.875
+            "rg": 0.3114942528735632
           },
-          "deltaMrr": -0.7829040468275899
+          "deltaMrr": -0.21939829970115304
         },
         {
           "feature": "plainWord",
           "n": 20,
           "mrr": {
             "hay": 0.03992344059222416,
-            "rg": 0.3846492763772176
+            "rg": 0.09573309257281172
           },
-          "deltaMrr": -0.3447258357849934
+          "deltaMrr": -0.05580965198058756
         }
       ],
       "truncations": {
         "hay": 5,
-        "rg": 3
+        "rg": 1
       }
     },
     {
       "corpus": "alamofire",
+      "provenance": {
+        "revision": "0455bfb650893e86ad07ace16e5f2d36dadf46f4",
+        "dirty": false
+      },
       "lang": "swift",
       "eligibleQueries": 168,
       "queries": [
@@ -975,8 +2866,8 @@
               "truncated": false
             },
             "rg": {
-              "rank": 74,
-              "scanned": 74,
+              "rank": 9,
+              "scanned": 9,
               "timedOut": false,
               "truncated": false
             }
@@ -1059,8 +2950,8 @@
               "truncated": false
             },
             "rg": {
-              "rank": 64,
-              "scanned": 64,
+              "rank": 4,
+              "scanned": 4,
               "timedOut": false,
               "truncated": false
             }
@@ -1143,8 +3034,8 @@
               "truncated": false
             },
             "rg": {
-              "rank": 5,
-              "scanned": 5,
+              "rank": 16,
+              "scanned": 16,
               "timedOut": false,
               "truncated": false
             }
@@ -1171,8 +3062,8 @@
               "truncated": false
             },
             "rg": {
-              "rank": 1,
-              "scanned": 1,
+              "rank": 2,
+              "scanned": 2,
               "timedOut": false,
               "truncated": false
             }
@@ -1199,8 +3090,8 @@
               "truncated": false
             },
             "rg": {
-              "rank": 29,
-              "scanned": 29,
+              "rank": 27,
+              "scanned": 27,
               "timedOut": false,
               "truncated": false
             }
@@ -1255,8 +3146,8 @@
               "truncated": false
             },
             "rg": {
-              "rank": 3,
-              "scanned": 3,
+              "rank": 2,
+              "scanned": 2,
               "timedOut": false,
               "truncated": false
             }
@@ -1283,8 +3174,8 @@
               "truncated": false
             },
             "rg": {
-              "rank": 2,
-              "scanned": 2,
+              "rank": 1,
+              "scanned": 1,
               "timedOut": false,
               "truncated": false
             }
@@ -1311,8 +3202,8 @@
               "truncated": false
             },
             "rg": {
-              "rank": 18,
-              "scanned": 18,
+              "rank": 3,
+              "scanned": 3,
               "timedOut": false,
               "truncated": false
             }
@@ -1339,8 +3230,8 @@
               "truncated": false
             },
             "rg": {
-              "rank": 9,
-              "scanned": 9,
+              "rank": 6,
+              "scanned": 6,
               "timedOut": false,
               "truncated": false
             }
@@ -1367,8 +3258,8 @@
               "truncated": false
             },
             "rg": {
-              "rank": 153,
-              "scanned": 153,
+              "rank": 131,
+              "scanned": 131,
               "timedOut": false,
               "truncated": false
             }
@@ -1479,8 +3370,8 @@
               "truncated": false
             },
             "rg": {
-              "rank": 29,
-              "scanned": 29,
+              "rank": 24,
+              "scanned": 24,
               "timedOut": false,
               "truncated": false
             }
@@ -1535,8 +3426,8 @@
               "truncated": false
             },
             "rg": {
-              "rank": 107,
-              "scanned": 107,
+              "rank": 73,
+              "scanned": 73,
               "timedOut": false,
               "truncated": false
             }
@@ -1563,8 +3454,8 @@
               "truncated": false
             },
             "rg": {
-              "rank": 6,
-              "scanned": 6,
+              "rank": 2,
+              "scanned": 2,
               "timedOut": false,
               "truncated": false
             }
@@ -1675,8 +3566,8 @@
               "truncated": true
             },
             "rg": {
-              "rank": 195,
-              "scanned": 195,
+              "rank": 112,
+              "scanned": 112,
               "timedOut": false,
               "truncated": false
             }
@@ -1703,8 +3594,8 @@
               "truncated": false
             },
             "rg": {
-              "rank": 84,
-              "scanned": 84,
+              "rank": 247,
+              "scanned": 247,
               "timedOut": false,
               "truncated": false
             }
@@ -1731,8 +3622,8 @@
               "truncated": false
             },
             "rg": {
-              "rank": 3,
-              "scanned": 3,
+              "rank": 13,
+              "scanned": 13,
               "timedOut": false,
               "truncated": false
             }
@@ -1759,8 +3650,8 @@
               "truncated": false
             },
             "rg": {
-              "rank": 6,
-              "scanned": 6,
+              "rank": 5,
+              "scanned": 5,
               "timedOut": false,
               "truncated": false
             }
@@ -1787,8 +3678,8 @@
               "truncated": false
             },
             "rg": {
-              "rank": 6,
-              "scanned": 6,
+              "rank": 4,
+              "scanned": 4,
               "timedOut": false,
               "truncated": false
             }
@@ -1801,17 +3692,18 @@
           "top10": 0.2
         },
         "rg": {
-          "mrr": 0.4016278277282274,
-          "top10": 0.6666666666666666
+          "mrr": 0.4316010007568783,
+          "top10": 0.7
         }
       },
       "delta": {
         "mrr": {
-          "mean": -0.340043545552949,
-          "lo": -0.47086899248311975,
-          "hi": -0.21732646186785193,
+          "mean": -0.37001671858159974,
+          "lo": -0.5003518117029038,
+          "hi": -0.24907165725593763,
           "p": 0.00019998000199980003,
-          "n": 30
+          "n": 30,
+          "clusters": 30
         },
         "randomizationP": 0.00009999000099990002
       },
@@ -1866,18 +3758,18 @@
           "n": 27,
           "mrr": {
             "hay": 0.0678827000684403,
-            "rg": 0.43312040526726675
+            "rg": 0.4760503604685309
           },
-          "deltaMrr": -0.3652377051988265
+          "deltaMrr": -0.40816766040009056
         },
         {
           "feature": "plainWord",
           "n": 3,
           "mrr": {
             "hay": 0.004898521136823283,
-            "rg": 0.11819462987687286
+            "rg": 0.03155676335200488
           },
-          "deltaMrr": -0.11329610874004958
+          "deltaMrr": -0.026658242215181593
         }
       ],
       "truncations": {
@@ -1887,41 +3779,17 @@
     },
     {
       "corpus": "hay",
+      "provenance": {
+        "revision": "82ff61c171c28fa6c72c06118a286b427f52ff08",
+        "dirty": false
+      },
       "lang": "rust",
-      "eligibleQueries": 310,
+      "eligibleQueries": 332,
       "queries": [
         {
-          "token": "Docs",
-          "answer": "docs/method/issues/11-cycle-2-plan.md",
-          "occurrences": 4,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": true,
-            "plainWord": false
-          },
-          "tools": {
-            "hay": {
-              "rank": 61,
-              "scanned": 61,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 61,
-              "scanned": 61,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "model",
-          "answer": "DESIGN-hay.md",
-          "occurrences": 8,
+          "token": "four",
+          "answer": "memory/2026-08-19.md",
+          "occurrences": 21,
           "features": {
             "flagShaped": false,
             "hyphenated": false,
@@ -1933,107 +3801,51 @@
           },
           "tools": {
             "hay": {
-              "rank": 11,
-              "scanned": 11,
+              "rank": 24,
+              "scanned": 24,
               "timedOut": false,
               "truncated": false
             },
             "rg": {
-              "rank": 10,
-              "scanned": 10,
+              "rank": 40,
+              "scanned": 40,
               "timedOut": false,
               "truncated": false
             }
           }
         },
         {
-          "token": "Use",
-          "answer": "HOWTO.md",
-          "occurrences": 14,
+          "token": "wrote",
+          "answer": "memory/2026-08-23.md",
+          "occurrences": 10,
           "features": {
             "flagShaped": false,
             "hyphenated": false,
             "snakeCase": false,
             "upperCase": false,
             "camelCase": false,
-            "pascalCase": true,
-            "plainWord": false
+            "pascalCase": false,
+            "plainWord": true
           },
           "tools": {
             "hay": {
-              "rank": 15,
-              "scanned": 15,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
               "rank": 16,
               "scanned": 16,
               "timedOut": false,
               "truncated": false
+            },
+            "rg": {
+              "rank": 15,
+              "scanned": 15,
+              "timedOut": false,
+              "truncated": false
             }
           }
         },
         {
-          "token": "sentence",
+          "token": "Turning",
           "answer": "BENCHMARK_FEYNMAN.md",
-          "occurrences": 12,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": false,
-            "plainWord": true
-          },
-          "tools": {
-            "hay": {
-              "rank": 10,
-              "scanned": 10,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 6,
-              "scanned": 6,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "helps",
-          "answer": "HOWTO.md",
-          "occurrences": 3,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": false,
-            "plainWord": true
-          },
-          "tools": {
-            "hay": {
-              "rank": 3,
-              "scanned": 3,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 1,
-              "scanned": 1,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "Reproduce",
-          "answer": "BENCHMARK.md",
-          "occurrences": 7,
+          "occurrences": 5,
           "features": {
             "flagShaped": false,
             "hyphenated": false,
@@ -2042,6 +3854,62 @@
             "camelCase": false,
             "pascalCase": true,
             "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 5,
+              "scanned": 5,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 2,
+              "scanned": 2,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "labels",
+          "answer": "BENCHMARK_FEYNMAN.md",
+          "occurrences": 11,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 6,
+              "scanned": 6,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 2,
+              "scanned": 2,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "matters",
+          "answer": "DESIGN-hay.md",
+          "occurrences": 13,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
           },
           "tools": {
             "hay": {
@@ -2059,65 +3927,9 @@
           }
         },
         {
-          "token": "page",
-          "answer": "memory/2026-08-22.md",
-          "occurrences": 25,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": false,
-            "plainWord": true
-          },
-          "tools": {
-            "hay": {
-              "rank": 104,
-              "scanned": 104,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 105,
-              "scanned": 105,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "fitting",
-          "answer": "docs/method/issues/11-cycle-2-plan.md",
-          "occurrences": 6,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": false,
-            "plainWord": true
-          },
-          "tools": {
-            "hay": {
-              "rank": 2,
-              "scanned": 2,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 5,
-              "scanned": 5,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "times",
-          "answer": "memory/2026-08-19.md",
-          "occurrences": 15,
+          "token": "reference",
+          "answer": "memory/2026-08-20.md",
+          "occurrences": 22,
           "features": {
             "flagShaped": false,
             "hyphenated": false,
@@ -2135,17 +3947,17 @@
               "truncated": false
             },
             "rg": {
-              "rank": 28,
-              "scanned": 28,
+              "rank": 45,
+              "scanned": 45,
               "timedOut": false,
               "truncated": false
             }
           }
         },
         {
-          "token": "more",
-          "answer": "BENCHMARK_FEYNMAN.md",
-          "occurrences": 24,
+          "token": "cleanup",
+          "answer": "memory/2026-08-22.md",
+          "occurrences": 5,
           "features": {
             "flagShaped": false,
             "hyphenated": false,
@@ -2157,92 +3969,8 @@
           },
           "tools": {
             "hay": {
-              "rank": 35,
-              "scanned": 35,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 49,
-              "scanned": 49,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "now",
-          "answer": "MEMORY.md",
-          "occurrences": 33,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": false,
-            "plainWord": true
-          },
-          "tools": {
-            "hay": {
-              "rank": 95,
-              "scanned": 95,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 62,
-              "scanned": 62,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "else",
-          "answer": "FOR_YOU_KNOW.md",
-          "occurrences": 29,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": false,
-            "plainWord": true
-          },
-          "tools": {
-            "hay": {
-              "rank": 78,
-              "scanned": 78,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 42,
-              "scanned": 42,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "claims",
-          "answer": "docs/method/issues/11-cycle-2-plan.md",
-          "occurrences": 7,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": false,
-            "plainWord": true
-          },
-          "tools": {
-            "hay": {
-              "rank": 7,
-              "scanned": 7,
+              "rank": 6,
+              "scanned": 6,
               "timedOut": false,
               "truncated": false
             },
@@ -2255,9 +3983,9 @@
           }
         },
         {
-          "token": "hand",
-          "answer": "AGENTS.md",
-          "occurrences": 30,
+          "token": "remember",
+          "answer": "MEMORY.md",
+          "occurrences": 6,
           "features": {
             "flagShaped": false,
             "hyphenated": false,
@@ -2269,191 +3997,51 @@
           },
           "tools": {
             "hay": {
-              "rank": 67,
-              "scanned": 67,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 9,
-              "scanned": 9,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "matters",
-          "answer": "DESIGN-hay.md",
-          "occurrences": 11,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": false,
-            "plainWord": true
-          },
-          "tools": {
-            "hay": {
-              "rank": 7,
-              "scanned": 7,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 16,
-              "scanned": 16,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "Three",
-          "answer": "README.md",
-          "occurrences": 13,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": true,
-            "plainWord": false
-          },
-          "tools": {
-            "hay": {
-              "rank": 13,
-              "scanned": 13,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
               "rank": 5,
               "scanned": 5,
               "timedOut": false,
               "truncated": false
-            }
-          }
-        },
-        {
-          "token": "treated",
-          "answer": "memory/2026-08-22.md",
-          "occurrences": 4,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": false,
-            "plainWord": true
-          },
-          "tools": {
-            "hay": {
-              "rank": 3,
-              "scanned": 3,
-              "timedOut": false,
-              "truncated": false
             },
             "rg": {
-              "rank": 3,
-              "scanned": 3,
+              "rank": 4,
+              "scanned": 4,
               "timedOut": false,
               "truncated": false
             }
           }
         },
         {
-          "token": "Version",
-          "answer": "memory/2026-08-22.md",
-          "occurrences": 10,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": true,
-            "plainWord": false
-          },
-          "tools": {
-            "hay": {
-              "rank": 10,
-              "scanned": 10,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 12,
-              "scanned": 12,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "benchmarked",
-          "answer": "BENCHMARK.md",
-          "occurrences": 4,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": false,
-            "plainWord": true
-          },
-          "tools": {
-            "hay": {
-              "rank": 6,
-              "scanned": 6,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 6,
-              "scanned": 6,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "version",
-          "answer": "BENCHMARK_FEYNMAN.md",
-          "occurrences": 36,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": false,
-            "plainWord": true
-          },
-          "tools": {
-            "hay": {
-              "rank": 139,
-              "scanned": 139,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 62,
-              "scanned": 62,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "your",
+          "token": "build",
           "answer": "HOWTO.md",
-          "occurrences": 17,
+          "occurrences": 34,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 140,
+              "scanned": 140,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 22,
+              "scanned": 22,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "simply",
+          "answer": "BENCHMARK_FEYNMAN.md",
+          "occurrences": 8,
           "features": {
             "flagShaped": false,
             "hyphenated": false,
@@ -2471,17 +4059,17 @@
               "truncated": false
             },
             "rg": {
-              "rank": 18,
-              "scanned": 18,
+              "rank": 3,
+              "scanned": 3,
               "timedOut": false,
               "truncated": false
             }
           }
         },
         {
-          "token": "reference",
-          "answer": "memory/2026-08-20.md",
-          "occurrences": 20,
+          "token": "need",
+          "answer": "BENCHMARK_FEYNMAN.md",
+          "occurrences": 34,
           "features": {
             "flagShaped": false,
             "hyphenated": false,
@@ -2493,51 +4081,23 @@
           },
           "tools": {
             "hay": {
-              "rank": 26,
-              "scanned": 26,
+              "rank": 61,
+              "scanned": 61,
               "timedOut": false,
               "truncated": false
             },
             "rg": {
-              "rank": 32,
-              "scanned": 32,
+              "rank": 10,
+              "scanned": 10,
               "timedOut": false,
               "truncated": false
             }
           }
         },
         {
-          "token": "make",
-          "answer": "AGENTS.md",
-          "occurrences": 24,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": false,
-            "plainWord": true
-          },
-          "tools": {
-            "hay": {
-              "rank": 28,
-              "scanned": 28,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 9,
-              "scanned": 9,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "show",
+          "token": "after",
           "answer": "docs/method/issues/04-probe-real-repos.md",
-          "occurrences": 20,
+          "occurrences": 30,
           "features": {
             "flagShaped": false,
             "hyphenated": false,
@@ -2549,23 +4109,51 @@
           },
           "tools": {
             "hay": {
-              "rank": 57,
-              "scanned": 57,
+              "rank": 110,
+              "scanned": 110,
               "timedOut": false,
               "truncated": false
             },
             "rg": {
-              "rank": 47,
-              "scanned": 47,
+              "rank": 54,
+              "scanned": 54,
               "timedOut": false,
               "truncated": false
             }
           }
         },
         {
-          "token": "break",
-          "answer": "AGENTS.md",
-          "occurrences": 25,
+          "token": "-token",
+          "answer": "docs/method/issues/11-cycle-2-plan.md",
+          "occurrences": 3,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": true,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 6,
+              "scanned": 6,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 3,
+              "scanned": 3,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "longer",
+          "answer": "memory/2026-08-22.md",
+          "occurrences": 11,
           "features": {
             "flagShaped": false,
             "hyphenated": false,
@@ -2577,8 +4165,8 @@
           },
           "tools": {
             "hay": {
-              "rank": 46,
-              "scanned": 46,
+              "rank": 10,
+              "scanned": 10,
               "timedOut": false,
               "truncated": false
             },
@@ -2591,9 +4179,9 @@
           }
         },
         {
-          "token": "like",
-          "answer": "memory/2026-08-22.md",
-          "occurrences": 25,
+          "token": "identical",
+          "answer": "HOWTO.md",
+          "occurrences": 27,
           "features": {
             "flagShaped": false,
             "hyphenated": false,
@@ -2605,23 +4193,23 @@
           },
           "tools": {
             "hay": {
-              "rank": 130,
-              "scanned": 130,
+              "rank": 32,
+              "scanned": 32,
               "timedOut": false,
               "truncated": false
             },
             "rg": {
-              "rank": 68,
-              "scanned": 68,
+              "rank": 22,
+              "scanned": 22,
               "timedOut": false,
               "truncated": false
             }
           }
         },
         {
-          "token": "For",
-          "answer": "FOR_YOU_KNOW.md",
-          "occurrences": 13,
+          "token": "Map",
+          "answer": "docs/method/map.md",
+          "occurrences": 9,
           "features": {
             "flagShaped": false,
             "hyphenated": false,
@@ -2633,23 +4221,51 @@
           },
           "tools": {
             "hay": {
-              "rank": 24,
-              "scanned": 24,
+              "rank": 59,
+              "scanned": 59,
               "timedOut": false,
               "truncated": false
             },
             "rg": {
-              "rank": 20,
-              "scanned": 20,
+              "rank": 31,
+              "scanned": 31,
               "timedOut": false,
               "truncated": false
             }
           }
         },
         {
-          "token": "ways",
+          "token": "contract",
+          "answer": "docs/method/issues/12-release-integrity.md",
+          "occurrences": 16,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 39,
+              "scanned": 39,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 25,
+              "scanned": 25,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "ignores",
           "answer": "BENCHMARK_FEYNMAN.md",
-          "occurrences": 17,
+          "occurrences": 6,
           "features": {
             "flagShaped": false,
             "hyphenated": false,
@@ -2661,23 +4277,23 @@
           },
           "tools": {
             "hay": {
-              "rank": 14,
-              "scanned": 14,
+              "rank": 5,
+              "scanned": 5,
               "timedOut": false,
               "truncated": false
             },
             "rg": {
-              "rank": 19,
-              "scanned": 19,
+              "rank": 2,
+              "scanned": 2,
               "timedOut": false,
               "truncated": false
             }
           }
         },
         {
-          "token": "result",
-          "answer": "README.md",
-          "occurrences": 31,
+          "token": "source",
+          "answer": "site/video-src/README.md",
+          "occurrences": 36,
           "features": {
             "flagShaped": false,
             "hyphenated": false,
@@ -2689,22 +4305,50 @@
           },
           "tools": {
             "hay": {
-              "rank": 260,
-              "scanned": 260,
+              "rank": 225,
+              "scanned": 225,
               "timedOut": false,
               "truncated": false
             },
             "rg": {
-              "rank": 185,
-              "scanned": 185,
+              "rank": 191,
+              "scanned": 191,
               "timedOut": false,
               "truncated": false
             }
           }
         },
         {
-          "token": "falsified",
-          "answer": "HOWTO.md",
+          "token": "can",
+          "answer": "BENCHMARK_FEYNMAN.md",
+          "occurrences": 47,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 286,
+              "scanned": 286,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 21,
+              "scanned": 21,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "boost",
+          "answer": "docs/method/issues/11-cycle-2-plan.md",
           "occurrences": 4,
           "features": {
             "flagShaped": false,
@@ -2717,8 +4361,8 @@
           },
           "tools": {
             "hay": {
-              "rank": 7,
-              "scanned": 7,
+              "rank": 6,
+              "scanned": 6,
               "timedOut": false,
               "truncated": false
             },
@@ -2729,27 +4373,280 @@
               "truncated": false
             }
           }
+        },
+        {
+          "token": "-registered",
+          "answer": "docs/method/issues/11-cycle-2-plan.md",
+          "occurrences": 13,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": true,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 4,
+              "scanned": 4,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 11,
+              "scanned": 11,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "partly",
+          "answer": "docs/method/issues/01-prior-art-survey.md",
+          "occurrences": 8,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 9,
+              "scanned": 9,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 7,
+              "scanned": 7,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "experiment",
+          "answer": "BENCHMARK_FEYNMAN.md",
+          "occurrences": 5,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 5,
+              "scanned": 5,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 5,
+              "scanned": 5,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "prior",
+          "answer": "docs/method/issues/11-cycle-2-plan.md",
+          "occurrences": 24,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 4,
+              "scanned": 4,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 52,
+              "scanned": 52,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Error",
+          "answer": "docs/method/issues/10-error-taxonomy.md",
+          "occurrences": 15,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 157,
+              "scanned": 157,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 79,
+              "scanned": 79,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "better",
+          "answer": "docs/method/issues/01-prior-art-survey.md",
+          "occurrences": 20,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 23,
+              "scanned": 23,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 15,
+              "scanned": 15,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "needs",
+          "answer": "FOR_YOU_KNOW.md",
+          "occurrences": 27,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 32,
+              "scanned": 32,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 9,
+              "scanned": 9,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "use",
+          "answer": "HOWTO.md",
+          "occurrences": 54,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 3,
+              "scanned": 3,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 122,
+              "scanned": 122,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Counting",
+          "answer": "README.md",
+          "occurrences": 3,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 2,
+              "scanned": 2,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 1,
+              "scanned": 1,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
         }
       ],
       "tools": {
         "hay": {
-          "mrr": 0.09452444295486323,
-          "top10": 0.36666666666666664
+          "mrr": 0.1203991425523492,
+          "top10": 0.5333333333333333
         },
         "rg": {
-          "mrr": 0.1173089360931244,
-          "top10": 0.4
+          "mrr": 0.16899463874201645,
+          "top10": 0.4666666666666667
         }
       },
       "delta": {
         "mrr": {
-          "mean": -0.02278449313826115,
-          "lo": -0.07821714016282823,
-          "hi": 0.019244749900195424,
-          "p": 0.35236476352364765,
-          "n": 30
+          "mean": -0.04859549618966727,
+          "lo": -0.1080156629051741,
+          "hi": 0.00682346462432758,
+          "p": 0.08239176082391761,
+          "n": 30,
+          "clusters": 30
         },
-        "randomizationP": 0.4794520547945205
+        "randomizationP": 0.1080891910808919
       },
       "featureSplits": [
         {
@@ -2763,12 +4660,12 @@
         },
         {
           "feature": "hyphenated",
-          "n": 0,
+          "n": 2,
           "mrr": {
-            "hay": 0,
-            "rg": 0
+            "hay": 0.20833333333333331,
+            "rg": 0.2121212121212121
           },
-          "deltaMrr": 0
+          "deltaMrr": -0.0037878787878787845
         },
         {
           "feature": "snakeCase",
@@ -2799,21 +4696,21 @@
         },
         {
           "feature": "pascalCase",
-          "n": 6,
+          "n": 4,
           "mrr": {
-            "hay": 0.07408449928941732,
-            "rg": 0.09648224043715847
+            "hay": 0.18082964482349131,
+            "rg": 0.3862290730910576
           },
-          "deltaMrr": -0.02239774114774115
+          "deltaMrr": -0.20539942826756627
         },
         {
           "feature": "plainWord",
           "n": 24,
           "mrr": {
-            "hay": 0.09963442887122471,
-            "rg": 0.12251561000711587
+            "hay": 0.10299954294207682,
+            "rg": 0.12919501856890994
           },
-          "deltaMrr": -0.02288118113589116
+          "deltaMrr": -0.026195475626833123
         }
       ],
       "truncations": {

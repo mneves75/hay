@@ -175,7 +175,7 @@ line of Rust existed, precisely so it could not be moved afterwards. It has not 
 
 ## Measured against every other tool
 
-[BENCHMARK.md](https://mneves75.github.io/hay/benchmark.html) compares `hay` with `ripgrep`, `ugrep`, `ag`, `ack`, BSD `grep`,
+[BENCHMARK.md](https://mneves75.github.io/hay/benchmark.html) compares `hay` with `ripgrep`, `ugrep`, `ag`, BSD `grep`,
 `git grep`, `ast-grep` and `codespelunker` over the Linux kernel, openclaw, ripgrep's own source,
 Alamofire (Swift) and this repository — ground truth from a parser, absolute differences with
 bootstrap intervals, and a capability matrix for the things speed does not capture. Regenerate it
@@ -194,16 +194,27 @@ and that is exactly what `hay` is built for, so a win there is weaker evidence t
 behavioural result above, whose ground truth was not designed around the tool. Both are reported
 because neither is sufficient alone.
 
-**The win is now detected on all four usable corpora, by both tests.** `hay` ranks first on every
-corpus: Linux 0.967, openclaw 0.879, ripgrep 0.800, Alamofire 0.691, ahead of every other tool
-including `ast-grep`, which parses the code, and `codespelunker`, which ranks. The history
-matters more than the row of bolds: on the pre-public 0.5.0 development run the two significance tests disagreed on
-openclaw (bootstrap interval excluding zero, randomization p=0.058 — exactly the small-sample
-optimism Smucker et al.'s follow-up warns about), and the report demoted the claim to "two of
-three". What changed is the tool, not the test: the definition-precision fixes from the error
-taxonomy lifted every corpus, and openclaw's effect (+0.185 [0.043, 0.329], p=0.015) now clears
-both tests honestly. A rule that costs you a claim when the evidence is thin pays it back when
-the evidence improves.
+**The clean-revision 0.1.4 run detects the win on all four usable code corpora, by both tests.**
+`hay` ranks first on every corpus: Linux 0.907, openclaw 0.911, ripgrep 0.800, Alamofire 0.691.
+Against deterministic `ripgrep --sort path`, the paired MRR effects are Linux +0.366 [0.223,
+0.515] (randomization p<0.001), openclaw +0.092 [0.031, 0.169] (p=0.017), ripgrep
++0.381 [0.228, 0.541] (p<0.001), and Alamofire +0.258 [0.152, 0.377] (p<0.001).
+The report records the exact clean commit for each corpus.
+
+The history still matters: on the pre-public 0.5.0 development run the two tests disagreed on
+openclaw (bootstrap interval excluding zero, randomization p=0.058), so the report demoted the
+claim. The current run uses a stable-order baseline and newer recorded corpus revisions as well as
+a newer tool, so it is a fresh cross-sectional estimate, not a causal before/after result. The
+decision rule stayed fixed: both tests must agree. Unordered tools remain visible only as
+descriptive snapshots, without intervals or p-values.
+
+**Do not generalize the code result to documentation.** On the separate public documentation
+track, `hay` is detectably worse than `ripgrep --sort path` on ripgrep's repository
+(−0.094 [−0.177, −0.026], randomization p=0.010) and Alamofire
+(−0.370 [−0.500, −0.249], p<0.001). Linux (−0.014 [−0.041, 0.006]), openclaw
+(+0.016 [−0.063, 0.120]), and this repository (−0.049 [−0.108, 0.007]) show no detected
+difference. That is the strongest public warning against treating a definition ranker as a
+universal search improvement.
 
 Building it found the largest defect in the project so far. `hay`'s definition signal was **inert
 on C** — a kernel function definition contains no declaration keyword, so on the Linux kernel

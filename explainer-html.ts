@@ -176,7 +176,7 @@ export function render(blocks: Block[]): string {
         const [head, ...body] = b.rows;
         const at = (i: number) => (b.align[i] && b.align[i] !== "left" ? ` class="${b.align[i]}"` : "");
         out.push(
-          `<div class="scroll"><table><thead><tr>${(head ?? []).map((c, i) => `<th scope="col"${at(i)}>${inline(c)}</th>`).join("")}</tr></thead>` +
+          `<div class="scroll" tabindex="0"><table><thead><tr>${(head ?? []).map((c, i) => `<th scope="col"${at(i)}>${inline(c)}</th>`).join("")}</tr></thead>` +
             `<tbody>${body.map((r) => `<tr>${r.map((c, i) => `<td${at(i)}>${inline(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`,
         );
         break;
@@ -213,7 +213,7 @@ export function page(title: string, lede: string, body: string): string {
 <meta property="og:url" content="${canonical}">
 <style>
 :root{
-  --ground:#f6f8f8; --panel:#ffffff; --ink:#161e20; --ink-soft:#46565a; --ink-faint:#7a8a8d;
+  --ground:#f6f8f8; --panel:#ffffff; --ink:#161e20; --ink-soft:#46565a; --ink-faint:#5e6b6e;
   --rule:#dfe6e6; --rule-strong:#c3cfd0;
   --accent:#0f6a63; --accent-soft:#dcedeb; --accent-ink:#0a4a45;
   --quote:#8a6410;
@@ -307,7 +307,7 @@ footer{margin-top:4rem;padding-top:1.3rem;border-top:1px solid var(--rule);color
   <p class="lede">${inline(lede)}</p>
 </header>
 ${body}
-<footer>Generated from <code>BENCHMARK_FEYNMAN.md</code> by <code>explainer-html.ts</code>. Every number in it was checked against <code>evidence/benchmark.json</code>.</footer>
+<footer>Generated from <code>BENCHMARK_FEYNMAN.md</code> by <code>explainer-html.ts</code>. Code-track figures come from <code>evidence/benchmark.json</code>; documentation-track figures come from <code>evidence/docs-track.json</code>.</footer>
 </main>
 </body>
 </html>
@@ -356,6 +356,10 @@ if (import.meta.main) {
     eq((parse("- one\n- two")[0] as { items: string[] }).items, ["one", "two"], "unordered list");
     eq((parse("1. one\n2. two")[0] as { ordered: boolean }).ordered, true, "ordered list");
     eq((parse("> quoted")[0] as { lines: string[] }).lines, ["quoted"], "blockquote");
+    const focusable = render(parse("```\nx\n```\n\n| a |\n|---|\n| b |"));
+    if (!focusable.includes('<pre tabindex="0">') ||
+        !focusable.includes('<div class="scroll" tabindex="0">'))
+      throw new Error("horizontal overflow regions must be keyboard-focusable");
     // A code fence must not be re-parsed as anything else, whatever it contains.
     eq(parse("```\n| not | a | table |\n# not a heading\n```").length, 1, "fence swallows its contents");
     const document = page("Explainer title", "Evidence-led description", "<p>body</p>");

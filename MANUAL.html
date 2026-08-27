@@ -17,7 +17,7 @@
   --panel:light-dark(#fffdf6,#1e1a10);
   --ink:light-dark(#201b10,#ece5d2);
   --ink-soft:light-dark(#5c5544,#b3aa92);
-  --ink-faint:light-dark(#8b8371,#847c66);
+  --ink-faint:light-dark(#6b6452,#958c72);
   --rule:light-dark(#e7e1cf,#2e2918);
   --rule-strong:light-dark(#cfc6a8,#46402a);
   --accent:light-dark(#8a6d10,#ddb84f);
@@ -136,7 +136,7 @@ footer{border-top:1px solid var(--rule);margin-top:3rem;padding-top:1.25rem;colo
 @supports (animation-timeline: view()){
   @media (prefers-reduced-motion: no-preference){
     section[id] > *{animation:rise linear both;animation-timeline:view();animation-range:entry 0% entry 40%}
-    @keyframes rise{from{opacity:.2;translate:0 14px}}
+    @keyframes rise{from{translate:0 14px}}
   }
 }
 @media (max-width:45rem){
@@ -191,13 +191,15 @@ headings, flag names, and body text.</p>
 <section id="start">
 <h2>Start here</h2>
 <p>Install from source — one line, or inspect first (Rust edition 2024, MSRV 1.88):</p>
-<div class="codewrap"><pre><code>curl -fsSL https://raw.githubusercontent.com/mneves75/hay/v0.1.4/install.sh | HAY_REF=v0.1.4 bash
+<div class="codewrap"><pre tabindex="0"><code>curl -fsSL https://raw.githubusercontent.com/mneves75/hay/v0.1.4/install.sh | HAY_REF=v0.1.4 bash
 
 # inspect-first form:
 git clone --depth 1 --branch v0.1.4 https://github.com/mneves75/hay.git &amp;&amp; cd hay &amp;&amp; HAY_REF=v0.1.4 ./install.sh</code></pre><button class="copy" type="button">copy</button></div>
 <p>The script gates on the toolchain version, clones, builds release, installs via
-<code>cargo install</code>, and smoke-tests. Then search exactly like you would with ripgrep:</p>
-<div class="codewrap"><pre><code>hay validateSession src/          # ranked results, best first
+<code>cargo install</code>, and smoke-tests the installed binary. Set
+<code>CARGO_INSTALL_ROOT</code> to choose its destination; the script passes that root to Cargo
+and verifies the same path. Then search exactly like you would with ripgrep:</p>
+<div class="codewrap"><pre tabindex="0"><code>hay validateSession src/          # ranked results, best first
 hay -t ts -w fetchUser            # TypeScript only, whole words
 hay -C 3 -m 20 'parseConfig'      # context, capped result count</code></pre><button class="copy" type="button">copy</button></div>
 <p>The deal hay offers is narrow and honest: each complete search returns the exact match set
@@ -256,7 +258,7 @@ mention, deliberately damped so repetition cannot buy a win.</td></tr>
 <h3>Turning signals off</h3>
 <p>Each signal has an ablation switch, because a contribution you cannot switch off is a belief,
 not a measurement:</p>
-<div class="codewrap"><pre><code>hay --no-definition validateSession .
+<div class="codewrap"><pre tabindex="0"><code>hay --no-definition validateSession .
 hay --no-path        validateSession .
 hay --no-tf          validateSession .</code></pre><button class="copy" type="button">copy</button></div>
 <p>This is also how several published claims here were proven: the definition signal’s value on C
@@ -331,7 +333,7 @@ the flag are mutually meaningless. Each refusal says why and names the ripgrep e
 <h3>Plain</h3>
 <p>Ripgrep-compatible <code>path:line:text</code>, rank-ordered, with <code>--</code> marking a true
 discontinuity between context windows:</p>
-<div class="codewrap"><pre><code>$ hay -C1 -F validateSession src/
+<div class="codewrap"><pre tabindex="0"><code>$ hay -C1 -F validateSession src/
 src/auth.ts:2:export function validateSession(t: string) {
 src/auth.ts-3-  return t
 --
@@ -339,7 +341,7 @@ src/session.ts:17:// delegates to validateSession</code></pre><button class="cop
 <h3>JSON Lines (<code>--json</code>)</h3>
 <p>Ripgrep-shaped objects, one per line, <strong><code>match</code> and <code>context</code> messages
 only</strong>:</p>
-<div class="codewrap"><pre><code>{"type":"match","data":{"path":{"text":"src/auth.ts"},
+<div class="codewrap"><pre tabindex="0"><code>{"type":"match","data":{"path":{"text":"src/auth.ts"},
  "lines":{"text":"export function validateSession(t: string) {\n"},
  "line_number":2,"absolute_offset":31,
  "submatches":[{"match":{"text":"validateSession"},"start":16,"end":30}]}}</code></pre><button class="copy" type="button">copy</button></div>
@@ -357,7 +359,7 @@ cleanly (recipe below).</li>
 <section id="explain">
 <h2><code>--explain</code>: reading a score</h2>
 <p>Each result is prefixed with its total score and the per-signal breakdown:</p>
-<div class="codewrap"><pre><code>$ hay --explain -F validateSession src/ | head -1
+<div class="codewrap"><pre tabindex="0"><code>$ hay --explain -F validateSession src/ | head -1
 6.00 [def +6.0 path +1.0 tf +1.00]  src/auth.ts:2:export function validateSession(t: string) {</code></pre><button class="copy" type="button">copy</button></div>
 <table>
 <thead><tr><th scope="col">field</th><th scope="col">meaning</th></tr></thead>
@@ -439,7 +441,7 @@ one-line <code>CLAUDE.md</code> containing <code>@AGENTS.md</code>, or
 <code>ln -s AGENTS.md CLAUDE.md</code> (both are Anthropic's documented patterns). Aider and Cursor
 need their own wiring — see "Make hay the default" below.</p>
 </div>
-<div class="codewrap"><pre><code>## Code search
+<div class="codewrap"><pre tabindex="0"><code>## Code search
 
 Use `hay` instead of `rg` for concept and symbol searches:
 
@@ -466,7 +468,7 @@ Use `hay` instead of `rg` for concept and symbol searches:
 a rule that names hay as the default and <code>rg</code> as the explicit fallback. Agents follow
 tool rules far more reliably than they discover tools. Strengthen the universal snippet's first
 line to a default:</p>
-<div class="codewrap"><pre><code>## Code search — defaults
+<div class="codewrap"><pre tabindex="0"><code>## Code search — defaults
 
 `hay` is the DEFAULT search tool in this repo. Reach for it first for every
 "where is X / what defines X / how does X work" search:
@@ -509,21 +511,21 @@ The default belongs in instructions, where the agent knows which tool it chose a
 </div>
 
 <h3>Find the definition, read it</h3>
-<div class="codewrap"><pre><code># fixed-string, top hit only — the common agent case
+<div class="codewrap"><pre tabindex="0"><code># fixed-string, top hit only — the common agent case
 hay -F -m 1 "$symbol" "$root"</code></pre><button class="copy" type="button">copy</button></div>
 <h3>Structured consumption</h3>
-<div class="codewrap"><pre><code># every match as TSV: path, line number, trimmed text
+<div class="codewrap"><pre tabindex="0"><code># every match as TSV: path, line number, trimmed text
 hay --json -F "$symbol" "$root" \
 | jq -r 'select(.type=="match")
          | [.data.path.text, .data.line_number,
             (.data.lines.text | gsub("\\n$";"") | .[0:160])] | @tsv'</code></pre><button class="copy" type="button">copy</button></div>
 <h3>Context without reordering surprises</h3>
-<div class="codewrap"><pre><code>hay -C 3 -m 10 -F "$symbol" "$root"   # blocks stay grouped, gaps show as --</code></pre><button class="copy" type="button">copy</button></div>
+<div class="codewrap"><pre tabindex="0"><code>hay -C 3 -m 10 -F "$symbol" "$root"   # blocks stay grouped, gaps show as --</code></pre><button class="copy" type="button">copy</button></div>
 <h3>Honesty check on a big tree</h3>
-<div class="codewrap"><pre><code>hay -m 0 -F "$symbol" "$root" 2&gt;err.log || true
+<div class="codewrap"><pre tabindex="0"><code>hay -m 0 -F "$symbol" "$root" 2&gt;err.log || true
 grep -q "ranked the .* strongest" err.log &amp;&amp; echo "truncated — switch to rg for exhaustiveness"</code></pre><button class="copy" type="button">copy</button></div>
 <h3>Install on an agent's machine</h3>
-<div class="codewrap"><pre><code>curl -fsSL https://raw.githubusercontent.com/mneves75/hay/v0.1.4/install.sh | HAY_REF=v0.1.4 bash   # inspect first!
+<div class="codewrap"><pre tabindex="0"><code>curl -fsSL https://raw.githubusercontent.com/mneves75/hay/v0.1.4/install.sh | HAY_REF=v0.1.4 bash   # inspect first!
 # inspect-first form:
 git clone --depth 1 --branch v0.1.4 https://github.com/mneves75/hay.git &amp;&amp; cd hay &amp;&amp; HAY_REF=v0.1.4 ./install.sh</code></pre><button class="copy" type="button">copy</button></div>
 </section>

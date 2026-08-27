@@ -15,8 +15,9 @@ pre-registered gate, and complete-search parity contract are unchanged.
 ### Security and release integrity
 
 - `install.sh` now resolves the requested branch, tag, or commit exactly, refuses an invalid
-  `HAY_REF` instead of falling back to `main`, installs with Cargo's lockfile, and verifies the
-  newly installed binary rather than an older `PATH` entry.
+  `HAY_REF` instead of falling back to `main`, installs with Cargo's lockfile, passes the resolved
+  destination with `--root`, and verifies that exact binary rather than an older `PATH` entry. A
+  Cargo `install.root` setting therefore cannot redirect the install away from the checked path.
 - Transcript-derived corpora and paired-query dumps can only be written beneath the gitignored
   `corpus/` boundary, with 0700 directories and 0600 files; traversal and symlinked parents are
   rejected, and atomic replacement prevents a pre-planted hard link from being truncated.
@@ -38,6 +39,12 @@ pre-registered gate, and complete-search parity contract are unchanged.
   documentation benchmarks record generation time plus corpus commit/dirty state, and the
   renderer rejects dirty provenance, impossible ranges, missing reference tests, and aggregates
   that disagree with their rows.
+- The public benchmark was rerun from clean, recorded corpus revisions. Inferential comparisons now
+  require a stable-order contract: ripgrep uses `--sort path`, ugrep uses `--sort=name`, and
+  unordered tools remain labeled snapshots without confidence intervals or p-values. `hay` clears
+  both statistical tests against sorted ripgrep on all four usable code corpora; the separate
+  documentation track detects regressions on ripgrep's repository and Alamofire, preventing the
+  code result from being presented as a universal search improvement.
 - Transcript harvesting recognizes attached `-ePATTERN`, `-pPATTERN`, `--regexp=...`, and
   `--pattern=...` forms. Document-authority analysis now subtracts only the actual target file
   from inbound-link counts and prefilters transcript parsing to the eligible repository cohort;
@@ -50,8 +57,13 @@ pre-registered gate, and complete-search parity contract are unchanged.
   metadata and refuses unsafe link schemes.
 - The manual tolerates unavailable browser storage, supports clipboard fallback when opened
   locally, and announces copy failures without disabling its other controls.
-- The benchmark film imports the committed evidence instead of hand-copied scores and refuses to
-  render if the four-corpus layout or the “hay ranks first” claim is no longer supported.
+- Benchmark, explainer, and manual auxiliary text, table headings, and chart captions now retain WCAG AA contrast in light and dark themes; mobile layouts no longer overflow, and horizontally scrollable tables and code blocks accept keyboard focus.
+- Scroll-linked entrance motion no longer lowers text opacity.
+- The benchmark film imports committed evidence instead of hand-copied scores, derives its
+  installer version from that evidence, keeps ranking copy neutral until final scores settle, and
+  refuses to render if the four-corpus layout, deterministic comparison, or release reference is
+  unsupported. It derives the documentation counter-result from committed evidence and displays it
+  beside the code result.
 
 ## [0.1.3] — 2026-08-25
 

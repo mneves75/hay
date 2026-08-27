@@ -446,8 +446,12 @@ bun swe-explore.ts --selftest
 bun benchmark.ts --selftest
 bun benchmark-report.ts --selftest
 bun explainer-html.ts --selftest
-bash install.sh --selftest                    # exact branch/tag/commit; invalid ref refuses
+bash install.sh --selftest                    # exact ref + deterministic install root
 ```
+
+The installer resolves `CARGO_INSTALL_ROOT`, then `CARGO_HOME`, then `~/.cargo`, and passes the
+result to Cargo with `--root`. This intentionally overrides a configured `install.root`, so the
+script installs, verifies, and reports the same binary.
 
 The typecheck gate is not optional politeness: bun executes TypeScript by stripping the types,
 so a property access on a field that does not exist runs happily as `undefined`. That is exactly

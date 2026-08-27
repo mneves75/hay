@@ -110,8 +110,8 @@ value is.
 
 Average those flipped values across all queries and you get **Mean Reciprocal Rank** — MRR.
 "Reciprocal" is just the fancy word for "1 divided by". That's the whole metric. An MRR of 1.0
-means the answer was always first. In the committed benchmark, `hay` scores 0.967 on the Linux
-kernel; plain ripgrep scores 0.670.
+means the answer was always first. In the committed benchmark, `hay` scores 0.907 on the Linux
+kernel; deterministic `ripgrep --sort path` scores 0.541.
 
 **An honest complication.** A researcher named Norbert Fuhr published a paper arguing you shouldn't
 average reciprocal ranks at all, because rank is an *ordinal* scale — an ordering, not a quantity —
@@ -149,14 +149,14 @@ is a much better position than one metric you had to defend.
 
 ## 5. Why a single number is a lie
 
-Say `hay` scores 0.967 and ripgrep scores 0.670. Difference: 0.296. Done?
+Say `hay` scores 0.907 and `ripgrep --sort path` scores 0.541. Difference: 0.366. Done?
 
 No. Because I only asked **30 questions**. If I'd picked 30 *different* symbols from the same
 kernel, I'd have got different numbers. So the real question isn't "what's the difference" but
 **"how much would this difference move if I'd been unlucky with which questions I picked?"**
 
-If the difference would jump around between −0.1 and +0.7 depending on the sample, then 0.296 is
-noise wearing a suit. If it would stay somewhere between 0.16 and 0.45 no matter which questions I
+If the difference would jump around between −0.1 and +0.7 depending on the sample, then 0.366 is
+noise wearing a suit. If it would stay somewhere between 0.22 and 0.52 no matter which questions I
 drew, that's a real effect.
 
 ### Trick one: compare on the same questions
@@ -194,21 +194,21 @@ Why does putting the card back matter? Because that's what makes each draw indep
 what simulates "a different sample from the same underlying world". Without replacement you'd just
 get the same 30 cards in a different order, every time, and learn nothing.
 
-For `hay` versus ripgrep on the kernel, the interval is **[0.150, 0.446]**.
+For `hay` versus `ripgrep --sort path` on the kernel, the interval is **[0.223, 0.515]**.
 
 ### Reading the interval — the only skill you need here
 
-**If the interval does not contain zero, the difference is probably real.** [0.150, 0.446] is
+**If the interval does not contain zero, the difference is probably real.** [0.223, 0.515] is
 entirely above zero: in essentially every resampling, `hay` won.
 
 **If the interval contains zero, you have not detected anything** — regardless of how good the
-headline number looks. `ugrep` on the kernel scores +0.019 over ripgrep, interval
-**[−0.107, 0.145]**. That interval includes zero, which means "on a different sample of questions
-this could easily have gone the other way". +0.019 is not a result. It's a shrug with a decimal
+headline number looks. `ugrep --sort=name` on the kernel scores +0.065 over `ripgrep --sort path`, interval
+**[0.000, 0.163]**. That interval reaches zero and its randomization p is 0.496, which means
+"on a different sample of questions this could easily have gone the other way". +0.065 is not a result. It's a shrug with a decimal
 point.
 
 This is why the benchmark tables bold some rows and not others. On the current kernel run, **only
-`hay` beats plain ripgrep by an amount that survives both tests**. Every other interval crosses
+`hay` beats `ripgrep --sort path` by an amount that survives both tests**. Every other interval crosses
 zero or fails the randomization check.
 
 ### Where I had to correct this section
@@ -232,8 +232,9 @@ small samples. Thirty queries is a small sample.
 
 So the report no longer bolds on the interval alone. A difference is claimed only when **both**
 tests agree; where they disagree the table says so and takes the conservative reading. That pre-public 0.5.0 development
-report reduced `hay`'s detected wins from three corpora to two. The current run restores openclaw
-because the tool improved: +0.210 [0.067, 0.354], randomization p=0.008.
+report reduced `hay`'s detected wins from three corpora to two. A later code revision cleared both checks; the current clean-revision run also does: +0.092
+[0.031, 0.169], randomization p=0.017. Because the corpus revision changed too, that is a
+current cross-sectional result, not proof that the tool change alone caused the difference.
 
 I've left my original wording standing above rather than quietly editing it, because the sequence
 is the lesson: a rule can sound crisp enough to teach and still be too crisp, and the way you find
@@ -423,7 +424,7 @@ thing it was supposed to interrupt finished on its own.
 labelled it "peak memory" across three queries. Usually a later query is larger.
 
 **One question is not a sample.** This repository yielded exactly **one** usable query. On it,
-`hay` scores 1.000 and ripgrep 0.014. Printing that beside samples of 23–30 queries would be the
+`hay` scores 0.200 and `ripgrep --sort path` 0.012. Printing that beside samples of 23–30 queries would be the
 precise sin this whole project exists to complain about, so any corpus under ten queries is now
 marked, in the report, as *not evidence* — and no difference is flagged as detected there.
 
@@ -464,6 +465,14 @@ politically neutral.
 "what calls this", "where does this behaviour live" when there's no symbol to name. None of that is
 measured here. A tool could win this benchmark outright and still be unhelpful.
 
+**A second public track disproves the broad reading.** It asks for identifier-like tokens from
+documentation headings instead of code declarations, with rows and paired inference recorded in
+[`evidence/docs-track.json`](evidence/docs-track.json). There, `hay` is detectably worse than
+`ripgrep --sort path` on ripgrep's own repository and Alamofire; on Linux, openclaw, and this
+repository the difference is not detected. That does not undo the code result. It does show exactly how narrow
+the result is: declaration priors help when the answer is a declaration and can hurt when the
+answer is prose.
+
 **One machine, one operating system, one filesystem.** The machine was under variable load.
 Rankings are immune to that, but the timing table is indicative and the *ratios* between tools
 deserve more trust than the absolute milliseconds.
@@ -477,8 +486,8 @@ In Feynman's spirit, the honest residue:
 1. **Why `hay` beats `ast-grep` specifically.** §6 gives a hypothesis (guarantee versus luck) that
    fits every number I have. I did not run the experiment that would confirm it.
 
-2. **Why several tools score *identically*.** On ripgrep's source, `ack`, BSD `grep`, `git grep`
-   and `ripgrep --sort path` all land on MRR 0.418–0.419. That's suspicious in an interesting way: it probably
+2. **Why several tools score *identically*.** On ripgrep's source, `ripgrep --sort path`, `git grep`, `ugrep --sort=name`, and the
+   BSD `grep` snapshot all land on MRR 0.418–0.421. That's suspicious in an interesting way: it probably
    means they return the same matches in the same file order, and the tiny differences come from
    which files they skip. Probably. I haven't verified it, and "probably" is doing real work in
    that sentence.
@@ -503,6 +512,8 @@ because position 1 versus 2 matters and position 50 versus 51 does not. I ran ev
 identical questions so the questions' difficulty cancels out, then resampled those results ten
 thousand times to see how much the answer wobbles, then asked the same question a second way by
 flipping signs at random, and I claim a difference only when both methods agree. By that standard,
-`hay`'s gain over plain ripgrep is detected on all four usable corpora in the current report.
+`hay`'s gain over deterministic `ripgrep --sort path` is detected on all four usable corpora in the current report.
+On a separate documentation-heading track, it is detectably worse on two of five corpora, which
+is why the code result should not be generalized to all search.
 Building the test found a bug worth more than the test: `hay`'s core feature
 had never once worked on C, which I proved by switching it off and watching the score not move.

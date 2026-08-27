@@ -135,6 +135,14 @@ export function peakRss(c: CorpusReport, tool: string): string {
   return xs.length ? `${Math.max(...xs).toFixed(0)} MB` : "—";
 }
 
+/** Labels expose deterministic modes instead of making sorted baselines look like defaults. */
+export function perfLabel(tool: string): string {
+  if (tool === "rg") return "rg --sort path";
+  if (tool === "ugrep") return "ugrep --sort=name";
+  if (tool === "git-grep") return "git grep";
+  return tool;
+}
+
 /**
  * Below this many queries a corpus reports numbers, not evidence.
  *
@@ -808,6 +816,8 @@ export function markdown(d: Payload, docs?: DocsPayload): string {
   p("- **Invocation** — every binary is called by absolute path. On the test machine `grep` is a");
   p("  shell function that resolves to ugrep, so calling tools by name would have measured the");
   p("  wrong program.");
+  p("- **Peak memory** — an em dash means `/usr/bin/time -l` did not expose RSS for that run;");
+  p("  missing values are reported, never imputed.");
   p();
   p("### Versions");
   p();
@@ -863,7 +873,7 @@ export function markdown(d: Payload, docs?: DocsPayload): string {
       `${c.symbolsUniquelyDeclared.toLocaleString()} symbols declared exactly once · ` +
       `**${c.queries} ${c.queries === 1 ? "query" : "queries"}**`);
     p();
-    p("| tool | MRR | answer in top 10 | median rank | never found | Δ MRR vs ripgrep (95% CI) | randomization p |");
+    p("| tool | MRR | answer in top 10 | median rank | never found | Δ MRR vs rg --sort path (95% CI) | randomization p |");
     p("|---|---:|---:|---:|---:|---|---:|");
     for (const t of [...c.tools].sort((a, b) => b.mrr - a.mrr)) {
       if (!t.available) { p(`| ${t.label} | not installed | | | | | |`); continue; }
@@ -891,7 +901,7 @@ export function markdown(d: Payload, docs?: DocsPayload): string {
       p("### Time to complete a full search");
       p();
       const ids = c.perf[0] ? Object.keys(c.perf[0].results) : [];
-      p(`| query | ${ids.join(" | ")} |`);
+      p(`| query | ${ids.map(perfLabel).join(" | ")} |`);
       p(`|---|${ids.map(() => "---:").join("|")}|`);
       for (const row of c.perf) p(`| \`${row.query}\` | ${ids.map((i) => ms(row.results[i]!)).join(" | ")} |`);
       if (c.perf.length) {
@@ -977,7 +987,7 @@ export function html(d: Payload, docs?: DocsPayload): string {
     const perf = c.perf.length
       ? `<h4>Time to complete a full search</h4>
 <div class="scroll" tabindex="0"><table class="perf">
-<thead><tr><th scope="col">query</th>${ids.map((i) => `<th scope="col">${esc(i)}</th>`).join("")}</tr></thead>
+<thead><tr><th scope="col">query</th>${ids.map((i) => `<th scope="col">${esc(perfLabel(i))}</th>`).join("")}</tr></thead>
 <tbody>${c.perf.map((r) => `<tr><th scope="row"><code>${esc(r.query)}</code></th>${ids.map((i) => `<td class="n">${esc(ms(r.results[i]!))}</td>`).join("")}</tr>`).join("")}
 <tr class="rss"><th scope="row">peak memory</th>${ids.map((i) => `<td class="n">${esc(peakRss(c, i))}</td>`).join("")}</tr></tbody></table></div>`
       : "";
@@ -990,7 +1000,7 @@ ${thin(c) ? `<p class="thin-note"><strong>Too few queries to conclude anything (
 <thead><tr>
   <th scope="col">tool</th><th scope="col" class="n">MRR</th><th scope="col" class="n">top 10</th>
   <th scope="col" class="n">median rank</th><th scope="col" class="n">never found</th>
-  <th scope="col">Δ MRR vs ripgrep (95% CI)</th>
+  <th scope="col">Δ MRR vs rg --sort path (95% CI)</th>
   <th scope="col" class="n">randomization p</th>
 </tr></thead>
 <tbody>${rows}</tbody></table></div>
@@ -1093,6 +1103,7 @@ tbody th{font-weight:500}
 td.n,th.n{text-align:right}
 tr.subject{background:var(--accent-soft)}
 tr.subject th{color:var(--accent-ink);font-weight:600}
+tr.subject td.d{color:var(--accent-ink)}
 tr.absent td{color:var(--ink-faint);font-style:italic}
 .bar{display:block;height:3px;background:var(--rule);margin-top:.3rem;border-radius:2px;overflow:hidden}
 .bar>span{display:block;height:100%;background:var(--bar)}
@@ -1498,6 +1509,8 @@ if (import.meta.main) {
     catch (e) { if (!String(e).includes("tampered")) throw e; }
     // Thin corpus and unavailable tools must vanish from summary charts, or the picture would
     // assert more than the tables do.
+    eq(perfLabel("rg"), "rg --sort path", "timing label names the deterministic baseline");
+    eq(perfLabel("ugrep"), "ugrep --sort=name", "timing label names the deterministic ugrep mode");
     eq(deltaRows(payload).map((r) => `${r.corpus}:${r.tool}`), ["real:hay"], "delta rows drop thin, absent, and unordered snapshots");
     eq(timeRatios(payload).map((r) => r.tool), ["hay", "ugrep"], "only tools with measurable timings appear");
     eq(timeRatios(payload)[0]!.ratio, 0.5, "hay at half of ripgrep's time");

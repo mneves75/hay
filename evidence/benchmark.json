@@ -1,411 +1,351 @@
 {
   "generatedBy": "benchmark.ts",
+  "generatedAt": "2026-08-26T23:27:43.571Z",
   "task": "definition finding: given a symbol declared exactly once, rank of the declaring file",
   "groundTruth": "ast-grep (a parser), independent of every heuristic under test",
   "rankCap": 1000,
   "machine": {
-    "loadavg": "22:03  up 22:29, 2 users, load averages: 24.99 19.56 32.48",
+    "loadavg": "19:18  2 users, load averages: 6.65 7.99 8.18",
     "cpus": 18
   },
   "versions": {
-    "hay": "hay 0.6.0",
-    "rg": "ripgrep 15.2.0",
-    "rg-sorted": "ripgrep 15.2.0",
+    "hay": "hay 0.1.4",
+    "rg": "ripgrep 15.2.0 (rev e89fff89ac)",
     "ugrep": "ugrep 7.8.4 aarch64-apple-darwin25.6.0 +neon/AArch64; -P:pcre2jit; -z:zlib,bzip2,lzma,lz4,zstd,brotli,7z,tar/pax/cpio/zip",
     "ag": "ag version 2.2.0",
-    "ack": "ack v3.10.0 (standalone version)",
     "grep": "grep (BSD grep, GNU compatible) 2.6.0-FreeBSD",
     "git-grep": "git version 2.55.0",
     "cs": "cs version 1.4.0",
-    "ast-grep": "ast-grep 0.45.1"
+    "ast-grep": "ast-grep 0.45.2"
   },
   "corpora": [
     {
       "corpus": "linux",
       "lang": "c",
       "files": {
-        "onDisk": 95661,
-        "rgVisible": 95660,
-        "gitTracked": 95776
+        "onDisk": 95819,
+        "rgVisible": 95818,
+        "gitTracked": 95921
       },
-      "symbolsUniquelyDeclared": 559944,
+      "provenance": {
+        "revision": "45c13f3f9e3bb15fd89ff2864c6f627a3b4b4229",
+        "dirty": false
+      },
+      "symbolsUniquelyDeclared": 560573,
       "queries": 30,
+      "symbols": [
+        "su_remove",
+        "use_intel_pmu",
+        "mgag200_init_pci_options",
+        "intel_vblank_evade",
+        "migrate_device_pfns",
+        "chcr_sha_init",
+        "mgmt_device_connected",
+        "iio_push_event",
+        "octep_setup_oq",
+        "rtl8723a_phy_lc_calibrate",
+        "ib_mr_pool_init",
+        "icmp_global_consume",
+        "mlx5hws_rule_free_action_ste",
+        "expr_contains_symbol_negated",
+        "snd_es1938_reg_read",
+        "qlcnic_83xx_idc_request_reset",
+        "v4l2_ctrl_fill",
+        "xfs_growfs_check_rtgeom",
+        "ptdump_walk_pgd_level_debugfs",
+        "mii_ethtool_get_link_ksettings",
+        "rtl8180_set_anaparam",
+        "serial_port_runtime_resume",
+        "bfa_fcport_ln_sm_dn_nf",
+        "sh_eth_write",
+        "qcom_fixup_class",
+        "usb_ep_enable",
+        "mdiobus_write_nested",
+        "smbd_reconnect",
+        "__iommu_group_set_domain",
+        "hisi_l3c_pmu_event_readl"
+      ],
       "tools": [
         {
           "tool": "hay",
           "label": "hay (this project)",
           "available": true,
+          "deterministic": true,
           "queries": 30,
-          "mrr": 0.9666666666666667,
+          "mrr": 0.9066666666666666,
           "top10": 1,
           "medianRank": 1,
           "unreachable": 0,
           "timeouts": 0,
           "vsRipgrep": {
-            "mean": 0.2963604946788803,
-            "lo": 0.1502493835677692,
-            "hi": 0.44580493912332475,
+            "mean": 0.3658215082378368,
+            "lo": 0.22254273504273506,
+            "hi": 0.5148114289924636,
             "p": 0.00019998000199980003,
-            "n": 30
+            "n": 30,
+            "clusters": 30
           },
-          "vsRipgrepRandP": 0.0011998800119988001
+          "vsRipgrepRandP": 0.00019998000199980003
         },
         {
           "tool": "rg",
-          "label": "ripgrep (default order)",
+          "label": "ripgrep --sort path (deterministic baseline)",
           "available": true,
+          "deterministic": true,
           "queries": 30,
-          "mrr": 0.6703061719877864,
-          "top10": 0.9,
-          "medianRank": 1,
+          "mrr": 0.5408451584288299,
+          "top10": 0.8333333333333334,
+          "medianRank": 2.5,
           "unreachable": 0,
           "timeouts": 0
         },
         {
-          "tool": "rg-sorted",
-          "label": "ripgrep --sort path",
-          "available": true,
-          "queries": 30,
-          "mrr": 0.7374603174603174,
-          "top10": 0.9333333333333333,
-          "medianRank": 1,
-          "unreachable": 0,
-          "timeouts": 0,
-          "vsRipgrep": {
-            "mean": 0.06715414547253112,
-            "lo": -0.09220168056490927,
-            "hi": 0.22218263550102113,
-            "p": 0.403959604039596,
-            "n": 30
-          },
-          "vsRipgrepRandP": 0.46355364463553644
-        },
-        {
           "tool": "ugrep",
-          "label": "ugrep",
+          "label": "ugrep --sort=name",
           "available": true,
+          "deterministic": true,
           "queries": 30,
-          "mrr": 0.6889763939763942,
-          "top10": 0.8666666666666667,
-          "medianRank": 1,
+          "mrr": 0.6059496617686272,
+          "top10": 0.9,
+          "medianRank": 1.5,
           "unreachable": 0,
           "timeouts": 0,
           "vsRipgrep": {
-            "mean": 0.018670221988607637,
-            "lo": -0.10656990825152261,
-            "hi": 0.14502146333984903,
-            "p": 0.771922807719228,
-            "n": 30
+            "mean": 0.06510450333979746,
+            "lo": 0,
+            "hi": 0.16326222796811032,
+            "p": 0.23997600239976002,
+            "n": 30,
+            "clusters": 30
           },
-          "vsRipgrepRandP": 0.7974202579742026
+          "vsRipgrepRandP": 0.49645035496450357
         },
         {
           "tool": "ag",
           "label": "the_silver_searcher",
           "available": true,
+          "deterministic": false,
           "queries": 30,
-          "mrr": 0.6071784511784512,
-          "top10": 0.8,
-          "medianRank": 1.5,
-          "unreachable": 0,
-          "timeouts": 0,
-          "vsRipgrep": {
-            "mean": -0.06312772080933517,
-            "lo": -0.21271490807813676,
-            "hi": 0.08395622895622895,
-            "p": 0.3935606439356064,
-            "n": 30
-          },
-          "vsRipgrepRandP": 0.38976102389761025
-        },
-        {
-          "tool": "ack",
-          "label": "ack",
-          "available": true,
-          "queries": 30,
-          "mrr": 0.6371506734006734,
-          "top10": 0.8,
-          "medianRank": 1,
-          "unreachable": 0,
-          "timeouts": 0,
-          "vsRipgrep": {
-            "mean": -0.03315549858711293,
-            "lo": -0.1721402175718319,
-            "hi": 0.10516317016317017,
-            "p": 0.6267373262673732,
-            "n": 30
-          },
-          "vsRipgrepRandP": 0.6093390660933906
+          "mrr": 0.5673452380952381,
+          "top10": 0.8333333333333334,
+          "medianRank": 2,
+          "unreachable": 0.03333333333333333,
+          "timeouts": 0
         },
         {
           "tool": "grep",
           "label": "BSD grep",
           "available": true,
+          "deterministic": false,
           "queries": 30,
-          "mrr": 0.5339562289562291,
-          "top10": 0.7,
-          "medianRank": 1,
-          "unreachable": 0.16666666666666666,
-          "timeouts": 5,
-          "vsRipgrep": {
-            "mean": -0.13634994303155737,
-            "lo": -0.31216524216524216,
-            "hi": 0.0376451359635216,
-            "p": 0.12218778122187782,
-            "n": 30
-          },
-          "vsRipgrepRandP": 0.134986501349865
+          "mrr": 0.6006785714285715,
+          "top10": 0.8666666666666667,
+          "medianRank": 2,
+          "unreachable": 0,
+          "timeouts": 0
         },
         {
           "tool": "git-grep",
           "label": "git grep",
           "available": true,
+          "deterministic": true,
           "queries": 30,
-          "mrr": 0.7374603174603174,
-          "top10": 0.9333333333333333,
-          "medianRank": 1,
+          "mrr": 0.5408451584288299,
+          "top10": 0.8333333333333334,
+          "medianRank": 2.5,
           "unreachable": 0,
           "timeouts": 0,
           "vsRipgrep": {
-            "mean": 0.06715414547253112,
-            "lo": -0.09220168056490927,
-            "hi": 0.22218263550102113,
-            "p": 0.403959604039596,
-            "n": 30
+            "mean": 0,
+            "lo": 0,
+            "hi": 0,
+            "p": 1,
+            "n": 30,
+            "clusters": 30
           },
-          "vsRipgrepRandP": 0.46355364463553644
+          "vsRipgrepRandP": 1
         },
         {
           "tool": "cs",
           "label": "codespelunker (ranked)",
           "available": true,
+          "deterministic": false,
           "queries": 30,
-          "mrr": 0.6429203802733217,
-          "top10": 0.9,
+          "mrr": 0.6036507936507937,
+          "top10": 0.9333333333333333,
           "medianRank": 2,
           "unreachable": 0,
-          "timeouts": 0,
-          "vsRipgrep": {
-            "mean": -0.02738579171446489,
-            "lo": -0.138525392854066,
-            "hi": 0.07355119825708062,
-            "p": 0.6143385661433857,
-            "n": 30
-          },
-          "vsRipgrepRandP": 0.6287371262873712
+          "timeouts": 0
         },
         {
           "tool": "ast-grep",
-          "label": "ast-grep (structural)",
+          "label": "ast-grep (structural snapshot)",
           "available": true,
+          "deterministic": false,
           "queries": 30,
-          "mrr": 0.7206559370886857,
+          "mrr": 0.636432783785725,
           "top10": 0.9,
-          "medianRank": 1,
+          "medianRank": 1.5,
           "unreachable": 0,
-          "timeouts": 0,
-          "vsRipgrep": {
-            "mean": 0.05034976510089929,
-            "lo": -0.009300469798201424,
-            "hi": 0.1328340331257752,
-            "p": 0.19038096190380963,
-            "n": 30
-          },
-          "vsRipgrepRandP": 0.34466553344665535
+          "timeouts": 0
         }
       ],
       "perf": [
         {
-          "query": "contpte_ptep_get",
+          "query": "su_remove",
           "results": {
             "hay": {
-              "medianMs": 2658.2680420000106,
-              "minMs": 2642.119084000122,
-              "peakRssMb": 15.109375,
+              "medianMs": 2553.272707999684,
+              "minMs": 2534.6494589997455,
+              "peakRssMb": null,
               "timedOut": false
             },
             "rg": {
-              "medianMs": 2784.2672079997137,
-              "minMs": 2709.0598749998026,
-              "peakRssMb": 15.4375,
-              "timedOut": false
-            },
-            "rg-sorted": {
-              "medianMs": 16496.09924999997,
-              "minMs": 15862.27733300021,
-              "peakRssMb": 7.734375,
+              "medianMs": 9803.975957999937,
+              "minMs": 9137.339416999836,
+              "peakRssMb": null,
               "timedOut": false
             },
             "ugrep": {
-              "medianMs": 5027.2114580003545,
-              "minMs": 4932.687541000079,
-              "peakRssMb": 9.484375,
+              "medianMs": 1804.2554999999702,
+              "minMs": 1797.653333000373,
+              "peakRssMb": null,
               "timedOut": false
             },
             "ag": {
-              "medianMs": 4223.054624999873,
-              "minMs": 3980.065084000118,
-              "peakRssMb": 174.359375,
-              "timedOut": false
-            },
-            "ack": {
-              "medianMs": 30616.11991700018,
-              "minMs": 26713.712624999695,
-              "peakRssMb": 22.859375,
+              "medianMs": 2850.933999999892,
+              "minMs": 2765.1581669999287,
+              "peakRssMb": null,
               "timedOut": false
             },
             "grep": {
-              "medianMs": 25306.891458000056,
-              "minMs": 22872.227874999866,
-              "peakRssMb": 3.296875,
+              "medianMs": 19131.996416000184,
+              "minMs": 18923.270916999783,
+              "peakRssMb": null,
               "timedOut": false
             },
             "git-grep": {
-              "medianMs": 2314.7809589998797,
-              "minMs": 2066.049041000195,
-              "peakRssMb": 245.671875,
+              "medianMs": 2557.445624999702,
+              "minMs": 2487.611124999821,
+              "peakRssMb": null,
               "timedOut": false
             },
             "cs": {
-              "medianMs": 14018.38512500003,
-              "minMs": 12261.725166999735,
-              "peakRssMb": 197.3125,
+              "medianMs": 11749.165583999828,
+              "minMs": 11433.449667000212,
+              "peakRssMb": null,
               "timedOut": false
             },
             "ast-grep": {
-              "medianMs": 17278.13125000056,
-              "minMs": 16767.911582999863,
-              "peakRssMb": 626.03125,
+              "medianMs": 10277.945625000168,
+              "minMs": 8797.778375000227,
+              "peakRssMb": null,
               "timedOut": false
             }
           }
         },
         {
-          "query": "iwl_trans_stop_device",
+          "query": "use_intel_pmu",
           "results": {
             "hay": {
-              "medianMs": 3090.0507500004023,
-              "minMs": 3075.0293339993805,
-              "peakRssMb": 14.671875,
+              "medianMs": 3148.546209000051,
+              "minMs": 2504.0765419998206,
+              "peakRssMb": null,
               "timedOut": false
             },
             "rg": {
-              "medianMs": 2933.618375000544,
-              "minMs": 2843.496749999933,
-              "peakRssMb": 15.359375,
-              "timedOut": false
-            },
-            "rg-sorted": {
-              "medianMs": 17494.978542000055,
-              "minMs": 15692.195666000247,
-              "peakRssMb": 7.765625,
+              "medianMs": 10011.40783300018,
+              "minMs": 9405.88662499981,
+              "peakRssMb": null,
               "timedOut": false
             },
             "ugrep": {
-              "medianMs": 3803.0611250000075,
-              "minMs": 3764.3160410001874,
-              "peakRssMb": 9.671875,
+              "medianMs": 87.67145800031722,
+              "minMs": 78.59675000002608,
+              "peakRssMb": null,
               "timedOut": false
             },
             "ag": {
-              "medianMs": 3582.2617499995977,
-              "minMs": 3441.5359169999138,
-              "peakRssMb": 174.015625,
-              "timedOut": false
-            },
-            "ack": {
-              "medianMs": 32738.81462499965,
-              "minMs": 32066.75241700001,
-              "peakRssMb": 22.796875,
+              "medianMs": 2765.894791000057,
+              "minMs": 2738.0067920000292,
+              "peakRssMb": null,
               "timedOut": false
             },
             "grep": {
-              "medianMs": null,
-              "minMs": null,
+              "medianMs": 19908.471957999747,
+              "minMs": 18535.899958000053,
               "peakRssMb": null,
-              "timedOut": true
+              "timedOut": false
             },
             "git-grep": {
-              "medianMs": 2762.0703750001267,
-              "minMs": 2645.5400000000373,
-              "peakRssMb": 250.625,
+              "medianMs": 3438.309083000291,
+              "minMs": 3338.6554160001688,
+              "peakRssMb": null,
               "timedOut": false
             },
             "cs": {
-              "medianMs": 18038.70108400006,
-              "minMs": 15213.20900000073,
-              "peakRssMb": 184.640625,
+              "medianMs": 11246.155832999852,
+              "minMs": 11057.197999999858,
+              "peakRssMb": null,
               "timedOut": false
             },
             "ast-grep": {
-              "medianMs": 20787.426541999914,
-              "minMs": 18328.196624999866,
-              "peakRssMb": 629.84375,
+              "medianMs": 11317.831083999947,
+              "minMs": 10828.886082999874,
+              "peakRssMb": null,
               "timedOut": false
             }
           }
         },
         {
-          "query": "ip_vs_nat_xmit",
+          "query": "mgag200_init_pci_options",
           "results": {
             "hay": {
-              "medianMs": 2741.2863330002874,
-              "minMs": 2664.2208329997957,
-              "peakRssMb": 14.59375,
+              "medianMs": 2615.778291999828,
+              "minMs": 2426.18995800009,
+              "peakRssMb": null,
               "timedOut": false
             },
             "rg": {
-              "medianMs": 2914.5681670000777,
-              "minMs": 2600.1865830002353,
-              "peakRssMb": 16.09375,
-              "timedOut": false
-            },
-            "rg-sorted": {
-              "medianMs": 28390.351832999848,
-              "minMs": 18447.573416000232,
-              "peakRssMb": 7.859375,
+              "medianMs": 9787.926708000246,
+              "minMs": 9774.567582999822,
+              "peakRssMb": null,
               "timedOut": false
             },
             "ugrep": {
-              "medianMs": 2156.100124999881,
-              "minMs": 2035.585291000083,
-              "peakRssMb": 9.15625,
+              "medianMs": 2523.4980830000713,
+              "minMs": 1991.0783339999616,
+              "peakRssMb": null,
               "timedOut": false
             },
             "ag": {
-              "medianMs": 3754.848166000098,
-              "minMs": 3726.2514169998467,
-              "peakRssMb": 175.03125,
-              "timedOut": false
-            },
-            "ack": {
-              "medianMs": 39203.26224999968,
-              "minMs": 32518.965249999426,
-              "peakRssMb": 23.484375,
+              "medianMs": 2736.179249999579,
+              "minMs": 2695.385290999897,
+              "peakRssMb": null,
               "timedOut": false
             },
             "grep": {
-              "medianMs": null,
-              "minMs": null,
+              "medianMs": 28018.552292000037,
+              "minMs": 18129.376416000072,
               "peakRssMb": null,
-              "timedOut": true
+              "timedOut": false
             },
             "git-grep": {
-              "medianMs": 2832.268333000131,
-              "minMs": 2539.24199999962,
-              "peakRssMb": 245.6875,
+              "medianMs": 2721.276999999769,
+              "minMs": 2609.8456669999287,
+              "peakRssMb": null,
               "timedOut": false
             },
             "cs": {
-              "medianMs": 16417.131790999323,
-              "minMs": 14294.74883300066,
-              "peakRssMb": 189.6875,
+              "medianMs": 13082.43437499972,
+              "minMs": 10787.028916000389,
+              "peakRssMb": null,
               "timedOut": false
             },
             "ast-grep": {
-              "medianMs": 21865.36070800014,
-              "minMs": 18830.925583000295,
-              "peakRssMb": 542.234375,
+              "medianMs": 16022.016582999844,
+              "minMs": 12085.416416999884,
+              "peakRssMb": null,
               "timedOut": false
             }
           }
@@ -416,388 +356,329 @@
       "corpus": "openclaw",
       "lang": "ts",
       "files": {
-        "onDisk": 33430,
-        "rgVisible": 32955,
-        "gitTracked": 33455
+        "onDisk": 33857,
+        "rgVisible": 33376,
+        "gitTracked": 33882
       },
-      "symbolsUniquelyDeclared": 20752,
+      "provenance": {
+        "revision": "a82042f204151680c14f89eb137a6056dfd3e0d2",
+        "dirty": false
+      },
+      "symbolsUniquelyDeclared": 21196,
       "queries": 30,
+      "symbols": [
+        "collectScopes",
+        "handleComposerKeydown",
+        "githubResponse",
+        "execContainer",
+        "expectTerminalContent",
+        "resolveDiscordChannelPolicyCommandAuthorizer",
+        "resolveLocalFullSuiteProfile",
+        "installTelegramPollRegistryForTests",
+        "createDateAuthProfiles",
+        "collectGatewayCpuObservations",
+        "hostedCatalog",
+        "buildAdmittedContext",
+        "renderSettingsValue",
+        "createDebouncedStream",
+        "resolveGitHubPublicationWorktreeOwner",
+        "configWithDefaultEnvProvider",
+        "renderWhatsAppConfigForm",
+        "mountPet",
+        "makeChannelMemberAuth",
+        "renderSettingsWorkspace",
+        "describeEmbeddedAgentStreamStrategy",
+        "matrixActionCall",
+        "plainMessage",
+        "itKeepsCodexPluginDisabled",
+        "runBootstrapConfigRequest",
+        "createOkFetcher",
+        "getAgentEventExecutionContext",
+        "agentsSetIdentityCommand",
+        "runProfileExtensionMemory",
+        "createAdapterWithHeaders"
+      ],
       "tools": [
         {
           "tool": "hay",
           "label": "hay (this project)",
           "available": true,
+          "deterministic": true,
           "queries": 30,
-          "mrr": 0.8786111111111112,
-          "top10": 0.9666666666666667,
+          "mrr": 0.9111111111111111,
+          "top10": 1,
           "medianRank": 1,
           "unreachable": 0,
           "timeouts": 0,
           "vsRipgrep": {
-            "mean": 0.21005633255633258,
-            "lo": 0.0668023643023643,
-            "hi": 0.3542396492396493,
-            "p": 0.004199580041995801,
-            "n": 30
+            "mean": 0.09224747474747476,
+            "lo": 0.03111111111111111,
+            "hi": 0.16861111111111113,
+            "p": 0.0005999400059994001,
+            "n": 30,
+            "clusters": 30
           },
-          "vsRipgrepRandP": 0.008099190080991902
+          "vsRipgrepRandP": 0.0165983401659834
         },
         {
           "tool": "rg",
-          "label": "ripgrep (default order)",
+          "label": "ripgrep --sort path (deterministic baseline)",
           "available": true,
+          "deterministic": true,
           "queries": 30,
-          "mrr": 0.6685547785547784,
-          "top10": 0.9,
+          "mrr": 0.8188636363636362,
+          "top10": 0.9666666666666667,
           "medianRank": 1,
           "unreachable": 0,
           "timeouts": 0
         },
         {
-          "tool": "rg-sorted",
-          "label": "ripgrep --sort path",
-          "available": true,
-          "queries": 30,
-          "mrr": 0.6490066171396093,
-          "top10": 0.9333333333333333,
-          "medianRank": 1,
-          "unreachable": 0,
-          "timeouts": 0,
-          "vsRipgrep": {
-            "mean": -0.019548161415169088,
-            "lo": -0.15193182066583602,
-            "hi": 0.11002886002886005,
-            "p": 0.7913208679132087,
-            "n": 30
-          },
-          "vsRipgrepRandP": 0.8593140685931406
-        },
-        {
           "tool": "ugrep",
-          "label": "ugrep",
+          "label": "ugrep --sort=name",
           "available": true,
+          "deterministic": true,
           "queries": 30,
-          "mrr": 0.6197517896047305,
-          "top10": 0.9333333333333333,
+          "mrr": 0.7966414141414142,
+          "top10": 0.9666666666666667,
           "medianRank": 1,
           "unreachable": 0,
           "timeouts": 0,
           "vsRipgrep": {
-            "mean": -0.04880298895004777,
-            "lo": -0.18732252496958382,
-            "hi": 0.08532159017453136,
-            "p": 0.4617538246175382,
-            "n": 30
+            "mean": -0.022222222222222223,
+            "lo": -0.08000000000000002,
+            "hi": 0.01333333333333333,
+            "p": 0.7233276672332767,
+            "n": 30,
+            "clusters": 30
           },
-          "vsRipgrepRandP": 0.5529447055294471
+          "vsRipgrepRandP": 1
         },
         {
           "tool": "ag",
           "label": "the_silver_searcher",
           "available": true,
+          "deterministic": false,
           "queries": 30,
-          "mrr": 0.6071195144724554,
-          "top10": 0.9333333333333333,
-          "medianRank": 1.5,
+          "mrr": 0.7298534798534799,
+          "top10": 0.8666666666666667,
+          "medianRank": 1,
           "unreachable": 0,
-          "timeouts": 0,
-          "vsRipgrep": {
-            "mean": -0.0614352640823229,
-            "lo": -0.19015321280027161,
-            "hi": 0.05841821577115695,
-            "p": 0.31496850314968505,
-            "n": 30
-          },
-          "vsRipgrepRandP": 0.34606539346065396
-        },
-        {
-          "tool": "ack",
-          "label": "ack",
-          "available": true,
-          "queries": 30,
-          "mrr": 0.5941565515094925,
-          "top10": 0.9333333333333333,
-          "medianRank": 2,
-          "unreachable": 0,
-          "timeouts": 0,
-          "vsRipgrep": {
-            "mean": -0.07439822704528587,
-            "lo": -0.1985164835164835,
-            "hi": 0.03898459383753502,
-            "p": 0.20517948205179481,
-            "n": 30
-          },
-          "vsRipgrepRandP": 0.28957104289571045
+          "timeouts": 0
         },
         {
           "tool": "grep",
           "label": "BSD grep",
           "available": true,
+          "deterministic": false,
           "queries": 30,
-          "mrr": 0.5941565515094925,
-          "top10": 0.9333333333333333,
-          "medianRank": 2,
+          "mrr": 0.7298534798534799,
+          "top10": 0.8666666666666667,
+          "medianRank": 1,
           "unreachable": 0,
-          "timeouts": 0,
-          "vsRipgrep": {
-            "mean": -0.07439822704528587,
-            "lo": -0.1985164835164835,
-            "hi": 0.03898459383753502,
-            "p": 0.20517948205179481,
-            "n": 30
-          },
-          "vsRipgrepRandP": 0.28957104289571045
+          "timeouts": 0
         },
         {
           "tool": "git-grep",
           "label": "git grep",
           "available": true,
+          "deterministic": true,
           "queries": 30,
-          "mrr": 0.6223399504729428,
-          "top10": 0.9333333333333333,
+          "mrr": 0.8188636363636362,
+          "top10": 0.9666666666666667,
           "medianRank": 1,
           "unreachable": 0,
           "timeouts": 0,
           "vsRipgrep": {
-            "mean": -0.04621482808183575,
-            "lo": -0.168008622522689,
-            "hi": 0.06536212153859214,
-            "p": 0.44635536446355367,
-            "n": 30
+            "mean": 0,
+            "lo": 0,
+            "hi": 0,
+            "p": 1,
+            "n": 30,
+            "clusters": 30
           },
-          "vsRipgrepRandP": 0.5127487251274873
+          "vsRipgrepRandP": 1
         },
         {
           "tool": "cs",
           "label": "codespelunker (ranked)",
           "available": true,
+          "deterministic": false,
           "queries": 30,
-          "mrr": 0.6960044585044586,
-          "top10": 0.9333333333333333,
+          "mrr": 0.8161111111111111,
+          "top10": 0.9666666666666667,
           "medianRank": 1,
           "unreachable": 0,
-          "timeouts": 0,
-          "vsRipgrep": {
-            "mean": 0.027449679949679957,
-            "lo": -0.09351592851592852,
-            "hi": 0.141007881007881,
-            "p": 0.644935506449355,
-            "n": 30
-          },
-          "vsRipgrepRandP": 0.6605339466053395
+          "timeouts": 0
         },
         {
           "tool": "ast-grep",
-          "label": "ast-grep (structural)",
+          "label": "ast-grep (structural snapshot)",
           "available": true,
+          "deterministic": false,
           "queries": 30,
-          "mrr": 0.726161986161986,
-          "top10": 0.9,
+          "mrr": 0.768808485835649,
+          "top10": 0.8333333333333334,
           "medianRank": 1,
-          "unreachable": 0.03333333333333333,
-          "timeouts": 0,
-          "vsRipgrep": {
-            "mean": 0.05760720760720761,
-            "lo": -0.0062454212454212425,
-            "hi": 0.13874236874236875,
-            "p": 0.0917908209179082,
-            "n": 30
-          },
-          "vsRipgrepRandP": 0.1705829417058294
+          "unreachable": 0,
+          "timeouts": 0
         }
       ],
       "perf": [
         {
-          "query": "createBetaAutoUpdateConfig",
+          "query": "collectScopes",
           "results": {
             "hay": {
-              "medianMs": 850.6160829998553,
-              "minMs": 764.402999999933,
-              "peakRssMb": 15.90625,
+              "medianMs": 2635.6419580001384,
+              "minMs": 1354.0819999999367,
+              "peakRssMb": null,
               "timedOut": false
             },
             "rg": {
-              "medianMs": 790.7077919999138,
-              "minMs": 747.0466250004247,
-              "peakRssMb": 15.84375,
-              "timedOut": false
-            },
-            "rg-sorted": {
-              "medianMs": 3576.0626660007983,
-              "minMs": 3139.2281669992954,
-              "peakRssMb": 7.78125,
+              "medianMs": 3191.9132079998963,
+              "minMs": 2424.937208000105,
+              "peakRssMb": null,
               "timedOut": false
             },
             "ugrep": {
-              "medianMs": 1621.0485000004992,
-              "minMs": 1615.1877500005066,
-              "peakRssMb": 8.234375,
+              "medianMs": 1639.3560419999994,
+              "minMs": 1200.596042000223,
+              "peakRssMb": null,
               "timedOut": false
             },
             "ag": {
-              "medianMs": 1032.5046250000596,
-              "minMs": 1022.0115000000224,
-              "peakRssMb": 19.875,
-              "timedOut": false
-            },
-            "ack": {
-              "medianMs": 5566.272249999456,
-              "minMs": 4850.976250000298,
-              "peakRssMb": 18.859375,
+              "medianMs": 950.9112500003539,
+              "minMs": 934.4148329999298,
+              "peakRssMb": null,
               "timedOut": false
             },
             "grep": {
-              "medianMs": 7258.878750000149,
-              "minMs": 5507.026042000391,
-              "peakRssMb": 3.203125,
+              "medianMs": 6807.447666000109,
+              "minMs": 6779.108082999941,
+              "peakRssMb": null,
               "timedOut": false
             },
             "git-grep": {
-              "medianMs": 790.7017920007929,
-              "minMs": 652.6716249994934,
-              "peakRssMb": 51.28125,
+              "medianMs": 879.0962499999441,
+              "minMs": 821.462833000347,
+              "peakRssMb": null,
               "timedOut": false
             },
             "cs": {
-              "medianMs": 2497.119041999802,
-              "minMs": 2332.448667000048,
-              "peakRssMb": 38.546875,
+              "medianMs": 2815.647541000042,
+              "minMs": 2703.378250000067,
+              "peakRssMb": null,
               "timedOut": false
             },
             "ast-grep": {
-              "medianMs": 3489.9232499999925,
-              "minMs": 3030.232166999951,
-              "peakRssMb": 45.125,
+              "medianMs": 3415.650541999843,
+              "minMs": 2653.202917000279,
+              "peakRssMb": null,
               "timedOut": false
             }
           }
         },
         {
-          "query": "expectEnvGatewayCredentials",
+          "query": "handleComposerKeydown",
           "results": {
             "hay": {
-              "medianMs": 680.6747920000926,
-              "minMs": 675.7770839994773,
-              "peakRssMb": 15.46875,
+              "medianMs": 875.7417089999653,
+              "minMs": 835.8406250001863,
+              "peakRssMb": null,
               "timedOut": false
             },
             "rg": {
-              "medianMs": 725.7541669998318,
-              "minMs": 668.8197079999372,
-              "peakRssMb": 16.390625,
-              "timedOut": false
-            },
-            "rg-sorted": {
-              "medianMs": 2918.0690839998424,
-              "minMs": 2720.067792000249,
-              "peakRssMb": 7.640625,
+              "medianMs": 3276.2356659998186,
+              "minMs": 3209.2741249999963,
+              "peakRssMb": null,
               "timedOut": false
             },
             "ugrep": {
-              "medianMs": 1310.890083999373,
-              "minMs": 1208.020499999635,
-              "peakRssMb": 8.25,
+              "medianMs": 220.8717080000788,
+              "minMs": 218.0137499999255,
+              "peakRssMb": null,
               "timedOut": false
             },
             "ag": {
-              "medianMs": 937.1649170005694,
-              "minMs": 912.5313330003992,
-              "peakRssMb": 19.453125,
-              "timedOut": false
-            },
-            "ack": {
-              "medianMs": 5087.6214169999585,
-              "minMs": 4499.463959000073,
-              "peakRssMb": 18.71875,
+              "medianMs": 930.5565420002677,
+              "minMs": 906.6303749997169,
+              "peakRssMb": null,
               "timedOut": false
             },
             "grep": {
-              "medianMs": 6285.234624999575,
-              "minMs": 6198.471083000302,
-              "peakRssMb": 3.1875,
+              "medianMs": 5644.714207999874,
+              "minMs": 5375.342750000302,
+              "peakRssMb": null,
               "timedOut": false
             },
             "git-grep": {
-              "medianMs": 521.8553750002757,
-              "minMs": 454.189708000049,
-              "peakRssMb": 59.515625,
+              "medianMs": 864.1720000002533,
+              "minMs": 855.0385829997249,
+              "peakRssMb": null,
               "timedOut": false
             },
             "cs": {
-              "medianMs": 2707.6426249993965,
-              "minMs": 2649.4120829999447,
-              "peakRssMb": 39.375,
+              "medianMs": 3961.4045409997925,
+              "minMs": 2844.8963329996914,
+              "peakRssMb": null,
               "timedOut": false
             },
             "ast-grep": {
-              "medianMs": 3249.2063749991357,
-              "minMs": 2771.757582999766,
-              "peakRssMb": 45.5625,
+              "medianMs": 3045.841541000176,
+              "minMs": 2848.161499999929,
+              "peakRssMb": null,
               "timedOut": false
             }
           }
         },
         {
-          "query": "buildMatrixReplyDetails",
+          "query": "githubResponse",
           "results": {
             "hay": {
-              "medianMs": 851.5324160000309,
-              "minMs": 839.2125000003725,
-              "peakRssMb": 15.859375,
+              "medianMs": 957.4830000000075,
+              "minMs": 898.7879169997759,
+              "peakRssMb": null,
               "timedOut": false
             },
             "rg": {
-              "medianMs": 945.9386669993401,
-              "minMs": 867.7862499998882,
-              "peakRssMb": 15.625,
-              "timedOut": false
-            },
-            "rg-sorted": {
-              "medianMs": 4002.27112499997,
-              "minMs": 3577.764417000115,
-              "peakRssMb": 7.71875,
+              "medianMs": 3815.846374999732,
+              "minMs": 3169.3458750001155,
+              "peakRssMb": null,
               "timedOut": false
             },
             "ugrep": {
-              "medianMs": 609.3871659999713,
-              "minMs": 536.612207999453,
-              "peakRssMb": 7.171875,
+              "medianMs": 1330.2099170000292,
+              "minMs": 1230.6397500000894,
+              "peakRssMb": null,
               "timedOut": false
             },
             "ag": {
-              "medianMs": 935.0774170001969,
-              "minMs": 914.8380829999223,
-              "peakRssMb": 19.734375,
-              "timedOut": false
-            },
-            "ack": {
-              "medianMs": 6070.501166000031,
-              "minMs": 4581.754124999978,
-              "peakRssMb": 18.671875,
+              "medianMs": 1050.763917000033,
+              "minMs": 1015.2506249998696,
+              "peakRssMb": null,
               "timedOut": false
             },
             "grep": {
-              "medianMs": 5779.5314170001075,
-              "minMs": 5183.152665999718,
-              "peakRssMb": 3.21875,
+              "medianMs": 6468.372250000015,
+              "minMs": 5780.699791999999,
+              "peakRssMb": null,
               "timedOut": false
             },
             "git-grep": {
-              "medianMs": 740.6291249999776,
-              "minMs": 704.9357089996338,
-              "peakRssMb": 52.203125,
+              "medianMs": 908.4111669999547,
+              "minMs": 894.5936250002123,
+              "peakRssMb": null,
               "timedOut": false
             },
             "cs": {
-              "medianMs": 3040.10579200089,
-              "minMs": 3001.8096249997616,
-              "peakRssMb": 41.921875,
+              "medianMs": 3530.7396669997834,
+              "minMs": 3203.5467920000665,
+              "peakRssMb": null,
               "timedOut": false
             },
             "ast-grep": {
-              "medianMs": 3698.005292000249,
-              "minMs": 3391.109582999721,
-              "peakRssMb": 41.1875,
+              "medianMs": 2723.346334000118,
+              "minMs": 2718.9177079997025,
+              "peakRssMb": null,
               "timedOut": false
             }
           }
@@ -812,13 +693,43 @@
         "rgVisible": 225,
         "gitTracked": 237
       },
+      "provenance": {
+        "revision": "3fce3b5bb0236da2df6d99672afb8a719642eca7",
+        "dirty": false
+      },
       "symbolsUniquelyDeclared": 534,
       "queries": 23,
+      "symbols": [
+        "basic",
+        "enforce_literal_len",
+        "quiet",
+        "assert_non_empty_stderr",
+        "add_searches",
+        "canonicalize",
+        "and_ngrams",
+        "path_terminator",
+        "trim_line_terminator",
+        "remove_matching_bytes",
+        "class",
+        "test_no_ignore",
+        "line_number",
+        "set_both",
+        "test_type",
+        "heading",
+        "line_terminator",
+        "from_ast_literal",
+        "bytes",
+        "symlinks",
+        "set_after",
+        "simplify",
+        "separator_field"
+      ],
       "tools": [
         {
           "tool": "hay",
           "label": "hay (this project)",
           "available": true,
+          "deterministic": true,
           "queries": 23,
           "mrr": 0.7999999999999999,
           "top10": 1,
@@ -826,124 +737,77 @@
           "unreachable": 0,
           "timeouts": 0,
           "vsRipgrep": {
-            "mean": 0.389860092488509,
-            "lo": 0.2354109232625857,
-            "hi": 0.5483885253706227,
+            "mean": 0.3814259941645944,
+            "lo": 0.22843296780200276,
+            "hi": 0.5412159346941957,
             "p": 0.00019998000199980003,
-            "n": 23
+            "n": 23,
+            "clusters": 23
           },
           "vsRipgrepRandP": 0.00019998000199980003
         },
         {
           "tool": "rg",
-          "label": "ripgrep (default order)",
+          "label": "ripgrep --sort path (deterministic baseline)",
           "available": true,
-          "queries": 23,
-          "mrr": 0.41013990751149104,
-          "top10": 0.6521739130434783,
-          "medianRank": 7,
-          "unreachable": 0,
-          "timeouts": 0
-        },
-        {
-          "tool": "rg-sorted",
-          "label": "ripgrep --sort path",
-          "available": true,
+          "deterministic": true,
           "queries": 23,
           "mrr": 0.41857400583540566,
           "top10": 0.6956521739130435,
           "medianRank": 5,
           "unreachable": 0,
-          "timeouts": 0,
-          "vsRipgrep": {
-            "mean": 0.008434098323914592,
-            "lo": -0.010022053877013356,
-            "hi": 0.028942081998659885,
-            "p": 0.39476052394760525,
-            "n": 23
-          },
-          "vsRipgrepRandP": 0.41885811418858115
+          "timeouts": 0
         },
         {
           "tool": "ugrep",
-          "label": "ugrep",
+          "label": "ugrep --sort=name",
           "available": true,
+          "deterministic": true,
           "queries": 23,
-          "mrr": 0.3833487535387396,
-          "top10": 0.6521739130434783,
-          "medianRank": 7,
+          "mrr": 0.4207479188788838,
+          "top10": 0.6956521739130435,
+          "medianRank": 5,
           "unreachable": 0,
           "timeouts": 0,
           "vsRipgrep": {
-            "mean": -0.02679115397275137,
-            "lo": -0.10281510633097747,
-            "hi": 0.02400969212849624,
-            "p": 0.505949405059494,
-            "n": 23
+            "mean": 0.0021739130434782605,
+            "lo": 0,
+            "hi": 0.006521739130434781,
+            "p": 0.7007299270072993,
+            "n": 23,
+            "clusters": 23
           },
-          "vsRipgrepRandP": 0.6806319368063194
+          "vsRipgrepRandP": 1
         },
         {
           "tool": "ag",
           "label": "the_silver_searcher",
           "available": true,
+          "deterministic": false,
           "queries": 23,
-          "mrr": 0.5290327093596134,
+          "mrr": 0.46021786829576744,
           "top10": 0.6956521739130435,
-          "medianRank": 3,
+          "medianRank": 4,
           "unreachable": 0,
-          "timeouts": 0,
-          "vsRipgrep": {
-            "mean": 0.11889280184812243,
-            "lo": 0.008450685972140425,
-            "hi": 0.24642242164562558,
-            "p": 0.0273972602739726,
-            "n": 23
-          },
-          "vsRipgrepRandP": 0.07329267073292671
-        },
-        {
-          "tool": "ack",
-          "label": "ack",
-          "available": true,
-          "queries": 23,
-          "mrr": 0.4180637040907151,
-          "top10": 0.6956521739130435,
-          "medianRank": 7,
-          "unreachable": 0,
-          "timeouts": 0,
-          "vsRipgrep": {
-            "mean": 0.007923796579224086,
-            "lo": -0.012655933647995901,
-            "hi": 0.03041833365277993,
-            "p": 0.48655134486551344,
-            "n": 23
-          },
-          "vsRipgrepRandP": 0.5117488251174882
+          "timeouts": 0
         },
         {
           "tool": "grep",
           "label": "BSD grep",
           "available": true,
+          "deterministic": false,
           "queries": 23,
-          "mrr": 0.4180637040907151,
+          "mrr": 0.41807025004989445,
           "top10": 0.6956521739130435,
           "medianRank": 7,
           "unreachable": 0,
-          "timeouts": 0,
-          "vsRipgrep": {
-            "mean": 0.007923796579224086,
-            "lo": -0.012655933647995901,
-            "hi": 0.03041833365277993,
-            "p": 0.48655134486551344,
-            "n": 23
-          },
-          "vsRipgrepRandP": 0.5117488251174882
+          "timeouts": 0
         },
         {
           "tool": "git-grep",
           "label": "git grep",
           "available": true,
+          "deterministic": true,
           "queries": 23,
           "mrr": 0.4185708566060221,
           "top10": 0.6956521739130435,
@@ -951,51 +815,38 @@
           "unreachable": 0,
           "timeouts": 0,
           "vsRipgrep": {
-            "mean": 0.008430949094531022,
-            "lo": -0.010025203106396924,
-            "hi": 0.028938932769276317,
-            "p": 0.39476052394760525,
-            "n": 23
+            "mean": -0.000003149229383569879,
+            "lo": -0.000009447688150709638,
+            "hi": 0,
+            "p": 0.7143285671432856,
+            "n": 23,
+            "clusters": 23
           },
-          "vsRipgrepRandP": 0.41885811418858115
+          "vsRipgrepRandP": 1
         },
         {
           "tool": "cs",
           "label": "codespelunker (ranked)",
           "available": true,
+          "deterministic": false,
           "queries": 23,
           "mrr": 0.6424462011418534,
           "top10": 0.9130434782608695,
           "medianRank": 2,
           "unreachable": 0,
-          "timeouts": 0,
-          "vsRipgrep": {
-            "mean": 0.23230629363036226,
-            "lo": 0.0968964775300091,
-            "hi": 0.37281197063805765,
-            "p": 0.00039996000399960006,
-            "n": 23
-          },
-          "vsRipgrepRandP": 0.0037996200379962005
+          "timeouts": 0
         },
         {
           "tool": "ast-grep",
-          "label": "ast-grep (structural)",
+          "label": "ast-grep (structural snapshot)",
           "available": true,
+          "deterministic": false,
           "queries": 23,
-          "mrr": 0.7690323955669224,
-          "top10": 0.9565217391304348,
+          "mrr": 0.6864754876821092,
+          "top10": 0.8695652173913043,
           "medianRank": 1,
           "unreachable": 0,
-          "timeouts": 0,
-          "vsRipgrep": {
-            "mean": 0.3588924880554314,
-            "lo": 0.17204193930536643,
-            "hi": 0.5423960853767035,
-            "p": 0.00039996000399960006,
-            "n": 23
-          },
-          "vsRipgrepRandP": 0.0017998200179982
+          "timeouts": 0
         }
       ],
       "perf": [
@@ -1003,63 +854,51 @@
           "query": "basic",
           "results": {
             "hay": {
-              "medianMs": 13.893875000067055,
-              "minMs": 13.754250000230968,
-              "peakRssMb": 6.28125,
+              "medianMs": 13.066833999939263,
+              "minMs": 12.989041999913752,
+              "peakRssMb": null,
               "timedOut": false
             },
             "rg": {
-              "medianMs": 14.745875000022352,
-              "minMs": 13.907250000163913,
-              "peakRssMb": 7.1875,
-              "timedOut": false
-            },
-            "rg-sorted": {
-              "medianMs": 20.41491699963808,
-              "minMs": 20.405833000317216,
-              "peakRssMb": 5.421875,
+              "medianMs": 18.29570799972862,
+              "minMs": 17.487500000279397,
+              "peakRssMb": null,
               "timedOut": false
             },
             "ugrep": {
-              "medianMs": 9.989249999634922,
-              "minMs": 9.114458000287414,
-              "peakRssMb": 4.296875,
+              "medianMs": 7.986457999795675,
+              "minMs": 7.642749999649823,
+              "peakRssMb": null,
               "timedOut": false
             },
             "ag": {
-              "medianMs": 30.4572080001235,
-              "minMs": 28.655499999411404,
-              "peakRssMb": 7.1875,
-              "timedOut": false
-            },
-            "ack": {
-              "medianMs": 70.26520900055766,
-              "minMs": 70.0964160002768,
-              "peakRssMb": 12.609375,
+              "medianMs": 26.888791000004858,
+              "minMs": 25.567999999970198,
+              "peakRssMb": null,
               "timedOut": false
             },
             "grep": {
-              "medianMs": 44.71658299956471,
-              "minMs": 43.85245900042355,
-              "peakRssMb": 1.859375,
+              "medianMs": 31.80075000040233,
+              "minMs": 31.606790999881923,
+              "peakRssMb": null,
               "timedOut": false
             },
             "git-grep": {
-              "medianMs": 15.879166999831796,
-              "minMs": 15.66604199912399,
-              "peakRssMb": 10.109375,
+              "medianMs": 18.11120800022036,
+              "minMs": 17.397374999709427,
+              "peakRssMb": null,
               "timedOut": false
             },
             "cs": {
-              "medianMs": 42.44908400066197,
-              "minMs": 39.547708000056446,
-              "peakRssMb": 22.5625,
+              "medianMs": 40.92033400014043,
+              "minMs": 39.23337500030175,
+              "peakRssMb": null,
               "timedOut": false
             },
             "ast-grep": {
-              "medianMs": 36.42262499965727,
-              "minMs": 36.37804100010544,
-              "peakRssMb": 26.171875,
+              "medianMs": 31.62112500006333,
+              "minMs": 31.40108300000429,
+              "peakRssMb": null,
               "timedOut": false
             }
           }
@@ -1068,63 +907,51 @@
           "query": "enforce_literal_len",
           "results": {
             "hay": {
-              "medianMs": 14.107499999925494,
-              "minMs": 13.615209000185132,
-              "peakRssMb": 6.375,
+              "medianMs": 13.75579100009054,
+              "minMs": 12.421167000196874,
+              "peakRssMb": null,
               "timedOut": false
             },
             "rg": {
-              "medianMs": 15.58454200066626,
-              "minMs": 14.01666700001806,
-              "peakRssMb": 7.109375,
-              "timedOut": false
-            },
-            "rg-sorted": {
-              "medianMs": 21.56204199977219,
-              "minMs": 20.792124999687076,
-              "peakRssMb": 5.46875,
+              "medianMs": 22.3390410002321,
+              "minMs": 20.813916000071913,
+              "peakRssMb": null,
               "timedOut": false
             },
             "ugrep": {
-              "medianMs": 13.06900000013411,
-              "minMs": 12.167041999287903,
-              "peakRssMb": 4.671875,
+              "medianMs": 12.057666999753565,
+              "minMs": 11.141167000401765,
+              "peakRssMb": null,
               "timedOut": false
             },
             "ag": {
-              "medianMs": 31.156542000360787,
-              "minMs": 30.231041999533772,
-              "peakRssMb": 7.1875,
-              "timedOut": false
-            },
-            "ack": {
-              "medianMs": 76.4429590003565,
-              "minMs": 76.01712500024587,
-              "peakRssMb": 12.578125,
+              "medianMs": 29.504583000205457,
+              "minMs": 27.784750000108033,
+              "peakRssMb": null,
               "timedOut": false
             },
             "grep": {
-              "medianMs": 59.28095799963921,
-              "minMs": 58.22374999988824,
-              "peakRssMb": 1.921875,
+              "medianMs": 43.27474999986589,
+              "minMs": 42.99866599962115,
+              "peakRssMb": null,
               "timedOut": false
             },
             "git-grep": {
-              "medianMs": 14.70666699949652,
-              "minMs": 14.426208999939263,
-              "peakRssMb": 10.0625,
+              "medianMs": 16.411290999967605,
+              "minMs": 16.12749999994412,
+              "peakRssMb": null,
               "timedOut": false
             },
             "cs": {
-              "medianMs": 35.770332999527454,
-              "minMs": 35.53491600044072,
-              "peakRssMb": 21.1875,
+              "medianMs": 40.65449999971315,
+              "minMs": 39.66491700010374,
+              "peakRssMb": null,
               "timedOut": false
             },
             "ast-grep": {
-              "medianMs": 38.383708000183105,
-              "minMs": 38.12020799983293,
-              "peakRssMb": 26.140625,
+              "medianMs": 31.125541999936104,
+              "minMs": 30.611083999741822,
+              "peakRssMb": null,
               "timedOut": false
             }
           }
@@ -1133,63 +960,51 @@
           "query": "quiet",
           "results": {
             "hay": {
-              "medianMs": 14.5794170005247,
-              "minMs": 14.481209000572562,
-              "peakRssMb": 6.328125,
+              "medianMs": 12.960624999832362,
+              "minMs": 12.411125000100583,
+              "peakRssMb": null,
               "timedOut": false
             },
             "rg": {
-              "medianMs": 15.755874999798834,
-              "minMs": 15.039041999727488,
-              "peakRssMb": 7.203125,
-              "timedOut": false
-            },
-            "rg-sorted": {
-              "medianMs": 25.557707999832928,
-              "minMs": 24.72920800000429,
-              "peakRssMb": 5.53125,
+              "medianMs": 22.212541999761015,
+              "minMs": 20.072042000014335,
+              "peakRssMb": null,
               "timedOut": false
             },
             "ugrep": {
-              "medianMs": 11.21212499961257,
-              "minMs": 10.999958999454975,
-              "peakRssMb": 4.71875,
+              "medianMs": 8.66158299986273,
+              "minMs": 8.193750000093132,
+              "peakRssMb": null,
               "timedOut": false
             },
             "ag": {
-              "medianMs": 32.17200000025332,
-              "minMs": 32.03045799955726,
-              "peakRssMb": 7.1875,
-              "timedOut": false
-            },
-            "ack": {
-              "medianMs": 81.19645799975842,
-              "minMs": 76.95437499973923,
-              "peakRssMb": 12.671875,
+              "medianMs": 26.957458999939263,
+              "minMs": 26.925249999854714,
+              "peakRssMb": null,
               "timedOut": false
             },
             "grep": {
-              "medianMs": 33.71954200044274,
-              "minMs": 32.83024999964982,
-              "peakRssMb": 1.859375,
+              "medianMs": 26.72124999994412,
+              "minMs": 26.601334000006318,
+              "peakRssMb": null,
               "timedOut": false
             },
             "git-grep": {
-              "medianMs": 15.347999999299645,
-              "minMs": 14.160542000085115,
-              "peakRssMb": 10.171875,
+              "medianMs": 16.27237500017509,
+              "minMs": 16.08999999985099,
+              "peakRssMb": null,
               "timedOut": false
             },
             "cs": {
-              "medianMs": 48.89650000073016,
-              "minMs": 44.76137499976903,
-              "peakRssMb": 22.234375,
+              "medianMs": 45.28920800006017,
+              "minMs": 43.081499999854714,
+              "peakRssMb": null,
               "timedOut": false
             },
             "ast-grep": {
-              "medianMs": 44.85537500027567,
-              "minMs": 41.09899999946356,
-              "peakRssMb": 31.8125,
+              "medianMs": 36.32691599987447,
+              "minMs": 32.77641599997878,
+              "peakRssMb": null,
               "timedOut": false
             }
           }
@@ -1204,13 +1019,49 @@
         "rgVisible": 555,
         "gitTracked": 568
       },
+      "provenance": {
+        "revision": "0455bfb650893e86ad07ace16e5f2d36dadf46f4",
+        "dirty": false
+      },
       "symbolsUniquelyDeclared": 509,
       "queries": 29,
+      "symbols": [
+        "requestDidCancel",
+        "reset",
+        "value",
+        "makeAsyncIterator",
+        "didFailToAdaptURLRequest",
+        "isRequest",
+        "streamRequest",
+        "superEncoder",
+        "joinedWithAmpersands",
+        "URLEncodedFormComponent",
+        "didClose",
+        "encodeIfPresent",
+        "testThatDatesCanBeEncoded",
+        "didDisconnect",
+        "finish",
+        "qualityEncoded",
+        "apply",
+        "decode",
+        "perform",
+        "canTransitionTo",
+        "setRootCertificateAsLoneAnchorCertificateForTrust",
+        "didCancel",
+        "requestDidSuspend",
+        "retrier",
+        "RequestTaskMap",
+        "didFinishDownloading",
+        "nestedUnkeyedContainer",
+        "didAdaptInitialRequest",
+        "requestDidResume"
+      ],
       "tools": [
         {
           "tool": "hay",
           "label": "hay (this project)",
           "available": true,
+          "deterministic": true,
           "queries": 29,
           "mrr": 0.6911740558292282,
           "top10": 0.9310344827586207,
@@ -1218,29 +1069,32 @@
           "unreachable": 0,
           "timeouts": 0,
           "vsRipgrep": {
-            "mean": 0.3974796717717989,
-            "lo": 0.2640082691550503,
-            "hi": 0.5343139404071755,
+            "mean": 0.25770338568657036,
+            "lo": 0.15175264890926152,
+            "hi": 0.37712791040377247,
             "p": 0.00019998000199980003,
-            "n": 29
+            "n": 29,
+            "clusters": 29
           },
           "vsRipgrepRandP": 0.00009999000099990002
         },
         {
           "tool": "rg",
-          "label": "ripgrep (default order)",
+          "label": "ripgrep --sort path (deterministic baseline)",
           "available": true,
+          "deterministic": true,
           "queries": 29,
-          "mrr": 0.29369438405742937,
-          "top10": 0.5172413793103449,
-          "medianRank": 7,
+          "mrr": 0.43347067014265794,
+          "top10": 0.5862068965517241,
+          "medianRank": 3,
           "unreachable": 0,
           "timeouts": 0
         },
         {
-          "tool": "rg-sorted",
-          "label": "ripgrep --sort path",
+          "tool": "ugrep",
+          "label": "ugrep --sort=name",
           "available": true,
+          "deterministic": true,
           "queries": 29,
           "mrr": 0.43347067014265794,
           "top10": 0.5862068965517241,
@@ -1248,94 +1102,44 @@
           "unreachable": 0,
           "timeouts": 0,
           "vsRipgrep": {
-            "mean": 0.13977628608522852,
-            "lo": 0.03285560841603159,
-            "hi": 0.2573798798446698,
-            "p": 0.007599240075992401,
-            "n": 29
+            "mean": 0,
+            "lo": 0,
+            "hi": 0,
+            "p": 1,
+            "n": 29,
+            "clusters": 29
           },
-          "vsRipgrepRandP": 0.0184981501849815
-        },
-        {
-          "tool": "ugrep",
-          "label": "ugrep",
-          "available": true,
-          "queries": 29,
-          "mrr": 0.44580557886462713,
-          "top10": 0.6206896551724138,
-          "medianRank": 2,
-          "unreachable": 0,
-          "timeouts": 0,
-          "vsRipgrep": {
-            "mean": 0.1521111948071977,
-            "lo": 0.03485510837621527,
-            "hi": 0.28058805103365614,
-            "p": 0.0093990600939906,
-            "n": 29
-          },
-          "vsRipgrepRandP": 0.024897510248975102
+          "vsRipgrepRandP": 1
         },
         {
           "tool": "ag",
           "label": "the_silver_searcher",
           "available": true,
+          "deterministic": false,
           "queries": 29,
-          "mrr": 0.4434556011897945,
-          "top10": 0.6206896551724138,
-          "medianRank": 2,
-          "unreachable": 0,
-          "timeouts": 0,
-          "vsRipgrep": {
-            "mean": 0.14976121713236515,
-            "lo": 0.03107421287851296,
-            "hi": 0.2791633752007272,
-            "p": 0.011198880111988802,
-            "n": 29
-          },
-          "vsRipgrepRandP": 0.027897210278972105
-        },
-        {
-          "tool": "ack",
-          "label": "ack",
-          "available": true,
-          "queries": 29,
-          "mrr": 0.4507697056604827,
-          "top10": 0.6206896551724138,
-          "medianRank": 2,
-          "unreachable": 0,
-          "timeouts": 0,
-          "vsRipgrep": {
-            "mean": 0.1570753216030533,
-            "lo": 0.03843610628646068,
-            "hi": 0.28519871472572966,
-            "p": 0.0071992800719928,
-            "n": 29
-          },
-          "vsRipgrepRandP": 0.020097990200979902
+          "mrr": 0.3259907262473768,
+          "top10": 0.41379310344827586,
+          "medianRank": 12,
+          "unreachable": 0.10344827586206896,
+          "timeouts": 0
         },
         {
           "tool": "grep",
           "label": "BSD grep",
           "available": true,
+          "deterministic": false,
           "queries": 29,
-          "mrr": 0.4507697056604827,
-          "top10": 0.6206896551724138,
-          "medianRank": 2,
-          "unreachable": 0,
-          "timeouts": 0,
-          "vsRipgrep": {
-            "mean": 0.1570753216030533,
-            "lo": 0.03843610628646068,
-            "hi": 0.28519871472572966,
-            "p": 0.0071992800719928,
-            "n": 29
-          },
-          "vsRipgrepRandP": 0.020097990200979902
+          "mrr": 0.2935368009794123,
+          "top10": 0.3793103448275862,
+          "medianRank": 19,
+          "unreachable": 0.034482758620689655,
+          "timeouts": 0
         },
         {
           "tool": "git-grep",
           "label": "git grep",
           "available": true,
+          "deterministic": true,
           "queries": 29,
           "mrr": 0.43347067014265794,
           "top10": 0.5862068965517241,
@@ -1343,51 +1147,38 @@
           "unreachable": 0,
           "timeouts": 0,
           "vsRipgrep": {
-            "mean": 0.13977628608522852,
-            "lo": 0.03285560841603159,
-            "hi": 0.2573798798446698,
-            "p": 0.007599240075992401,
-            "n": 29
+            "mean": 0,
+            "lo": 0,
+            "hi": 0,
+            "p": 1,
+            "n": 29,
+            "clusters": 29
           },
-          "vsRipgrepRandP": 0.0184981501849815
+          "vsRipgrepRandP": 1
         },
         {
           "tool": "cs",
           "label": "codespelunker (ranked)",
           "available": true,
+          "deterministic": false,
           "queries": 29,
           "mrr": 0.42986287102518456,
           "top10": 0.8620689655172413,
           "medianRank": 3,
           "unreachable": 0,
-          "timeouts": 0,
-          "vsRipgrep": {
-            "mean": 0.1361684869677552,
-            "lo": 0.033767053642772826,
-            "hi": 0.23726069245167036,
-            "p": 0.0103989601039896,
-            "n": 29
-          },
-          "vsRipgrepRandP": 0.014798520147985201
+          "timeouts": 0
         },
         {
           "tool": "ast-grep",
-          "label": "ast-grep (structural)",
+          "label": "ast-grep (structural snapshot)",
           "available": true,
+          "deterministic": false,
           "queries": 29,
-          "mrr": 0.3814299702484287,
-          "top10": 0.7586206896551724,
-          "medianRank": 6,
+          "mrr": 0.38649556060376505,
+          "top10": 0.6896551724137931,
+          "medianRank": 4,
           "unreachable": 0.06896551724137931,
-          "timeouts": 0,
-          "vsRipgrep": {
-            "mean": 0.08773558619099923,
-            "lo": -0.04327733148576275,
-            "hi": 0.21653343359549673,
-            "p": 0.17738226177382263,
-            "n": 29
-          },
-          "vsRipgrepRandP": 0.19818018198180182
+          "timeouts": 0
         }
       ],
       "perf": [
@@ -1395,63 +1186,51 @@
           "query": "requestDidCancel",
           "results": {
             "hay": {
-              "medianMs": 26.844499999657273,
-              "minMs": 25.955083000473678,
-              "peakRssMb": 9.859375,
+              "medianMs": 21.594041999895126,
+              "minMs": 19.97179100010544,
+              "peakRssMb": null,
               "timedOut": false
             },
             "rg": {
-              "medianMs": 28.06762500014156,
-              "minMs": 27.07741600088775,
-              "peakRssMb": 9.34375,
-              "timedOut": false
-            },
-            "rg-sorted": {
-              "medianMs": 112.92958300001919,
-              "minMs": 100.13349999953061,
-              "peakRssMb": 5.796875,
+              "medianMs": 76.73212500009686,
+              "minMs": 75.00849999999627,
+              "peakRssMb": null,
               "timedOut": false
             },
             "ugrep": {
-              "medianMs": 12.200250000692904,
-              "minMs": 11.759957999922335,
-              "peakRssMb": 4.578125,
+              "medianMs": 12.751666000112891,
+              "minMs": 11.81774999992922,
+              "peakRssMb": null,
               "timedOut": false
             },
             "ag": {
-              "medianMs": 58.936208999715745,
-              "minMs": 56.72374999988824,
-              "peakRssMb": 7.21875,
-              "timedOut": false
-            },
-            "ack": {
-              "medianMs": 255.69554099999368,
-              "minMs": 243.18133299984038,
-              "peakRssMb": 14.1875,
+              "medianMs": 59.90020899986848,
+              "minMs": 54.88704100018367,
+              "peakRssMb": null,
               "timedOut": false
             },
             "grep": {
-              "medianMs": 366.9124170001596,
-              "minMs": 343.5320840002969,
-              "peakRssMb": 3.265625,
+              "medianMs": 178.45333399996161,
+              "minMs": 176.83058300008997,
+              "peakRssMb": null,
               "timedOut": false
             },
             "git-grep": {
-              "medianMs": 38.61954199988395,
-              "minMs": 35.65512499958277,
-              "peakRssMb": 12.671875,
+              "medianMs": 24.041415999643505,
+              "minMs": 22.867749999742955,
+              "peakRssMb": null,
               "timedOut": false
             },
             "cs": {
-              "medianMs": 140.03208300005645,
-              "minMs": 138.53737500030547,
-              "peakRssMb": 34.5,
+              "medianMs": 299.2571250000037,
+              "minMs": 91.45066699991003,
+              "peakRssMb": null,
               "timedOut": false
             },
             "ast-grep": {
-              "medianMs": 51.04208400007337,
-              "minMs": 49.25645800027996,
-              "peakRssMb": 25.15625,
+              "medianMs": 57.974750000052154,
+              "minMs": 49.728624999988824,
+              "peakRssMb": null,
               "timedOut": false
             }
           }
@@ -1460,63 +1239,51 @@
           "query": "reset",
           "results": {
             "hay": {
-              "medianMs": 34.65754199959338,
-              "minMs": 33.04870899952948,
-              "peakRssMb": 8.234375,
+              "medianMs": 39.60412500007078,
+              "minMs": 28.21354200039059,
+              "peakRssMb": null,
               "timedOut": false
             },
             "rg": {
-              "medianMs": 37.67391599994153,
-              "minMs": 29.225792000070214,
-              "peakRssMb": 8.65625,
-              "timedOut": false
-            },
-            "rg-sorted": {
-              "medianMs": 180.3121670000255,
-              "minMs": 168.00633399933577,
-              "peakRssMb": 5.875,
+              "medianMs": 39.05066700000316,
+              "minMs": 38.60929200006649,
+              "peakRssMb": null,
               "timedOut": false
             },
             "ugrep": {
-              "medianMs": 15.225499999709427,
-              "minMs": 14.402499999850988,
-              "peakRssMb": 4.5625,
+              "medianMs": 8.90533300023526,
+              "minMs": 8.487500000279397,
+              "peakRssMb": null,
               "timedOut": false
             },
             "ag": {
-              "medianMs": 76.03933299984783,
-              "minMs": 75.33033400028944,
-              "peakRssMb": 7.21875,
-              "timedOut": false
-            },
-            "ack": {
-              "medianMs": 207.10408299975097,
-              "minMs": 203.6862079994753,
-              "peakRssMb": 12.96875,
+              "medianMs": 43.19450000021607,
+              "minMs": 41.81262500025332,
+              "peakRssMb": null,
               "timedOut": false
             },
             "grep": {
-              "medianMs": 235.19745800085366,
-              "minMs": 208.25004100054502,
-              "peakRssMb": 2.640625,
+              "medianMs": 142.46187500003725,
+              "minMs": 139.26800000015646,
+              "peakRssMb": null,
               "timedOut": false
             },
             "git-grep": {
-              "medianMs": 19.12624999973923,
-              "minMs": 18.594124999828637,
-              "peakRssMb": 12.484375,
+              "medianMs": 20.316208000294864,
+              "minMs": 20.224624999798834,
+              "peakRssMb": null,
               "timedOut": false
             },
             "cs": {
-              "medianMs": 73.68070800043643,
-              "minMs": 70.54254100006074,
-              "peakRssMb": 31.78125,
+              "medianMs": 84.71895799972117,
+              "minMs": 84.17137499991804,
+              "peakRssMb": null,
               "timedOut": false
             },
             "ast-grep": {
-              "medianMs": 31.26187499985099,
-              "minMs": 30.330333999358118,
-              "peakRssMb": 25.65625,
+              "medianMs": 30.416457999963313,
+              "minMs": 29.809291999787092,
+              "peakRssMb": null,
               "timedOut": false
             }
           }
@@ -1525,63 +1292,51 @@
           "query": "value",
           "results": {
             "hay": {
-              "medianMs": 23.809291999787092,
-              "minMs": 22.740582999773324,
-              "peakRssMb": 10.3125,
+              "medianMs": 20.49362500011921,
+              "minMs": 19.789375000167638,
+              "peakRssMb": null,
               "timedOut": false
             },
             "rg": {
-              "medianMs": 24.00358400028199,
-              "minMs": 23.727791000157595,
-              "peakRssMb": 9.8125,
-              "timedOut": false
-            },
-            "rg-sorted": {
-              "medianMs": 77.64295899961144,
-              "minMs": 76.3308749999851,
-              "peakRssMb": 5.84375,
+              "medianMs": 48.06925000017509,
+              "minMs": 46.659041999839246,
+              "peakRssMb": null,
               "timedOut": false
             },
             "ugrep": {
-              "medianMs": 7.5094170002266765,
-              "minMs": 7.345459000207484,
-              "peakRssMb": 4.390625,
+              "medianMs": 8.154208000283688,
+              "minMs": 8.143291000276804,
+              "peakRssMb": null,
               "timedOut": false
             },
             "ag": {
-              "medianMs": 67.67729199957103,
-              "minMs": 65.46745800040662,
-              "peakRssMb": 7.1875,
-              "timedOut": false
-            },
-            "ack": {
-              "medianMs": 175.8547499999404,
-              "minMs": 172.05979199986905,
-              "peakRssMb": 13.75,
+              "medianMs": 66.13770900014788,
+              "minMs": 63.44816600019112,
+              "peakRssMb": null,
               "timedOut": false
             },
             "grep": {
-              "medianMs": 145.13987500034273,
-              "minMs": 143.24916699994355,
-              "peakRssMb": 2.640625,
+              "medianMs": 124.04670900013298,
+              "minMs": 112.2310830000788,
+              "peakRssMb": null,
               "timedOut": false
             },
             "git-grep": {
-              "medianMs": 17.681957999244332,
-              "minMs": 17.324165999889374,
-              "peakRssMb": 14.0625,
+              "medianMs": 21.290000000037253,
+              "minMs": 19.74783300003037,
+              "peakRssMb": null,
               "timedOut": false
             },
             "cs": {
-              "medianMs": 154.11883299984038,
-              "minMs": 150.84975000005215,
-              "peakRssMb": 47.609375,
+              "medianMs": 177.17529199970886,
+              "minMs": 173.48079199995846,
+              "peakRssMb": null,
               "timedOut": false
             },
             "ast-grep": {
-              "medianMs": 31.42299999948591,
-              "minMs": 31.140708000399172,
-              "peakRssMb": 27.3125,
+              "medianMs": 31.013584000058472,
+              "minMs": 30.60591599997133,
+              "peakRssMb": null,
               "timedOut": false
             }
           }
@@ -1592,78 +1347,71 @@
       "corpus": "hay",
       "lang": "rust",
       "files": {
-        "onDisk": 5356,
-        "rgVisible": 54,
-        "gitTracked": 56
+        "onDisk": 540,
+        "rgVisible": 80,
+        "gitTracked": 91
       },
-      "symbolsUniquelyDeclared": 46,
+      "provenance": {
+        "revision": "32b319badb00a59d6bba47b9a9652085a704f9eb",
+        "dirty": false
+      },
+      "symbolsUniquelyDeclared": 51,
       "queries": 1,
+      "symbols": [
+        "write"
+      ],
       "tools": [
         {
           "tool": "hay",
           "label": "hay (this project)",
           "available": true,
+          "deterministic": true,
           "queries": 1,
-          "mrr": 1,
+          "mrr": 0.2,
           "top10": 1,
-          "medianRank": 1,
+          "medianRank": 5,
           "unreachable": 0,
           "timeouts": 0,
           "vsRipgrep": {
-            "mean": 0.9859154929577465,
-            "lo": 0.9859154929577465,
-            "hi": 0.9859154929577465,
+            "mean": 0.18765432098765433,
+            "lo": 0.18765432098765433,
+            "hi": 0.18765432098765433,
             "p": 0.00019998000199980003,
-            "n": 1
+            "n": 1,
+            "clusters": 1
           },
           "vsRipgrepRandP": 1
         },
         {
           "tool": "rg",
-          "label": "ripgrep (default order)",
+          "label": "ripgrep --sort path (deterministic baseline)",
           "available": true,
+          "deterministic": true,
           "queries": 1,
-          "mrr": 0.014084507042253521,
+          "mrr": 0.012345679012345678,
           "top10": 0,
-          "medianRank": 71,
+          "medianRank": 81,
           "unreachable": 0,
           "timeouts": 0
         },
         {
-          "tool": "rg-sorted",
-          "label": "ripgrep --sort path",
-          "available": true,
-          "queries": 1,
-          "mrr": 0.017857142857142856,
-          "top10": 0,
-          "medianRank": 56,
-          "unreachable": 0,
-          "timeouts": 0,
-          "vsRipgrep": {
-            "mean": 0.0037726358148893347,
-            "lo": 0.0037726358148893347,
-            "hi": 0.0037726358148893347,
-            "p": 0.00019998000199980003,
-            "n": 1
-          },
-          "vsRipgrepRandP": 1
-        },
-        {
           "tool": "ugrep",
-          "label": "ugrep",
+          "label": "ugrep --sort=name",
           "available": true,
+          "deterministic": true,
           "queries": 1,
-          "mrr": 0.017543859649122806,
+          "mrr": 0.009615384615384616,
           "top10": 0,
-          "medianRank": 57,
+          "medianRank": 104,
           "unreachable": 0,
           "timeouts": 0,
           "vsRipgrep": {
-            "mean": 0.0034593526068692846,
-            "lo": 0.0034593526068692846,
-            "hi": 0.0034593526068692846,
+            "mean": -0.0027302943969610624,
+            "lo": -0.0027302943969610624,
+            "hi": -0.0027302943969610624,
             "p": 0.00019998000199980003,
-            "n": 1
+            "n": 1,
+            "clusters": 1
           },
           "vsRipgrepRandP": 1
         },
@@ -1671,75 +1419,44 @@
           "tool": "ag",
           "label": "the_silver_searcher",
           "available": true,
+          "deterministic": false,
           "queries": 1,
-          "mrr": 0.047619047619047616,
+          "mrr": 0.02857142857142857,
           "top10": 0,
-          "medianRank": 21,
+          "medianRank": 35,
           "unreachable": 0,
-          "timeouts": 0,
-          "vsRipgrep": {
-            "mean": 0.03353454057679409,
-            "lo": 0.03353454057679409,
-            "hi": 0.03353454057679409,
-            "p": 0.00019998000199980003,
-            "n": 1
-          },
-          "vsRipgrepRandP": 1
-        },
-        {
-          "tool": "ack",
-          "label": "ack",
-          "available": true,
-          "queries": 1,
-          "mrr": 0.00847457627118644,
-          "top10": 0,
-          "medianRank": 118,
-          "unreachable": 0,
-          "timeouts": 0,
-          "vsRipgrep": {
-            "mean": -0.005609930771067081,
-            "lo": -0.005609930771067081,
-            "hi": -0.005609930771067081,
-            "p": 0.00019998000199980003,
-            "n": 1
-          },
-          "vsRipgrepRandP": 1
+          "timeouts": 0
         },
         {
           "tool": "grep",
           "label": "BSD grep",
           "available": true,
+          "deterministic": false,
           "queries": 1,
-          "mrr": 0.008547008547008548,
+          "mrr": 0.021739130434782608,
           "top10": 0,
-          "medianRank": 117,
+          "medianRank": 46,
           "unreachable": 0,
-          "timeouts": 0,
-          "vsRipgrep": {
-            "mean": -0.005537498495244974,
-            "lo": -0.005537498495244974,
-            "hi": -0.005537498495244974,
-            "p": 0.00019998000199980003,
-            "n": 1
-          },
-          "vsRipgrepRandP": 1
+          "timeouts": 0
         },
         {
           "tool": "git-grep",
           "label": "git grep",
           "available": true,
+          "deterministic": true,
           "queries": 1,
-          "mrr": 0.017543859649122806,
+          "mrr": 0.011494252873563218,
           "top10": 0,
-          "medianRank": 57,
+          "medianRank": 87,
           "unreachable": 0,
           "timeouts": 0,
           "vsRipgrep": {
-            "mean": 0.0034593526068692846,
-            "lo": 0.0034593526068692846,
-            "hi": 0.0034593526068692846,
+            "mean": -0.0008514261387824601,
+            "lo": -0.0008514261387824601,
+            "hi": -0.0008514261387824601,
             "p": 0.00019998000199980003,
-            "n": 1
+            "n": 1,
+            "clusters": 1
           },
           "vsRipgrepRandP": 1
         },
@@ -1747,39 +1464,25 @@
           "tool": "cs",
           "label": "codespelunker (ranked)",
           "available": true,
+          "deterministic": false,
           "queries": 1,
-          "mrr": 0.3333333333333333,
+          "mrr": 0.25,
           "top10": 1,
-          "medianRank": 3,
+          "medianRank": 4,
           "unreachable": 0,
-          "timeouts": 0,
-          "vsRipgrep": {
-            "mean": 0.3192488262910798,
-            "lo": 0.3192488262910798,
-            "hi": 0.3192488262910798,
-            "p": 0.00019998000199980003,
-            "n": 1
-          },
-          "vsRipgrepRandP": 1
+          "timeouts": 0
         },
         {
           "tool": "ast-grep",
-          "label": "ast-grep (structural)",
+          "label": "ast-grep (structural snapshot)",
           "available": true,
+          "deterministic": false,
           "queries": 1,
           "mrr": 1,
           "top10": 1,
           "medianRank": 1,
           "unreachable": 0,
-          "timeouts": 0,
-          "vsRipgrep": {
-            "mean": 0.9859154929577465,
-            "lo": 0.9859154929577465,
-            "hi": 0.9859154929577465,
-            "p": 0.00019998000199980003,
-            "n": 1
-          },
-          "vsRipgrepRandP": 1
+          "timeouts": 0
         }
       ],
       "perf": [
@@ -1787,63 +1490,51 @@
           "query": "write",
           "results": {
             "hay": {
-              "medianMs": 8.531791999936104,
-              "minMs": 8.074374999850988,
-              "peakRssMb": 5.703125,
+              "medianMs": 10.838541999924928,
+              "minMs": 10.261082999873906,
+              "peakRssMb": null,
               "timedOut": false
             },
             "rg": {
-              "medianMs": 9.050874999724329,
-              "minMs": 8.965166999958456,
-              "peakRssMb": 6.703125,
-              "timedOut": false
-            },
-            "rg-sorted": {
-              "medianMs": 8.41420799959451,
-              "minMs": 8.088666999712586,
-              "peakRssMb": 5.046875,
+              "medianMs": 15.147375000175089,
+              "minMs": 13.295582999940962,
+              "peakRssMb": null,
               "timedOut": false
             },
             "ugrep": {
-              "medianMs": 6.887916999869049,
-              "minMs": 6.723832999356091,
-              "peakRssMb": 4.3125,
+              "medianMs": 9.457291999831796,
+              "minMs": 8.801208999939263,
+              "peakRssMb": null,
               "timedOut": false
             },
             "ag": {
-              "medianMs": 16.98208300024271,
-              "minMs": 16.903959000483155,
-              "peakRssMb": 7.1875,
-              "timedOut": false
-            },
-            "ack": {
-              "medianMs": 490.1357920002192,
-              "minMs": 476.0654589999467,
-              "peakRssMb": 15.421875,
+              "medianMs": 26.10866599995643,
+              "minMs": 25.719334000255913,
+              "peakRssMb": null,
               "timedOut": false
             },
             "grep": {
-              "medianMs": 3217.1771660000086,
-              "minMs": 3046.9459579996765,
-              "peakRssMb": 10.171875,
+              "medianMs": 471.8105829996057,
+              "minMs": 443.5422499999404,
+              "peakRssMb": null,
               "timedOut": false
             },
             "git-grep": {
-              "medianMs": 9.389957999810576,
-              "minMs": 9.195499999448657,
-              "peakRssMb": 9.46875,
+              "medianMs": 17.878125000279397,
+              "minMs": 17.08141600014642,
+              "peakRssMb": null,
               "timedOut": false
             },
             "cs": {
-              "medianMs": 13.072374999523163,
-              "minMs": 12.96620799973607,
-              "peakRssMb": 21.9375,
+              "medianMs": 22.59070899989456,
+              "minMs": 22.458542000036687,
+              "peakRssMb": null,
               "timedOut": false
             },
             "ast-grep": {
-              "medianMs": 12.075875000096858,
-              "minMs": 12.072292000055313,
-              "peakRssMb": 10.046875,
+              "medianMs": 17.39391600014642,
+              "minMs": 17.305374999996275,
+              "peakRssMb": null,
               "timedOut": false
             }
           }
