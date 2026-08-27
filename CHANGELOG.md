@@ -6,7 +6,7 @@ history lives in git and `memory/`.
 
 ## [Unreleased]
 
-## [0.1.4] — 2026-08-26
+## [0.1.4] — 2026-08-27
 
 No ranking change — this release closes integrity gaps in the installer, measurement kit, public
 benchmark provenance, and generated web surfaces. The three ranking signals, weights, failed
@@ -63,7 +63,8 @@ pre-registered gate, and complete-search parity contract are unchanged.
   installer version from that evidence, keeps ranking copy neutral until final scores settle, and
   refuses to render if the four-corpus layout, deterministic comparison, or release reference is
   unsupported. It derives the documentation counter-result from committed evidence and displays it
-  beside the code result.
+  beside the code result. Its render is explicitly muted, so the silent film ships without a phantom
+  audio track.
 
 ## [0.1.3] — 2026-08-25
 
