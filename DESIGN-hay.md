@@ -257,6 +257,35 @@ signals, and the strongest is path class — despite the repo-level finding that
 predicts nothing (rho −0.035). A prior can be worthless as a repository score and valuable as a
 per-result tiebreak; that distinction was written down as a hypothesis before testing, and held.
 
+### 0.2.0 — one layout rule, one signal back from the dead, one deleted
+
+Measured on the public development corpora (contribution to that corpus's mean MRR, paired
+bootstrap over per-query differences), never on the behavioural corpus, which saw exactly one
+confirmation run of the frozen binary:
+
+| change | ripgrep corpus | alamofire | openclaw | SWE-Explore |
+|---|---|---|---|---|
+| **file interleaving** (round-robin by file) | +0.0250 [0.009, 0.045] | +0.0355 [0.016, 0.057] | +0.0071 [0.001, 0.016] | — |
+| **`word`** (whole identifier 1.0 / prefix 0.5) | +0.0163 [0.000, 0.045] | +0.0217 [0.000, 0.055] | +0.0095 [0.000, 0.027] | — |
+| ~~`filename`~~ (file named for the query) | +0.0000 | −0.0018 | +0.0083 | **−0.0136** — **deleted** |
+| all three together vs 0.1.4 | +0.0518 [0.017, 0.101] | +0.0624 [0.031, 0.101] | +0.0247 [0.004, 0.052] | — |
+
+**`word` is not the deleted whole-word signal returning unexamined.** The 2026-08-19 version was
+binary — match on a word boundary or not — and was measured against the behavioural corpus before
+the firewall existed. This one is graded (a match that *starts* an identifier keeps half the
+bonus, because `authenticate` is still what `auth` was asking about), and it was measured on
+three public corpora that had no vote in its design. Same intuition, different function, different
+evidence, opposite result. Both facts belong in the record.
+
+**The filename signal is the most expensive thing this project has deleted.** Every published
+lexical code retriever weights the filename field highest — it is the whole point of BM25F, and
+Sourcegraph's post-embeddings Cody is built on it. Simulated against the private evaluation
+corpus it was worth **+0.033 median MRR**, which would have taken the pre-registered gate from
+0.44 to within 0.02 of passing. It earned nothing on two development corpora, lost on a third, and
+lost clearly on SWE-Explore — the only public set whose queries look like the ones agents type.
+The rule written in this document before any Rust existed says a signal that does not improve MRR
+in ablation does not ship, and the evaluation set does not get a vote. It did not ship.
+
 **Constraint on any future signal** (2026-08-20, from the bounded-retention soundness argument in
 `score.rs`): a signal must be computable per line/per path — it goes into `prescore_line` — or, if
 it needs per-file state, it must be capped like the frequency term. The top-K heap retains
@@ -403,3 +432,44 @@ is not reproducible. Two repositories in the set moved by 0.0001 between runs, w
 be 1,795 and 179 files changing under the measurement, not a ranking change — confirmed by diffing
 the old and new binaries' output on exactly the queries that moved, which was identical. Pin the
 corpus to a fixed checkout before comparing anything.
+
+## Released v0.2.0 — the gate, moved toward and not moved
+
+> The cycle labels `0.2.0`–`0.7.0` above name pre-public development cycles, per the version-history
+> note in the README. This section is about the published tag **v0.2.0** (2026-08-27), which is a
+> different thing that unfortunately shares a number.
+
+The first change to the ranker since it went public, and the first release where the headline is
+retrieval quality rather than packaging.
+
+**What changed.** Results are round-robined by file after scoring — the first pass carries each
+file's strongest line, the second its next-strongest — and a graded `word` signal rewards a match
+that is a whole identifier over one buried inside a longer name. A filename signal was built,
+measured and deleted. Nothing else about the scoring model moved: same weights, same path classes,
+same definition rule, same candidate cap, same parity contract (differential test 17/17).
+
+**Why interleaving was the largest single gain in the project's history.** Every relevance
+judgment here is per *file*, because what an agent does with a result is open a file — and the
+metric counts result *lines*. A module with forty matching lines therefore pushed the file that
+declares the symbol to line-rank forty-one, and the reader paid for thirty-nine lines that told
+them nothing new. Fixing that is not a better understanding of code; it is noticing that the unit
+of an answer is a file. It moved the behavioural top-10 rate 18.8 points without re-scoring
+anything.
+
+**The gate, as written, on one confirmation run of the frozen binary:**
+
+| | 0.1.4 | v0.2.0 | required |
+|---|---|---|---|
+| median-repo MRR | 0.3810 | **0.4437** | ≥ 0.50 |
+| median-repo answer-in-top-10 | 0.5916 | **0.7849** | ≥ 0.80 |
+| repos worse than ripgrep | 0 | **0** | 0 |
+
+**FAIL**, by 0.056 and 1.5 points. It has not been moved.
+
+**And the corpus cannot be blamed.** An oracle that ranks any answer file first scores **1.00**
+here — every judged answer is reachable inside both retrievers' output — so 0.50 was always
+attainable and the shortfall is ranking. The first-position rate is 31.7%. Reading the queries that
+remain unanswered is the honest next ticket: `test`, `timeout`, `catch`, `plan`, `node_modules` —
+broad greps whose next-opened file is a function of the task, not of the term. Whether those are a
+retrieval problem at all is a research question this project has not answered, and stratifying the
+gate around them after seeing them fail would be exactly the move it exists to refuse.

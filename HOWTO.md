@@ -114,27 +114,35 @@ hay --explain classify_path hay/src
 ```
 
 ```text
-8.00 [def +6.0 path +1.0 tf +1.00]  hay/src/score.rs:29:pub fn classify_path(path: &str) -> PathClass {
-   2.00 [def +0.0 path +1.0 tf +1.00]  hay/src/score.rs:303:    let path = w.path * path_weight(classify_path(inp.path));
-   2.00 [def +0.0 path +1.0 tf +1.00]  hay/src/score.rs:346:        assert_eq!(classify_path("src/auth/session.ts"), PathClass::Source);
-   ... (12 more, all 2.00)
+   9.00 [def +6.0 path +1.0 word +1.0 tf +1.00]  hay/src/score.rs:29:pub fn classify_path(path: &str) -> PathClass {
+   3.00 [def +0.0 path +1.0 word +1.0 tf +1.00]  hay/src/score.rs:415:    let path = w.path * path_weight(classify_path(inp.path));
+   3.00 [def +0.0 path +1.0 word +1.0 tf +1.00]  hay/src/score.rs:460:        assert_eq!(classify_path("src/auth/session.ts"), PathClass::Source);
+   ... (12 more, all 3.00)
 ```
 
 The number on the left is the total score — higher is earlier — and the bracket shows what each
-signal contributed to it. Here the declaration scores **8.00** because the definition signal fired
-(`def +6.0`); every use scores **2.00** because it did not. That is the whole ranking, visible per
+signal contributed to it. Here the declaration scores **9.00** because the definition signal fired
+(`def +6.0`); every use scores **3.00** because it did not. That is the whole ranking, visible per
 result, so a surprising order can be attributed to a specific signal rather than guessed at. The
-score is built from exactly three things:
+score is built from exactly four things:
 
 | signal | what it does |
 |---|---|
 | **definition** (+6) | the line looks like it *declares* the thing (`function foo`, `class Foo`, `foo:`) rather than using it |
 | **path class** (±1 to ±4) | `src/` outranks `test/`, which outranks `docs/`, which outranks `.json` data, which outranks `archive/` and `.scratch/` |
+| **word match** (+1 / +0.5) | the match is a whole identifier (`auth`), or starts one (`authenticate`), rather than being buried inside a longer name (`oauthToken`) |
 | **term frequency** (up to +1) | a file that mentions the term repeatedly is mildly more likely to be its home |
 
-Three *other* signals were built, measured, and deleted because they made no difference. That is
-documented in [DESIGN-hay.md](DESIGN-hay.md); the short version is that intuition about ranking is
-unreliable and the only honest way to keep a signal is to measure it.
+Results are then **interleaved by file**: the first pass shows each file's strongest line, the
+second its next-strongest, and so on. An agent opens files, so a first page of ten files is worth
+more than ten lines of one file — this alone moved the behavioural top-10 rate from 59% to 78%.
+`--no-diversify` restores strict score order.
+
+Four *other* signals were built, measured, and deleted because they made no difference or made
+things worse — most recently a filename-match signal that every published code retriever weights
+highly and that lost 0.014 MRR on the public agent-shaped benchmark. That is documented in
+[DESIGN-hay.md](DESIGN-hay.md); the short version is that intuition about ranking is unreliable
+and the only honest way to keep a signal is to measure it.
 
 ### Useful flags
 
@@ -150,6 +158,7 @@ hay --hidden config           # include dotfiles (.git is still excluded)
 hay --no-ignore config        # ignore .gitignore
 hay -m 100 config             # show 100 results (default 50; 0 = no limit)
 hay --no-path config          # turn off one ranking signal, to see what it was doing
+hay --no-diversify config     # strict score order, without interleaving files
 ```
 
 ### Where it differs from ripgrep
@@ -375,7 +384,7 @@ naming a private repository is what invariant 4 forbids. Only the `--compare` pa
 aggregates-only and safe to commit — that is why `evidence/` contains that one and nothing else.
 
 `--ablate` turns off a single ranking signal so you can see what it was contributing. Valid values:
-`no-definition`, `no-path`, `no-tf`.
+`no-definition`, `no-path`, `no-word`, `no-tf`, `no-diversify`.
 
 **Public-corpus comparison**: `./benchmark-corpora.sh` clones whatever corpora `benchmark.ts`
 wants and is missing into `${XDG_CACHE_HOME:-$HOME/.cache}/hay/corpora` (`BENCH_CORPORA`

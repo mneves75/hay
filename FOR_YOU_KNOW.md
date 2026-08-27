@@ -70,10 +70,27 @@ That makes four bug classes **structurally impossible** rather than merely guard
 errors, exit-code confusion, nondeterministic output order, and inherited config. Every one of
 those had already bitten this project. Owning the walk beats parsing someone else's output.
 
-The ranking itself is three signals, and picking them was the humbling part. Six were built. Three
-earned nothing and were deleted — exact-case matching, comment penalties, and whole-word matching.
-Removing whole-word matching *improved* the score. Every one of them had sounded obviously correct
-when it was written. **Intuition about ranking is worthless; ablation is not.**
+The ranking itself is four signals, and picking them was the humbling part. Seven were built. Four
+earned nothing and were deleted — exact-case matching, comment penalties, binary whole-word
+matching, and (in v0.2.0) a filename match. Removing binary whole-word matching *improved* the
+score. Every one of them had sounded obviously correct when it was written. **Intuition about
+ranking is worthless; ablation is not.**
+
+The filename one is worth a paragraph, because it is the most expensive deletion here. Ranking a
+file called `session_store.ts` first when you search `sessionStore` is what every serious code
+search engine does — it is the whole point of BM25F — and simulated against this project's private
+evaluation corpus it was worth **+0.033 MRR**, enough to bring the failed ship gate within a
+whisker of passing. On the public benchmarks it earned nothing, and on the one built from other
+people's agent trajectories it *lost* 0.014. It was deleted. The rule that the evaluation set does
+not get a vote is easy to keep when it agrees with you.
+
+And the biggest ranking gain in the project's history was not a signal at all. Every relevance
+judgment here is about a **file** — what an agent does with a search result is open one — while
+the metric counts result **lines**. A module with forty matching lines was therefore pushing the
+file that actually declares the symbol to line-rank forty-one. `hay` now shows each file's best
+line first and comes back for second-best lines afterwards. Nothing was re-scored; the
+answer-in-top-10 rate moved 18.8 points. **Look at what the number counts before you try to
+improve it.**
 
 ## The twenty bugs
 
@@ -91,7 +108,7 @@ The pattern is consistent: **the instrument lied, plausibly, repeatedly**, and t
 ever caught it was checking against something already known. "Does ripgrep report 2 or 4 here?"
 took four seconds and demolished a published number.
 
-## What shipping 0.2.0 taught
+## What shipping the 0.2.0 development cycle taught
 
 The list of missing pieces — `-C`, `--json`, `-e`, `-t`, packaging, CI — read like the work between
 `hay` and being finished. Closing it took an afternoon and moved the number that matters by

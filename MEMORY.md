@@ -19,6 +19,34 @@ useful than what was attempted:
 
 ## Decisions, and why
 
+**The unit of an answer is a file, and the metric counted lines** (2026-08-27). Judgments here are
+per file — an agent opens files — while MRR counts result lines, so a module with forty matching
+lines pushed the declaring file to line-rank forty-one. Round-robining the ranked list by file
+(pass one = each file's best line) moved the behavioural top-10 rate **18.8 points without
+re-scoring anything**, the largest single retrieval gain this project has measured. It came from
+noticing what was being counted, not from understanding code better. See [[2026-08-27]].
+
+**The firewall's first real cost** (2026-08-27). A filename signal — the highest-weighted field in
+every published lexical code retriever — simulated at **+0.033 median MRR on the private
+evaluation corpus**, which would have brought the pre-registered gate within 0.02 of passing. On
+the development sets it earned +0.008 / +0.000 / −0.002 and **−0.0136 on SWE-Explore**, the only
+public agent-shaped benchmark. Deleted. The evaluation set does not get a vote on what ships,
+*especially* when it says the thing you want to hear. The honest caveat is recorded too: the
+public definition benchmark is structurally blind to a filename signal, because its queries are
+function names — which is an argument for the signal and not evidence for it.
+
+**Check whether the excuse is available before reaching for it** (2026-08-27). With the gate still
+failing at 0.4437, the tempting move was to blame the corpus. An oracle that ranks any answer file
+first scores **1.00** here, so 0.50 was always attainable and the shortfall is ranking quality.
+Measuring the ceiling removed the excuse rather than supplying one, which is the only reason it
+was worth measuring.
+
+**Every safety limit is a potential silent sampler** (2026-08-27). The SWE-Explore archive reader
+rejected any repository tarball containing a symlink, so 21 of 97 committed instances silently
+stopped scoring — 22% of the project's only external evidence. The payload had been printing
+`repoSkipped: 22` the whole time. Invariant 7 recorded it and nobody read it: **a counter nobody
+reads is not a gate.** Links are now dropped individually, still never written to disk.
+
 **An A/B has to feed both sides the same input, and you have to check rather than assume**
 (2026-08-20). `measure-mrr.ts` gave ripgrep `--hidden` and never gave `hay` the matching flag, so
 for four versions the headline comparison ran two different searches — in a file whose own comment
@@ -138,6 +166,15 @@ destination is public. Use `=label` for repo identity and `--redact-names` for i
 
 ## Current state
 
+- **0.2.0 — first ranking change since going public** (2026-08-27): file interleaving + a graded
+  `word` signal; a filename signal built, ablated and deleted. One confirmation run on the frozen
+  binary: paired MRR 0.258 → **0.458** (+0.1995 [0.1754, 0.2243]), top-10 44.9% → **77.1%**
+  (+32.2 pts), nDCG@10 0.358 → 0.501, worse-than-rg queries 235 → **115** of 951, 0 repos worse.
+  **GATE 0.4437 / 0.7849 — still FAIL** against 0.50 / 0.80, not moved; oracle ceiling on this
+  corpus is 1.00, so the gap is ranking, not the corpus. SWE-Explore 0.242 → **0.551** (+0.3085
+  [0.2321, 0.3878]) on 96 of 97 instances after fixing an archive reader that had been discarding
+  21 of them. Also fixed: `hay` panicked on any non-ASCII query whose first hit sat inside a word.
+
 - **0.1.4 BETA STAGED; PRODUCTION PENDING** (2026-08-26): no ranking or weight change. The release
   closes installer, archive, private-output, subprocess, benchmark-inference, provenance, site,
   accessibility, and film-integrity gaps while leaving the failed behavioural gate fixed. `main`
@@ -239,6 +276,14 @@ destination is public. Use `=label` for repo identity and `--redact-names` for i
 
 ## Blockers / open questions
 
+0. **The gate fails by 0.056 MRR and 1.5 points of top-10** (2026-08-27, v0.2.0). Everything cheap
+   and honest has now been spent: the layout fix, the pre-registered `word` signal, and the one
+   signal that would have closed most of the distance was deleted because the public sets refused
+   it. What remains in the failure population is dominated by broad greps (`test`, `timeout`,
+   `catch`, `node_modules`) whose next-opened file is a function of the task, not the term.
+   Stratifying the gate around them after seeing them fail is forbidden; measuring whether they
+   are a retrieval problem at all is the open research question. A held-out behavioural corpus
+   from a second developer would answer more than another signal would.
 1. **The gate still fails, but the gap now has a theory** (issue 10): the two largest remaining
    buckets are answers in files hay's own path prior penalizes (31% — prose 78, tests 53) and
    answers both retrievers rank deep (31%, all rankable). The prose/test bucket is currently

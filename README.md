@@ -2,9 +2,10 @@
 
 **A ranked grep for coding agents, built from a negative result.** `hay` uses ripgrep's search
 engine and reorders the complete result set from an equivalently configured ripgrep search:
-likely declarations first, stale prose and buried files later. Broad searches that hit the
-bounded candidate cap exit 2 instead of claiming completeness. It is stateless, deterministic,
-and currently fails its pre-registered ship gate. See the
+likely declarations first, stale prose and buried files later, and one line per file before any
+file's second line. Broad searches that hit the bounded candidate cap exit 2 instead of claiming
+completeness. It is stateless, deterministic, and still fails its pre-registered ship gate — by
+1.5 points on one of its two criteria as of 0.2.0, against 20 points at 0.1.4. See the
 [manual](https://mneves75.github.io/hay/MANUAL.html) for the command surface and
 [HOWTO.md](HOWTO.md) for setup.
 
@@ -115,7 +116,8 @@ means an agent issuing the same search twice genuinely gets a different first pa
 If the constraint is the retriever, fix the retriever. [`hay`](HOWTO.md#3-hay) is ripgrep's engine
 and walk with the priors ripgrep deliberately lacks: every complete search returns **exactly**
 the matches from the corresponding normalized `rg` invocation, reordered so the likely
-declaration comes first. Above 20,000 candidates it exits 2 and identifies the incomplete
+declaration comes first and so the first page is ten files rather than ten lines of one file.
+Above 20,000 candidates it exits 2 and identifies the incomplete
 prescore-retained set on stderr. No index, no daemon, no state — you type `hay` instead of `rg`.
 Every flag, output format, traversal difference, and exit code is documented in the
 [manual](https://mneves75.github.io/hay/MANUAL.html) — an offline, self-contained page with
@@ -127,19 +129,31 @@ hay classify_path            # same flags, same path:line:text output, different
 ```
 
 Measured against the same corpus, **paired at the query level** — 951 queries across 12
-repositories where both retrievers return something:
+repositories where both retrievers return something (0.2.0, both retrievers rerun together):
 
 | | ripgrep | hay | difference (95% CI) | randomization p |
 |---|---|---|---|---|
-| MRR | 0.266 | **0.404** | **+0.138** [0.112, 0.165] | 0.0001 |
-| answer in top 10 | 46.1% | **60.0%** | **+14.0 pts** [10.7, 17.4] | 0.0001 |
-| nDCG@10 | 0.373 | **0.503** | **+0.130** [0.109, 0.152] | 0.0001 |
+| MRR | 0.258 | **0.458** | **+0.200** [0.175, 0.224] | 0.0001 |
+| answer in top 10 | 44.9% | **77.1%** | **+32.2 pts** [28.9, 35.5] | 0.0001 |
+| nDCG@10 | 0.358 | **0.501** | **+0.143** [0.122, 0.165] | 0.0001 |
 
 Paired bootstrap over per-query values, 10,000 replicates, fixed seed, absolute differences.
-Clustering the resampling by repository instead of by query barely moves it (MRR +0.138
-[0.111, 0.162], nDCG +0.130 [0.091, 0.167]), so the effect is not an artifact of a few queries in
+Clustering the resampling by repository instead of by query barely moves it (MRR +0.200
+[0.168, 0.228], nDCG +0.143 [0.103, 0.180]), so the effect is not an artifact of a few queries in
 one project. Every interval excludes zero, and the p-values are at the resolution of a
-10,000-replicate simulation rather than a claim that the probability is smaller.
+10,000-replicate simulation rather than a claim that the probability is smaller. The ripgrep
+column is not copied from an earlier report: these repositories are live working trees, so the
+baseline is recomputed in the same run as the number it is compared against (0.1.4 measured
+0.266 → 0.404 on the trees as they stood on 2026-08-20).
+
+**Most of that came from a layout decision, not a cleverer score.** Results are now interleaved by
+file — the first pass carries each file's strongest line, the second its next-strongest — because
+relevance for code is judged per *file* and an agent's next move is to open one. Forty matching
+lines in one module used to push the file that actually declares the symbol to line-rank
+forty-one. Nothing is re-scored, the sequence of distinct files is unchanged, and the
+answer-in-top-10 rate moved 18.8 points on its own. The second change is a `word` signal that
+was written into the design document before any Rust existed and never implemented: a match that
+is a whole identifier beats one buried inside a longer name.
 
 **nDCG@10 is there because MRR only looks at the first hit.** These judgments are not
 single-positive: **57% of the 2,508 corpus entries name more than one answer file**, mean 2.27,
@@ -148,10 +162,18 @@ other answers landed on the first page or the fortieth. nDCG@10 over distinct fi
 relevance, is the measure that sees them. It moves the same way and by the same amount, which is
 the useful outcome: the gain is not an artifact of one lucky top hit per query.
 
-**And hay is worse on 235 of those 951 queries — 25%.** Better on 557, tied on 159. The earlier
-version of this section said "improved in 12 of 12, none made worse", which was true of repository
-*medians* and hid that nearly a quarter of individual searches regress. Three of six hand-designed
-ranking signals earned nothing in ablation and were deleted; removing one *improved* the score.
+**And hay is still worse on 115 of those 951 queries — 12%.** Better on 695, tied on 141. At 0.1.4
+it was worse on 235 (25%), and the version of this section before that said "improved in 12 of 12,
+none made worse", which was true of repository *medians* and hid that nearly a quarter of
+individual searches regressed. Four of seven hand-designed ranking signals earned nothing in
+ablation and were deleted; removing one *improved* the score.
+
+**The one deleted in 0.2.0 is the most instructive.** A bonus for a file whose own name is the
+query — `session_store.ts` for `sessionStore` — is the highest-weighted field in every published
+lexical code retriever, and it scored **+0.033 median MRR when simulated against the private
+evaluation corpus**. On the development sets it earned +0.008, +0.000, −0.002, and **−0.014 on
+SWE-Explore**, the one public agent-shaped benchmark. It was deleted. The evaluation set is not
+allowed to vote on what ships, and this is the first time that rule cost something it wanted.
 
 **Every miss and regression now has a counted category.** The error taxonomy
 ([issue 10](docs/method/issues/10-error-taxonomy.md), counts in
@@ -166,12 +188,20 @@ a confound worth naming: on several "regressions" hay ranks the true definition 
 scored worse because the agent opened a usage site. Behavioural ground truth measures what the
 agent opened next, not what defines the thing; on those queries the two goals disagree.
 
-**It fails its own ship gate**, at 0.381 and 59.2% — computed, for the first time, as the median
-across repositories the gate's own text specifies (every earlier report judged it against the
-paired mean, a different statistic; both are now printed side by side). The gate — median MRR
-≥ 0.50, answer in the top 10 ≥ 80% — was written into [DESIGN-hay.md](DESIGN-hay.md) before a
-line of Rust existed, precisely so it could not be moved afterwards. It has not been moved.
-`hay` is a large, consistent improvement that is not good enough by the standard it set itself.
+**It still fails its own ship gate**, now at **0.4437 and 78.5%** against 0.50 and 80%, up from
+0.3810 and 59.2% at 0.1.4. The gate — median MRR across repositories ≥ 0.50, answer in the top 10
+≥ 80% — was written into [DESIGN-hay.md](DESIGN-hay.md) before a line of Rust existed, precisely
+so it could not be moved afterwards. It has not been moved, and the second criterion is now
+missing by 1.5 points.
+
+**And the excuse is not available.** An oracle that ranks any answer file first scores **1.00** on
+this corpus: every judged answer file is reachable in the results of both retrievers, so nothing
+about the corpus or the metric makes 0.50 unattainable. The shortfall is ranking quality. The
+first-position rate is 31.7% — a third of searches put a file the agent opened at the very top,
+and the rest of the distance is made of queries like `test`, `timeout` and `catch`, where what an
+agent opened next is not a function of the term it searched for. `hay` is a large, consistent
+improvement that is still not good enough by the standard it set itself, and saying so is cheaper
+than the alternative.
 
 ## Measured against every other tool
 
@@ -234,13 +264,13 @@ this repository chose its repositories, its issues, or its ground truth.
 committed in [`evidence/`](evidence/swe-explore-instances.json)), derives queries from each issue
 by a fixed mechanical rule — backticked tokens, then identifier-shaped words, first five, no
 tuning — and feeds the **identical queries** to `rg --sort path` and `hay` over the repository at
-the issue's base commit. On 97 scored instances across eight languages:
+the issue's base commit. On 96 scored instances across eight languages:
 
 | | ripgrep | hay | difference (95% CI) | randomization p |
 |---|---|---|---|---|
-| MRR (best query per instance) | 0.242 | **0.513** | **+0.271** [0.192, 0.353] | 0.0001 |
-| gold file in top 10 | 41.2% | **68.0%** | **+26.8 pts** [18.6, 36.1] | 0.0001 |
-| nDCG@10 | 0.227 | **0.378** | **+0.151** [0.109, 0.197] | 0.0001 |
+| MRR (best query per instance) | 0.242 | **0.551** | **+0.309** [0.232, 0.388] | 0.0001 |
+| gold file in top 10 | 40.6% | **68.8%** | **+28.1 pts** [19.8, 37.5] | 0.0001 |
+| nDCG@10 | 0.225 | **0.375** | **+0.150** [0.108, 0.195] | 0.0001 |
 
 Read the claim precisely, because the payload states it verbatim: given the same queries, hay's
 reordering surfaces the files a successful agent needed earlier than ripgrep's path order. It is
@@ -250,7 +280,15 @@ is *larger* than on the private corpus, which is worth exactly one sentence of c
 gold files come from trajectories that solved the issue, a friendlier notion of relevance than
 "whatever file one developer's agent opened next". Exclusions are counted in the payload: 215
 `pro`-split instances lack public issue text; the fixed manifest contains 97 instances, and the
-current run lost none to missing queries, unavailable repositories, or invisible gold files.
+current run lost one, to a repository archive over the size budget.
+
+*It nearly lost twenty-two.* The archive reader rejected any repository tarball containing a
+symbolic link — the right instinct, wrong action: 21 of the 97 instances (django, sympy and
+friends) silently stopped scoring on a clean machine, which is 22% of the only external evidence
+this project has, disappearing over a member nothing here would have read. Links are now dropped
+individually instead of failing the archive, still never written to disk, and ripgrep does not
+follow symlinks anyway, so the extracted tree is identical for the measurement. It is instrument
+error 13, and the only reason it was caught is that the numbers had to be regenerated.
 
 ## What is also useful here
 
@@ -374,7 +412,14 @@ from data no one here collected — it removes the "one developer chose everythi
     the correct symmetric invocation on both sides the entire time — the harness that proves
     correctness was rigorous, and the two that publish numbers were not.
 
-Numbers 8, 9, 11 and 12 were caught before publication. The other eight were not. The correction
+13. **A safety check deleted 22% of the external evidence.** The SWE-Explore archive reader
+    refused any repository tarball containing a symbolic link, so 21 of the 97 committed instances
+    stopped scoring on a clean machine — a published sample quietly shrinking to 75 while the
+    payload's own exclusion counter said so and nobody read it. Links are now dropped
+    individually, still never written to disk. Every safety limit is a potential silent sampler,
+    and this repo's own invariant 7 — count the truncations — is the thing that recorded it.
+
+Numbers 8, 9, 11, 12 and 13 were caught before publication. The other eight were not. The correction
 history is kept deliberately: it is more useful to anyone picking this up than the final table is.
 
 ## Prior art, which should have been read first
@@ -405,11 +450,14 @@ team, and rules ranking out of even an indexed ripgrep by design.
 
 Both halves of that are load-bearing here. The first says the gap is real and permanent — it will
 not be closed upstream, which is why a wrapper is the right shape. The second is a warning this
-project has already partly earned: three of six hand-designed signals were worth nothing, the
-definition signal was inert on C for four versions, and the tool still fails its own ship gate.
-`hay` is not code-aware relevance ranking. It is four structural priors and a tie-break, measured,
-with the ones that earned nothing deleted — and the honest reading of the RFC is that this is the
-ceiling of what one person should claim, not a step toward the thing he said needs a team.
+project has already partly earned: four of seven hand-designed signals were worth nothing or
+worse, the definition signal was inert on C for four versions, the tool crashed on any non-ASCII
+query for five, and it still fails its own ship gate. `hay` is not code-aware relevance ranking.
+It is four structural priors, a tie-break and a layout rule, measured, with the ones that earned
+nothing deleted — and the honest reading of the RFC is that this is the ceiling of what one person
+should claim, not a step toward the thing he said needs a team. Note where the largest single gain
+in 0.2.0 came from: not from understanding code better, but from noticing that the unit of an
+answer is a file.
 
 Two more recent results point the same way about *lexical* ranking specifically. Sourcegraph
 removed embeddings from Cody in favour of an adapted BM25F over its code graph, on cost and scaling

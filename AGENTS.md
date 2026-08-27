@@ -64,8 +64,11 @@ a line scored.
 2. **Rank order is the product.** Nothing may reorder results — not context windows, not block
    grouping, not deduplication. A fix that reorders is worse than the bug it replaces.
 3. **The pre-registered ship gate does not move.** Median MRR >= 0.50 and answer-in-top-10 >= 80%,
-   fixed in `DESIGN-hay.md` before implementation. It currently fails. Failing a gate you wrote
-   down is the point of writing it down first.
+   fixed in `DESIGN-hay.md` before implementation. It still fails — 0.4437 / 0.7849 as of v0.2.0,
+   up from 0.3810 / 0.5916 — and an oracle ranking any answer file first scores 1.00 on this
+   corpus, so the corpus is not the reason. Failing a gate you wrote down is the point of writing
+   it down first; the temptation to stratify it around the queries that fail arrives *after* you
+   have seen which ones fail, which is why the answer is no.
 4. **`corpus/` is never committed.** It holds real queries and paths from private repositories.
    Publish only aggregates, with `path=label` and `--redact-names`.
 5. **Never weaken an error into silence.** Exit 1 means "searched fine, found nothing"; exit 2
@@ -91,8 +94,14 @@ This repository exists because a number was published as though validated and wa
   per-query reciprocal ranks, both by query and clustered by repository.
 - **Pair the comparison.** The design is paired at the query level; comparing per-repo marginals
   at n=12 throws the power away.
-- **Ablate every ranking signal and delete the ones that earn nothing.** Three of six original
-  signals contributed <= 0 and were removed; removing one *improved* the score.
+- **Ablate every ranking signal and delete the ones that earn nothing.** Four of seven have now
+  been deleted; removing one *improved* the score. The v0.2.0 filename signal is the case to
+  remember: worth +0.033 median MRR simulated on the private evaluation corpus — which would have
+  nearly closed the gate — and −0.014 on the public agent-shaped benchmark. It did not ship. The
+  evaluation set does not get a vote, least of all when it agrees with you.
+- **Check what the metric counts before adding a signal.** The largest retrieval gain in this
+  project's history was not a signal at all: judgments are per file, MRR counts lines, and
+  interleaving the output by file moved top-10 by 18.8 points without re-scoring anything.
 - **Do not fit the weights on the behavioural corpus.** Develop against the public benchmark and
   confirm on the behavioural one; never tune the numbers you publish on the set you tuned against.
   A held-out corpus from *another developer's* transcripts is still missing and would be better

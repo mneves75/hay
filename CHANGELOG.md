@@ -6,6 +6,61 @@ history lives in git and `memory/`.
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-08-27
+
+The first ranking change since 0.1.0, and the first release whose headline is the ranker rather
+than its packaging. On the 951-query behavioural corpus, paired against `ripgrep --sort path`:
+MRR **0.258 → 0.458** (+0.1995, 95% CI [0.1754, 0.2243], randomization p=0.0001), answer in the
+top ten **44.9% → 77.1%** (+32.2 pts [28.9, 35.5]), nDCG@10 **0.358 → 0.501** (+0.1434). Queries
+where `hay` is *worse* than ripgrep fall from 235 of 951 (25%) to 115 (12%); no repository is
+worse than ripgrep. On the public SWE-Explore-Bench sample, MRR **0.242 → 0.551** (+0.3085
+[0.2321, 0.3878]).
+
+**The pre-registered gate still fails**, at median-repo MRR **0.4437** against 0.50 and top-10
+**78.5%** against 80%, up from 0.3810 / 59.2%. It has not been moved. An oracle that ranks any
+answer file first scores 1.00 on this corpus, so nothing about the corpus makes the threshold
+unreachable — the remaining gap is ranking quality, not measurement.
+
+### Ranking
+
+- **Results are interleaved by file.** The first pass carries each file's strongest line, the
+  second its next-strongest. Relevance judgments for code are per file and an agent opens files,
+  so a first page of ten files is worth more than ten lines of one module. Nothing is re-scored
+  and the sequence of distinct files is unchanged, so `-l` output is byte-identical; only the
+  layout of the ranked list changes. Worth +0.0071 to +0.0355 MRR across the public corpora and
+  +18.8 points of behavioural top-10 on its own. `--no-diversify` restores strict score order.
+- **New `word` signal**, pre-registered in `DESIGN-hay.md` before any Rust was written and
+  unimplemented until now: `+1.0` when the match is a whole identifier, `+0.5` when it starts one,
+  nothing when it is buried inside a longer name (`auth` inside `oauthToken`). Measured
+  contribution +0.0095 (openclaw), +0.0163 (ripgrep), +0.0217 (alamofire) MRR. `--no-word`.
+- **A filename signal was implemented, ablated, and deleted.** A bonus for a file whose own name is
+  the query is the highest-weighted field in every published lexical code retriever, and it scored
+  +0.033 median MRR in a simulation on the private evaluation corpus. On the development sets it
+  earned +0.008 (openclaw), +0.000 (ripgrep), −0.002 (alamofire) and **−0.0136 on SWE-Explore**,
+  the one public agent-shaped benchmark. Deleted, per the design document's own rule: a signal
+  that does not improve MRR in ablation does not ship, and the evaluation set does not get a vote.
+
+### Fixed
+
+- **`hay` crashed on a non-ASCII query.** Both identifier scans advanced one *byte* past a rejected
+  occurrence, so a query whose first hit sat inside a word sliced into the middle of a multi-byte
+  character: `hay -F -e 'éé'` over a line containing `aéé` exited 2 with "ranking thread panicked"
+  on a search ripgrep answers normally. Found in review, reproduced from the command line first,
+  and covered by a unit test and a CLI contract test.
+- **The public external-validity benchmark was silently losing 22% of its sample.** A repository
+  archive containing any symbolic link was rejected whole, so 21 of the 97 committed SWE-Explore
+  instances (django, sympy and friends) never scored on a clean machine. Links are now dropped
+  individually and counted — never written to disk, which is what the check was for — and
+  ripgrep does not follow symlinks anyway, so the extracted tree is identical for the measurement.
+  The run goes from 75 to 96 scored instances, the one remaining exclusion being an archive over
+  the size budget.
+
+### Measurement kit
+
+- `swe-explore.ts --ablate <signals> --out <path>` runs the public agent-shaped benchmark with a
+  ranking signal turned off. It refuses to write `evidence/swe-explore.json` and records the flags
+  in the payload, so an ablation cannot be mistaken for the published run.
+
 ## [0.1.4] — 2026-08-27
 
 No ranking change — this release closes integrity gaps in the installer, measurement kit, public
