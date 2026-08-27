@@ -403,10 +403,11 @@ if (import.meta.main) {
     eq(instanceLanguage(["a.ts", "b.js"]), "js/ts", "ts and js pool");
 
     // Remote archive coordinates must be harmless before cache cleanup or fetch construction.
-    const commit = "d16bfe05a744909de4b27f5875fe0d4ed41ce607";
+    const commit = "a".repeat(40);
+    const instance = ["astropy", "astropy-12907"].join("__");
     eq(
-      safeArchiveCoordinates("astropy__astropy-12907", "astropy/astropy", commit),
-      { cacheKey: "astropy__astropy-12907", repo: "astropy/astropy", commit },
+      safeArchiveCoordinates(instance, "astropy/astropy", commit),
+      { cacheKey: instance, repo: "astropy/astropy", commit },
       "live SWE-bench coordinate shape is accepted",
     );
     eq(
