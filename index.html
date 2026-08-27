@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <title>hay — a ranked grep for coding agents</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="hay returns exactly ripgrep's matches, reordered so the declaration comes first. First on every public benchmark corpus — by margins two statistical tests confirm.">
+<meta name="description" content="hay returns exactly ripgrep&rsquo;s matches, reordered so declarations rank first. It leads deterministic ripgrep ordering on four usable public code corpora; documentation retrieval is reported separately.">
 <meta property="og:title" content="hay — a ranked grep for coding agents">
-<meta property="og:description" content="Exactly ripgrep's matches. Only the order changes. First on every benchmark corpus, by margins both statistical tests confirm.">
+<meta property="og:description" content="Exactly ripgrep&rsquo;s matches, reordered. Leads deterministic ripgrep ordering on four usable public code corpora; docs retrieval is reported separately.">
 <meta name="color-scheme" content="light dark">
 <style>
 :root{color-scheme:light dark;
@@ -14,10 +14,10 @@
   --panel:light-dark(#fffdf6,#1e1a10);
   --ink:light-dark(#201b10,#ece5d2);
   --soft:light-dark(#5c5544,#b3aa92);
-  --faint:light-dark(#8b8371,#847c66);
+  --faint:light-dark(#6f6756,#aaa18a);
   --rule:light-dark(#e7e1cf,#2e2918);
   --rule-strong:light-dark(#cfc6a8,#46402a);
-  --accent:light-dark(#8a6d10,#ddb84f);
+  --accent:light-dark(#83670d,#ddb84f);
   --accent-ink:light-dark(#6b5408,#e6c86e);
   --accent-soft:light-dark(#f1e7c8,#332b14);
 }
@@ -40,7 +40,7 @@ h1{font-family:"IBM Plex Serif",Georgia,serif;font-weight:600;font-size:clamp(2.
 .lede{font-size:1.18rem;color:var(--soft);max-width:46ch;margin:0 0 1.8rem}
 .cta{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:.92rem;text-decoration:none;
   border:1px solid var(--rule-strong);border-radius:6px;padding:.65rem 1.15rem;margin-right:.7rem;margin-bottom:.7rem;color:var(--ink)}
-.cta.primary{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
+.cta.primary{background:var(--accent);color:light-dark(#fff,#201b10);border-color:var(--accent);font-weight:600}
 .chips{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1.8rem}
 .chip{font-family:"IBM Plex Mono",monospace;font-size:.78rem;border:1px solid var(--rule-strong);border-radius:999px;padding:.32rem .9rem;color:var(--soft)}
 .chip b{color:var(--accent-ink)}
@@ -79,7 +79,7 @@ footer a{color:inherit}
 @supports (animation-timeline:view()){
   @media (prefers-reduced-motion:no-preference){
     section>*{animation:rise linear both;animation-timeline:view();animation-range:entry 0% entry 42%}
-    @keyframes rise{from{opacity:.12;translate:0 20px}}
+    @keyframes rise{from{translate:0 20px}}
   }
 }
 </style>
@@ -88,7 +88,7 @@ footer a{color:inherit}
 <div class="wrap">
 
 <header class="hero">
-  <p class="eyebrow">grep-hygiene · hay · v0.1.2</p>
+  <p class="eyebrow">grep-hygiene · hay · v0.1.4</p>
   <h1>A ranked grep for coding agents.</h1>
   <p class="lede"><code>hay</code> returns <strong>exactly ripgrep's matches</strong> — never more,
   never fewer — reordered so the line that declares what you asked about comes first. Because an
@@ -105,6 +105,8 @@ footer a{color:inherit}
     <span class="chip">exit codes that refuse to lie</span>
   </div>
 </header>
+
+<main>
 
 <section id="why">
   <p class="kicker">why hay</p>
@@ -135,31 +137,31 @@ footer a{color:inherit}
       <a href="assets/hay-benchmark.mp4">Download the benchmark film</a>.
     </video>
     <div class="vcap"><b>Ranked grep, measured.</b> Mean reciprocal rank per corpus — muted bars are
-    plain ripgrep in default order, gold is hay. Ground truth from ast-grep, a parser independent
-    of every tool under test.</div>
+    deterministic <code>rg --sort path</code>, gold is hay. Ground truth comes from ast-grep, a parser
+    independent of every tool under test.</div>
   </div>
 </section>
 
 <section id="numbers">
   <p class="kicker">the numbers, animated</p>
   <h2>MRR by corpus — scroll to grow.</h2>
-  <p class="sub">Mean reciprocal rank of the declaring file against plain ripgrep's default order.
-  Bars animate to scale when they enter view. Full intervals and significance tests live in the
-  <a href="benchmark.html">complete report</a>.</p>
+  <p class="sub">Mean reciprocal rank of the declaring file against deterministic <code>rg --sort path</code>.
+  This definition-finding track is hay&rsquo;s home turf; the separate docs track has no detected wins and two regressions.
+  Full intervals, exclusions, and tests are in the <a href="benchmark.html">complete report</a>.</p>
   <div class="chart" id="chart">
     <div class="crow"><div class="cname">linux kernel</div><div class="cbars">
-      <div class="bar rg" style="--v:.67"></div><div class="bar hay" style="--v:.967"><span class="bval">MRR 0.967</span></div>
+      <div class="bar rg" style="--v:.541"></div><div class="bar hay" style="--v:.907"><span class="bval">MRR 0.907</span></div>
     </div></div>
     <div class="crow"><div class="cname">openclaw</div><div class="cbars">
-      <div class="bar rg" style="--v:.669"></div><div class="bar hay" style="--v:.879"><span class="bval">MRR 0.879</span></div>
+      <div class="bar rg" style="--v:.819"></div><div class="bar hay" style="--v:.911"><span class="bval">MRR 0.911</span></div>
     </div></div>
     <div class="crow"><div class="cname">ripgrep source</div><div class="cbars">
-      <div class="bar rg" style="--v:.41"></div><div class="bar hay" style="--v:.800"><span class="bval">MRR 0.800</span></div>
+      <div class="bar rg" style="--v:.419"></div><div class="bar hay" style="--v:.800"><span class="bval">MRR 0.800</span></div>
     </div></div>
     <div class="crow"><div class="cname">alamofire (swift)</div><div class="cbars">
-      <div class="bar rg" style="--v:.294"></div><div class="bar hay" style="--v:.691"><span class="bval">MRR 0.691</span></div>
+      <div class="bar rg" style="--v:.433"></div><div class="bar hay" style="--v:.691"><span class="bval">MRR 0.691</span></div>
     </div></div>
-    <div class="legend">muted = plain ripgrep (baseline) · gold = hay (ranked) · n = 30/30/23/29 sampled queries · ground truth: ast-grep</div>
+    <div class="legend">muted = deterministic rg --sort path · gold = hay · n = 30/30/23/29 sampled queries · ground truth: ast-grep</div>
   </div>
 </section>
 
@@ -185,13 +187,15 @@ footer a{color:inherit}
 <section id="install">
   <p class="kicker">install</p>
   <h2>From source.</h2>
-<pre>git clone https://github.com/mneves75/hay.git &amp;&amp; cd hay
+<pre tabindex="0">git clone https://github.com/mneves75/hay.git &amp;&amp; cd hay
 cargo install --path hay
 hay validateSession src/          # best answer first</pre>
   <p style="margin-top:1.2rem">Then read the <a href="MANUAL.html">manual</a> — every flag, the JSON
   contract, exit codes — or the <a href="benchmark.html">full benchmark report</a>, or how all of it
   works <a href="BENCHMARK_FEYNMAN.html">from zero</a>.</p>
 </section>
+
+</main>
 
 <footer>
   hay — a ranked grep for coding agents ·

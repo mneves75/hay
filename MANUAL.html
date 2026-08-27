@@ -8,6 +8,7 @@
 <meta property="og:title" content="hay — the manual">
 <meta property="og:description" content="A ranked grep for coding agents: every flag, the JSON contract, exit codes, ranking signals, and recipes.">
 <meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%238a6d10'/%3E%3Cpath d='M18 14h8v14h12V14h8v36h-8V36H26v14h-8z' fill='%23fffdf6'/%3E%3C/svg%3E">
 <style>
 /* Theme via light-dark(): one value per custom property, resolved by color-scheme.
    The toggle sets data-theme for explicit choice; absence follows the OS. */
@@ -16,7 +17,7 @@
   --panel:light-dark(#fffdf6,#1e1a10);
   --ink:light-dark(#201b10,#ece5d2);
   --ink-soft:light-dark(#5c5544,#b3aa92);
-  --ink-faint:light-dark(#8b8371,#847c66);
+  --ink-faint:light-dark(#6b6452,#958c72);
   --rule:light-dark(#e7e1cf,#2e2918);
   --rule-strong:light-dark(#cfc6a8,#46402a);
   --accent:light-dark(#8a6d10,#ddb84f);
@@ -116,7 +117,7 @@ mark{background:var(--mark);color:inherit;padding:0 .1em;border-radius:2px}
 body.searching section:not(.hit){display:none}
 body.searching .toc-else{display:none}
 .noresults{display:none}
-body.searching .noresults{display:block}
+body.no-search-results .noresults{display:block}
 .explain-anatomy{display:block;width:100%;height:auto;font-size:13px}
 details.flaggroup{border:1px solid var(--rule);border-radius:4px;background:var(--panel);margin:0 0 .7rem}
 details.flaggroup summary{
@@ -135,8 +136,13 @@ footer{border-top:1px solid var(--rule);margin-top:3rem;padding-top:1.25rem;colo
 @supports (animation-timeline: view()){
   @media (prefers-reduced-motion: no-preference){
     section[id] > *{animation:rise linear both;animation-timeline:view();animation-range:entry 0% entry 40%}
-    @keyframes rise{from{opacity:.2;translate:0 14px}}
+    @keyframes rise{from{translate:0 14px}}
   }
+}
+@media (max-width:45rem){
+  table{table-layout:fixed}
+  th,td{overflow-wrap:anywhere;padding:.45rem .5rem}
+  tbody th[scope="row"]{white-space:normal}
 }
 @media print{.searchbar,nav.toc,#theme-toggle,.copy{display:none}body{background:#fff}section[id]{break-before:page}section:first-of-type{break-before:auto}}
 </style>
@@ -185,19 +191,22 @@ headings, flag names, and body text.</p>
 <section id="start">
 <h2>Start here</h2>
 <p>Install from source — one line, or inspect first (Rust edition 2024, MSRV 1.88):</p>
-<div class="codewrap"><pre><code>curl -fsSL https://raw.githubusercontent.com/mneves75/hay/main/install.sh | bash
+<div class="codewrap"><pre tabindex="0"><code>curl -fsSL https://raw.githubusercontent.com/mneves75/hay/v0.1.4/install.sh | HAY_REF=v0.1.4 bash
 
 # inspect-first form:
-git clone https://github.com/mneves75/hay.git &amp;&amp; cd hay &amp;&amp; ./install.sh</code></pre><button class="copy" type="button">copy</button></div>
+git clone --depth 1 --branch v0.1.4 https://github.com/mneves75/hay.git &amp;&amp; cd hay &amp;&amp; HAY_REF=v0.1.4 ./install.sh</code></pre><button class="copy" type="button">copy</button></div>
 <p>The script gates on the toolchain version, clones, builds release, installs via
-<code>cargo install</code>, and smoke-tests. Then search exactly like you would with ripgrep:</p>
-<div class="codewrap"><pre><code>hay validateSession src/          # ranked results, best first
+<code>cargo install</code>, and smoke-tests the installed binary. Set
+<code>CARGO_INSTALL_ROOT</code> to choose its destination; the script passes that root to Cargo
+and verifies the same path. Then search exactly like you would with ripgrep:</p>
+<div class="codewrap"><pre tabindex="0"><code>hay validateSession src/          # ranked results, best first
 hay -t ts -w fetchUser            # TypeScript only, whole words
 hay -C 3 -m 20 'parseConfig'      # context, capped result count</code></pre><button class="copy" type="button">copy</button></div>
-<p>The deal hay offers is narrow and honest: it returns <strong>exactly ripgrep’s matches</strong> —
-never more, never fewer, verified continuously by a differential test against ripgrep itself — but
-<strong>ordered by likelihood of being the answer</strong> instead of by file path. If two orderings
-would ever differ in which lines match, that is a bug; the project treats it as such.</p>
+<p>The deal hay offers is narrow and honest: each complete search returns the exact match set
+from an equivalently configured ripgrep invocation, verified continuously by a differential test
+that normalizes traversal inputs on both sides — but <strong>ordered by likelihood of being the
+answer</strong> instead of by file path. If the corresponding orderings differ in which lines
+match, that is a bug; the project treats it as such.</p>
 <div class="callout">
 <p><strong>One-sentence mental model:</strong> ripgrep answers <em>“where does this string
 appear?”</em>; hay answers <em>“where is the thing I’m asking about — most likely first?”</em></p>
@@ -211,11 +220,14 @@ appear?”</em>; hay answers <em>“where is the thing I’m asking about — mo
 <em>declares</em> a thing is worth more than a line that merely mentions it.</strong> When an agent
 searches <code>validateSession</code>, the function definition is the answer; the forty call sites
 are supporting material; the dead planning document that mentions the name is noise.</p>
-<p>Mechanically, hay runs a ripgrep-grade search over your tree (same ignore rules, same walk,
-same match semantics), scores every matching line, keeps the strongest 20,000 candidates, sorts
-them, and prints. The scoring never changes <em>which</em> lines match — only their order.</p>
+<p>Mechanically, hay uses ripgrep’s matching and walking crates with a deterministic ignore
+policy: repository <code>.gitignore</code> rules apply, while global gitignore,
+<code>.git/info/exclude</code>, <code>.ignore</code>, and <code>.rgignore</code> do not. The
+differential harness disables those same non-<code>.gitignore</code> sources for ripgrep. hay then retains the
+20,000 strongest-by-prescore candidates, scores them, sorts them, and prints. Scoring never
+changes which retained lines match — only their order.</p>
 <p>If you want the full story — why ranking exists at all, what a bootstrap interval is, and the C
-bug the benchmark itself caught — read <a href="BENCHMARK_FEYNMAN.html">BENCHMARK_FEYNMAN.md</a>.
+bug the benchmark itself caught — read <a href="BENCHMARK_FEYNMAN.html">BENCHMARK_FEYNMAN.html</a>.
 It assumes no information-retrieval background.</p>
 </section>
 
@@ -246,7 +258,7 @@ mention, deliberately damped so repetition cannot buy a win.</td></tr>
 <h3>Turning signals off</h3>
 <p>Each signal has an ablation switch, because a contribution you cannot switch off is a belief,
 not a measurement:</p>
-<div class="codewrap"><pre><code>hay --no-definition validateSession .
+<div class="codewrap"><pre tabindex="0"><code>hay --no-definition validateSession .
 hay --no-path        validateSession .
 hay --no-tf          validateSession .</code></pre><button class="copy" type="button">copy</button></div>
 <p>This is also how several published claims here were proven: the definition signal’s value on C
@@ -321,7 +333,7 @@ the flag are mutually meaningless. Each refusal says why and names the ripgrep e
 <h3>Plain</h3>
 <p>Ripgrep-compatible <code>path:line:text</code>, rank-ordered, with <code>--</code> marking a true
 discontinuity between context windows:</p>
-<div class="codewrap"><pre><code>$ hay -C1 -F validateSession src/
+<div class="codewrap"><pre tabindex="0"><code>$ hay -C1 -F validateSession src/
 src/auth.ts:2:export function validateSession(t: string) {
 src/auth.ts-3-  return t
 --
@@ -329,7 +341,7 @@ src/session.ts:17:// delegates to validateSession</code></pre><button class="cop
 <h3>JSON Lines (<code>--json</code>)</h3>
 <p>Ripgrep-shaped objects, one per line, <strong><code>match</code> and <code>context</code> messages
 only</strong>:</p>
-<div class="codewrap"><pre><code>{"type":"match","data":{"path":{"text":"src/auth.ts"},
+<div class="codewrap"><pre tabindex="0"><code>{"type":"match","data":{"path":{"text":"src/auth.ts"},
  "lines":{"text":"export function validateSession(t: string) {\n"},
  "line_number":2,"absolute_offset":31,
  "submatches":[{"match":{"text":"validateSession"},"start":16,"end":30}]}}</code></pre><button class="copy" type="button">copy</button></div>
@@ -347,7 +359,7 @@ cleanly (recipe below).</li>
 <section id="explain">
 <h2><code>--explain</code>: reading a score</h2>
 <p>Each result is prefixed with its total score and the per-signal breakdown:</p>
-<div class="codewrap"><pre><code>$ hay --explain -F validateSession src/ | head -1
+<div class="codewrap"><pre tabindex="0"><code>$ hay --explain -F validateSession src/ | head -1
 6.00 [def +6.0 path +1.0 tf +1.00]  src/auth.ts:2:export function validateSession(t: string) {</code></pre><button class="copy" type="button">copy</button></div>
 <table>
 <thead><tr><th scope="col">field</th><th scope="col">meaning</th></tr></thead>
@@ -376,11 +388,13 @@ weights are optimal.</p>
 <tr><th scope="row"><code>-m</code> bounds total results, not matches-per-file</th><td>An agent wants “the twenty best lines”, not “twenty per file”.</td></tr>
 <tr><th scope="row"><code>--json</code> emits only <code>match</code>/<code>context</code></th><td><code>begin</code>/<code>end</code>/<code>summary</code> assume a file-scoped stream; rank order interleaves files.</td></tr>
 <tr><th scope="row"><code>-l</code> wins over <code>--json</code></th><td>Plain paths beat a bare <code>begin</code> with no <code>end</code>.</td></tr>
+<tr><th scope="row">Deterministic ignore inputs</th><td>Repository <code>.gitignore</code> rules apply; global gitignore, <code>.git/info/exclude</code>, <code>.ignore</code>, and <code>.rgignore</code> do not.</td></tr>
 <tr><th scope="row">A 20,000-candidate cap (see <a href="#cap">the cap</a>)</th><td>Memory bound with a loud stderr notice instead of unbounded buffering.</td></tr>
 </tbody>
 </table>
-<p>Everything else is parity by construction, enforced by a differential test that fails the build
-if hay and ripgrep ever disagree on <em>which lines match</em>.</p>
+<p>For equivalent flags and normalized traversal inputs, match semantics are parity by
+construction. The differential test fails the build if hay and the corresponding ripgrep
+invocation disagree on <em>which lines match</em>.</p>
 </section>
 
 <!-- ─────────────────────────────── exits ─────────────────────────────── -->
@@ -405,8 +419,9 @@ results”. Scripts should treat 2 as “retry narrower”, not as success.</p>
 <section id="cap">
 <h2>The candidate cap</h2>
 <p>hay buffers up to <strong>20,000 matching lines</strong> to score them. A pattern broader than
-that (say, <code>-e e</code> on the Linux kernel) ranks only the strongest 20,000 candidates — and
-says so on stderr while still exiting&nbsp;2, because the printed list is <em>not</em> every match
+that (say, <code>-e e</code> on the Linux kernel) ranks only the 20,000
+strongest-by-prescore candidates — and says so on stderr while still exiting&nbsp;2, because the
+printed list is <em>not</em> every match
 in the tree. For exhaustive counting or completeness checks on very broad patterns, use
 <code>rg</code>. That is not a limitation hay apologises for; it is the trade that makes ranking
 affordable, stated where you can see it.</p>
@@ -426,7 +441,7 @@ one-line <code>CLAUDE.md</code> containing <code>@AGENTS.md</code>, or
 <code>ln -s AGENTS.md CLAUDE.md</code> (both are Anthropic's documented patterns). Aider and Cursor
 need their own wiring — see "Make hay the default" below.</p>
 </div>
-<div class="codewrap"><pre><code>## Code search
+<div class="codewrap"><pre tabindex="0"><code>## Code search
 
 Use `hay` instead of `rg` for concept and symbol searches:
 
@@ -453,7 +468,7 @@ Use `hay` instead of `rg` for concept and symbol searches:
 a rule that names hay as the default and <code>rg</code> as the explicit fallback. Agents follow
 tool rules far more reliably than they discover tools. Strengthen the universal snippet's first
 line to a default:</p>
-<div class="codewrap"><pre><code>## Code search — defaults
+<div class="codewrap"><pre tabindex="0"><code>## Code search — defaults
 
 `hay` is the DEFAULT search tool in this repo. Reach for it first for every
 "where is X / what defines X / how does X work" search:
@@ -496,23 +511,23 @@ The default belongs in instructions, where the agent knows which tool it chose a
 </div>
 
 <h3>Find the definition, read it</h3>
-<div class="codewrap"><pre><code># fixed-string, top hit only — the common agent case
+<div class="codewrap"><pre tabindex="0"><code># fixed-string, top hit only — the common agent case
 hay -F -m 1 "$symbol" "$root"</code></pre><button class="copy" type="button">copy</button></div>
 <h3>Structured consumption</h3>
-<div class="codewrap"><pre><code># every match as TSV: path, line number, trimmed text
+<div class="codewrap"><pre tabindex="0"><code># every match as TSV: path, line number, trimmed text
 hay --json -F "$symbol" "$root" \
 | jq -r 'select(.type=="match")
          | [.data.path.text, .data.line_number,
             (.data.lines.text | gsub("\\n$";"") | .[0:160])] | @tsv'</code></pre><button class="copy" type="button">copy</button></div>
 <h3>Context without reordering surprises</h3>
-<div class="codewrap"><pre><code>hay -C 3 -m 10 -F "$symbol" "$root"   # blocks stay grouped, gaps show as --</code></pre><button class="copy" type="button">copy</button></div>
+<div class="codewrap"><pre tabindex="0"><code>hay -C 3 -m 10 -F "$symbol" "$root"   # blocks stay grouped, gaps show as --</code></pre><button class="copy" type="button">copy</button></div>
 <h3>Honesty check on a big tree</h3>
-<div class="codewrap"><pre><code>hay -m 0 -F "$symbol" "$root" 2&gt;err.log || true
-grep -q "candidate cap" err.log &amp;&amp; echo "truncated — switch to rg for exhaustiveness"</code></pre><button class="copy" type="button">copy</button></div>
+<div class="codewrap"><pre tabindex="0"><code>hay -m 0 -F "$symbol" "$root" 2&gt;err.log || true
+grep -q "ranked the .* strongest" err.log &amp;&amp; echo "truncated — switch to rg for exhaustiveness"</code></pre><button class="copy" type="button">copy</button></div>
 <h3>Install on an agent's machine</h3>
-<div class="codewrap"><pre><code>curl -fsSL https://raw.githubusercontent.com/mneves75/hay/main/install.sh | bash   # inspect first!
+<div class="codewrap"><pre tabindex="0"><code>curl -fsSL https://raw.githubusercontent.com/mneves75/hay/v0.1.4/install.sh | HAY_REF=v0.1.4 bash   # inspect first!
 # inspect-first form:
-git clone https://github.com/mneves75/hay.git &amp;&amp; cd hay &amp;&amp; ./install.sh</code></pre><button class="copy" type="button">copy</button></div>
+git clone --depth 1 --branch v0.1.4 https://github.com/mneves75/hay.git &amp;&amp; cd hay &amp;&amp; HAY_REF=v0.1.4 ./install.sh</code></pre><button class="copy" type="button">copy</button></div>
 </section>
 
 <!-- ─────────────────────────────── faq ─────────────────────────────── -->
@@ -563,14 +578,24 @@ are asserted by <code>hay/tests/cli.rs</code>.
 // ── theme: auto → dark → light → auto; persisted; falls back to OS via light-dark() ──
 const root = document.documentElement, btn = document.getElementById("theme-toggle");
 const next = { auto: "dark", dark: "light", light: "auto" };
-const saved = localStorage.getItem("hay-manual-theme");
-if (saved === "dark" || saved === "light") root.dataset.theme = saved;
-btn.textContent = saved ?? "auto";
+const readTheme = () => {
+  try { return localStorage.getItem("hay-manual-theme"); } catch { return null; }
+};
+const writeTheme = (value) => {
+  try { localStorage.setItem("hay-manual-theme", value); } catch {}
+};
+const saved = readTheme();
+let theme = saved === "dark" || saved === "light" || saved === "auto" ? saved : "auto";
+const applyTheme = () => {
+  if (theme === "auto") delete root.dataset.theme; else root.dataset.theme = theme;
+  btn.textContent = theme;
+  btn.setAttribute("aria-label", `Color theme: ${theme}. Activate to switch theme.`);
+};
+applyTheme();
 btn.addEventListener("click", () => {
-  const n = next[localStorage.getItem("hay-manual-theme") ?? "auto"];
-  if (n === "auto") delete root.dataset.theme; else root.dataset.theme = n;
-  localStorage.setItem("hay-manual-theme", n);
-  btn.textContent = n;
+  theme = next[theme];
+  applyTheme();
+  writeTheme(theme);
 });
 
 // ── scrollspy: aria-current drives TOC highlight; IO because scroll handlers jank ──
@@ -582,12 +607,41 @@ const spy = new IntersectionObserver((entries) => {
 }, { rootMargin: "-20% 0px -70% 0px" });
 document.querySelectorAll("main section[id]").forEach((s) => spy.observe(s));
 
-// ── copy buttons: clipboard API, inline confirmation, no toast library ──
+// ── copy buttons: secure-context API first, local-file fallback, accessible status ──
+const copyText = async (text) => {
+  if (navigator.clipboard?.writeText) {
+    try { await navigator.clipboard.writeText(text); return; } catch {}
+  }
+  const box = document.createElement("textarea");
+  box.value = text;
+  box.setAttribute("readonly", "");
+  box.style.cssText = "position:fixed;inset:0;opacity:0;pointer-events:none";
+  document.body.append(box);
+  box.select();
+  let copied = false;
+  try { copied = document.execCommand("copy"); } finally { box.remove(); }
+  if (!copied) throw new Error("clipboard unavailable");
+};
 for (const b of document.querySelectorAll(".copy")) {
+  b.setAttribute("aria-label", "Copy command to clipboard");
+  b.setAttribute("aria-live", "polite");
+  let reset;
   b.addEventListener("click", async () => {
-    await navigator.clipboard.writeText(b.previousElementSibling.querySelector("code").textContent);
-    b.textContent = "copied"; b.dataset.done = "";
-    setTimeout(() => { delete b.dataset.done; b.textContent = "copy"; }, 1400);
+    clearTimeout(reset);
+    const code = b.previousElementSibling?.querySelector("code");
+    try {
+      if (!code) throw new Error("copy source missing");
+      await copyText(code.textContent ?? "");
+      b.textContent = "copied";
+      b.dataset.done = "";
+    } catch {
+      b.textContent = "copy failed";
+      delete b.dataset.done;
+    }
+    reset = setTimeout(() => {
+      delete b.dataset.done;
+      b.textContent = "copy";
+    }, 1800);
   });
 }
 
@@ -622,6 +676,7 @@ q.addEventListener("input", () => {
       }
     }
   }
+  document.body.classList.toggle("no-search-results", !!needle && hits === 0);
   meta.textContent = needle ? `${hits} section${hits === 1 ? "" : "s"} match “${q.value.trim()}”` : "";
 });
 
