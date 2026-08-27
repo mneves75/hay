@@ -3,12 +3,13 @@
   "claim": "given identical mechanically-derived queries, does hay's reordering surface gold files earlier than rg's path order — this does not measure issue localization",
   "qderive": "qderive-v1",
   "seed": 20260820,
-  "instances": 97,
+  "hayAblation": [],
+  "instances": 96,
   "byLanguage": {
     "python": 19,
     "rust": 11,
     "ruby": 9,
-    "js/ts": 17,
+    "js/ts": 16,
     "go": 7,
     "php": 11,
     "c/c++": 13,
@@ -16,49 +17,52 @@
   },
   "excluded": {
     "noPublicIssueText": 215,
-    "repoSkipped": 0,
+    "repoSkipped": 1,
     "noDerivableQueries": 0,
     "noVisibleGold": 0
   },
-  "mrrRg": 0.24205562206193834,
-  "mrrHay": 0.5129056995332231,
-  "top10Rg": 0.41237113402061853,
-  "top10Hay": 0.6804123711340206,
-  "ndcg10Rg": 0.226549989688378,
-  "ndcg10Hay": 0.37773190483315183,
+  "mrrRg": 0.24197286812508353,
+  "mrrHay": 0.5504866323709429,
+  "top10Rg": 0.40625,
+  "top10Hay": 0.6875,
+  "ndcg10Rg": 0.22506334581568666,
+  "ndcg10Hay": 0.37534340295340574,
   "deltaMrr": {
     "byInstance": {
-      "mean": 0.27085007747128464,
-      "lo": 0.1919836125821566,
-      "hi": 0.3528779195010401,
+      "mean": 0.3085137642458592,
+      "lo": 0.23214938060047452,
+      "hi": 0.38783766734391656,
       "p": 0.00019998000199980003,
-      "n": 97
+      "n": 96,
+      "clusters": 96
     },
     "randomizationByInstance": 0.00009999000099990002
   },
   "deltaTop10": {
     "byInstance": {
-      "mean": 0.26804123711340205,
-      "lo": 0.18556701030927836,
-      "hi": 0.36082474226804123,
+      "mean": 0.28125,
+      "lo": 0.19791666666666666,
+      "hi": 0.375,
       "p": 0.00019998000199980003,
-      "n": 97
+      "n": 96,
+      "clusters": 96
     },
     "randomizationByInstance": 0.00009999000099990002
   },
   "deltaNdcg10": {
     "byInstance": {
-      "mean": 0.15118191514477364,
-      "lo": 0.10895391274724567,
-      "hi": 0.19663249938455057,
+      "mean": 0.15028005713771883,
+      "lo": 0.10755252028470942,
+      "hi": 0.19528649798719,
       "p": 0.00019998000199980003,
-      "n": 97
+      "n": 96,
+      "clusters": 96
     },
     "randomizationByInstance": 0.00009999000099990002
   },
   "hayTruncatedQueries": 2,
   "toolVersions": {
-    "hay": "hay 0.5.0",
+    "hay": "hay 0.2.0",
     "rg": "ripgrep 15.2.0"
   }
 }
