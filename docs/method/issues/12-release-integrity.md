@@ -1,7 +1,8 @@
 # 12 — Release integrity and public-evidence closure
 
-**Status:** in progress (2026-08-25). This ticket is the repository-native fallback for the
-requested to-spec/to-tickets workflow; those named skills were not installed in this environment.
+**Status:** beta staged; production approval pending (2026-08-26). This ticket is the
+repository-native fallback for the requested to-spec/to-tickets workflow; those named skills were
+not installed in this environment.
 
 ## Objective
 
@@ -46,8 +47,8 @@ headline, and the release fixes evidence integrity rather than presenting the pr
 
 ## Implementation contract
 
-- Installer fetches the requested branch, tag, or commit exactly, installs with the lockfile, and
-  verifies the newly installed binary rather than an older `PATH` entry.
+- Installer fetches the requested branch, tag, or commit exactly, installs with the lockfile and
+  an explicit resolved `--root`, and verifies that binary rather than an older `PATH` entry.
 - Transcript-derived outputs stay beneath a real `corpus/` directory with 0700 directories and
   0600 files; atomic replacement cannot truncate a planted hard link, and no override writes
   private pairs elsewhere.
@@ -92,3 +93,18 @@ recorded but `benchmark-corpora.sh` does not yet check them out automatically.
 - Version, changelog, docs, memory, evidence, site, and film agree.
 - Main is committed and pushed; `v0.1.4-beta1` is tagged and its staging artifacts verified.
 - Production tag and Pages push occur only after explicit production confirmation.
+
+## Staging result
+
+- `main` CI run `33031310741` passed all seven jobs at
+  `cce42179dae8b2a6f25e9dd22f169712fb9e8bb1`.
+- Annotated tag `v0.1.4-beta1` peels to that commit. Release run `33031510806` passed five
+  platform builds, checksums, SLSA attestations, and draft creation. The draft remains unpublished
+  with ten assets.
+- The arm64 macOS archive was downloaded back, checksum-verified, attestation-verified against the
+  repository, workflow, tag, and commit, then run natively: `hay 0.1.4` and a search smoke test pass.
+- Browser E2E, DOM overflow checks, axe, video OCR, and artifact metadata passed. The independent
+  final pixel pass remains incomplete because the local image viewer hung; no code, evidence,
+  installer, or security P0/P1 blocker was found.
+- Stable tag `v0.1.4`, the live Pages update, and any GitHub Release publication remain pending
+  their separate explicit confirmations.

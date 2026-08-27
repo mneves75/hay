@@ -108,7 +108,7 @@ would have taken an hour. Ticket 01 was open the entire time the scorer was bein
 signals in `hay` contributed ≤0 and were removed. Removing one *improved* the score.
 
 **Pre-register the ship gate before implementing.** `hay`'s gate (median MRR ≥ 0.50, top-10 ≥ 80%)
-was fixed in `DESIGN-hay.md` before any Rust was written. It currently **fails at 0.387 / 58.2%**,
+was fixed in `DESIGN-hay.md` before any Rust was written. It currently **fails at 0.381 / 59.2%**,
 and it has not been moved, even though the improvement is statistically unambiguous — paired MRR
 +0.132, 95% CI [0.106, 0.158]. Significance is not sufficiency; that is the point of fixing the
 gate first. As of 0.5.0 `--compare` computes the gate itself; every earlier figure for it was
@@ -137,6 +137,17 @@ destination is public. Use `=label` for repo identity and `--redact-names` for i
 `corpus/` is gitignored — it contains real queries and paths.
 
 ## Current state
+
+- **0.1.4 BETA STAGED; PRODUCTION PENDING** (2026-08-26): no ranking or weight change. The release
+  closes installer, archive, private-output, subprocess, benchmark-inference, provenance, site,
+  accessibility, and film-integrity gaps while leaving the failed behavioural gate fixed. `main`
+  CI run `33031310741` passed all seven jobs. Annotated `v0.1.4-beta1` and release run
+  `33031510806` produced five checksummed, attested platform archives in an unpublished draft.
+  The arm64 macOS archive was downloaded back, checksum- and SLSA-attestation-verified, versioned
+  as `hay 0.1.4`, and smoke-tested. Live Pages, stable `v0.1.4`, and GitHub Release publication
+  remain untouched pending their separate confirmations. Final independent review found no P0/P1
+  code, methodology, installer, or security blocker; its pixel pass was incomplete because the
+  local image viewer hung.
 
 - **0.1.3 PRODUCTION TAGGED; GITHUB RELEASE DRAFT** (2026-08-25): ranking and weights stay frozen. The release makes
   candidate-cap truncation exit 2, restores JSON context offsets and zero-width submatches, and
