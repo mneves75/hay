@@ -344,6 +344,79 @@ async function rgLines(root: string, args: string[], purpose: string): Promise<s
   return text.split("\n").filter(Boolean);
 }
 
+/** Recover every fixed-string candidate present in text, including overlapping literals. */
+export function docsTokensInText(
+  text: string,
+  tokensByPrefix: ReadonlyMap<string, readonly string[]>,
+): string[] {
+  const presentPrefixes = new Set<string>();
+  for (let i = 0; i + 3 <= text.length; i++) {
+    const prefix = text.slice(i, i + 3);
+    if (tokensByPrefix.has(prefix)) presentPrefixes.add(prefix);
+  }
+  const hits: string[] = [];
+  for (const prefix of presentPrefixes) {
+    for (const token of tokensByPrefix.get(prefix) ?? []) {
+      if (text.includes(token)) hits.push(token);
+    }
+  }
+  return hits;
+}
+
+/**
+ * Ripgrep first supplies the exact parity-visible union of files containing any candidate. Each
+ * such file is then read once and checked for every candidate locally. This preserves overlapping
+ * literals that ripgrep's multi-pattern JSON submatches collapse (for example, `foo` in
+ * `foobar`) without rescanning the entire corpus once per heading token.
+ */
+async function docsOccurrenceFiles(
+  root: string,
+  corpus: Corpus,
+  tokens: string[],
+): Promise<Map<string, Set<string>>> {
+  const filesByToken = new Map(tokens.map((token) => [token, new Set<string>()]));
+  if (tokens.length === 0) return filesByToken;
+
+  const tokensByPrefix = new Map<string, string[]>();
+  for (const token of tokens) {
+    const prefix = token.slice(0, 3);
+    const group = tokensByPrefix.get(prefix);
+    if (group) group.push(token);
+    else tokensByPrefix.set(prefix, [token]);
+  }
+
+  const scratch = mkdtempSync(join(tmpdir(), "hay-docs-patterns-"));
+  const patterns = join(scratch, "patterns.txt");
+  try {
+    await Bun.write(patterns, tokens.join("\n") + "\n");
+    const matchingFiles = await rgLines(
+      root,
+      [...RG_PARITY, "-F", "-l", "-f", patterns, "."],
+      `${corpus.name} batched docs occurrence search`,
+    );
+    for (const rawPath of matchingFiles) {
+      const file = normalizePath(rawPath);
+      const bytes = new Uint8Array(await Bun.file(join(root, file)).arrayBuffer());
+      let text: string;
+      if (bytes[0] === 0xff && bytes[1] === 0xfe) {
+        text = new TextDecoder("utf-16le").decode(bytes.subarray(2));
+      } else if (bytes[0] === 0xfe && bytes[1] === 0xff) {
+        text = new TextDecoder("utf-16be").decode(bytes.subarray(2));
+      } else {
+        // Match ripgrep's default binary cut-off: bytes after the first NUL do not qualify a
+        // second token merely because another token made the file enter the union.
+        const nul = bytes.indexOf(0);
+        const searchable = nul === -1 ? bytes : bytes.subarray(0, nul);
+        text = Buffer.from(searchable).toString("latin1");
+      }
+      for (const token of docsTokensInText(text, tokensByPrefix)) filesByToken.get(token)!.add(file);
+    }
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
+  return filesByToken;
+}
+
 /**
  * Mechanical public ground truth for documentation retrieval.
  *
@@ -370,17 +443,20 @@ export async function docsGroundTruth(root: string, corpus: Corpus): Promise<Doc
     }
   }
 
+  const uniqueTokens = [...headingFiles.keys()]
+    .filter((token) => headingFiles.get(token)!.size === 1)
+    .sort();
+  const filesByToken = await docsOccurrenceFiles(root, corpus, uniqueTokens);
   const queries: DocsQuery[] = [];
-  for (const token of [...headingFiles.keys()].sort()) {
-    const answers = headingFiles.get(token)!;
-    if (answers.size !== 1) continue;
-    const files = new Set((await rgLines(
-      root,
-      [...RG_PARITY, "-F", "-l", "-e", token, "."],
-      `${corpus.name} docs occurrence search for ${JSON.stringify(token)}`,
-    )).map(normalizePath));
+  for (const token of uniqueTokens) {
+    const files = filesByToken.get(token)!;
     if (files.size < 3) continue;
-    queries.push({ token, answer: [...answers][0]!, occurrences: files.size, features: docFeatures(token) });
+    queries.push({
+      token,
+      answer: [...headingFiles.get(token)!][0]!,
+      occurrences: files.size,
+      features: docFeatures(token),
+    });
   }
   return queries;
 }
@@ -889,22 +965,24 @@ if (import.meta.main) {
     const fixture = mkdtempSync(join(tmpdir(), "hay-docs-track-"));
     try {
       await Bun.write(join(fixture, "answer.md"), [
-        "# UniqueToken --long-flag -short-flag snake_case UPPER_CASE camelCase plainword SharedToken NoiseOnly",
+        "# UniqueToken --long-flag -short-flag snake_case UPPER_CASE camelCase plainword foo foobar SharedToken NoiseOnly",
         "body",
       ].join("\n"));
       await Bun.write(join(fixture, "shared.md"), "## SharedToken\n");
       // Indented up to three spaces is still an ATX heading per CommonMark; ignoring that would
       // both miss answers and wrongly grant uniqueness (review finding).
       await Bun.write(join(fixture, "indent.md"), "  ## IndentedTok\n");
-      const repeated = "UniqueToken --long-flag -short-flag snake_case UPPER_CASE camelCase plainword SharedToken IndentedTok";
+      const repeated = "UniqueToken --long-flag -short-flag snake_case UPPER_CASE camelCase plainword foobar SharedToken IndentedTok";
       await Bun.write(join(fixture, "use-a.ts"), repeated);
       await Bun.write(join(fixture, "use-b.rs"), repeated);
       const derived = await docsGroundTruth(fixture, { name: "fixture", dir: ".", lang: "rust", patterns: [] });
       const byToken = new Map(derived.map((q) => [q.token, q]));
-      for (const token of ["UniqueToken", "--long-flag", "-short-flag", "snake_case", "UPPER_CASE", "camelCase", "plainword"]) {
+      for (const token of ["UniqueToken", "--long-flag", "-short-flag", "snake_case", "UPPER_CASE", "camelCase", "plainword", "foo", "foobar"]) {
         eq(byToken.get(token)?.answer, "answer.md", `${token} has its one heading file as answer`);
         eq(byToken.get(token)?.occurrences, 3, `${token} occurs in three distinct files`);
       }
+      eq(byToken.get("foo")?.occurrences, 3, "overlapping foo is recovered from the foobar lines");
+      eq(byToken.get("foobar")?.occurrences, 3, "overlapping foobar is recovered from the same lines");
       eq(byToken.has("SharedToken"), false, "a token headed in two markdown files is excluded");
       eq(byToken.has("NoiseOnly"), false, "a token present in fewer than three files is excluded");
       eq(byToken.get("IndentedTok")?.answer, "indent.md", "an indented ATX heading still anchors its file");
