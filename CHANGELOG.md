@@ -6,6 +6,15 @@ history lives in git and `memory/`.
 
 ## [Unreleased]
 
+### Measurement kit
+
+- The SWE-Explore ablation guard could be walked past with a dangling symlink: `existsSync`
+  follows links, so an `--out` symlink aimed at the not-yet-created published evidence file failed
+  both existence checks and then compared two different basenames — after which the write followed
+  the link onto the file the guard exists to protect. The final path component is now resolved by
+  hand, dangling links included, with a bounded hop count. Found by the closing review pass; the
+  shipped binary is unaffected.
+
 ## [0.2.0] — 2026-08-27
 
 The first ranking change since 0.1.0, and the first release whose headline is the ranker rather

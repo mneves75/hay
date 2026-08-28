@@ -31,7 +31,7 @@
 
 import {
   chmodSync, createReadStream, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync,
-  readdirSync, realpathSync, renameSync, rmSync, statSync,
+  readdirSync, readlinkSync, realpathSync, renameSync, rmSync, statSync,
   symlinkSync, writeFileSync, type Stats,
 } from "node:fs";
 import { homedir, tmpdir } from "node:os";
@@ -71,7 +71,22 @@ export function namesTheSameFile(a: string, b: string): boolean {
     // fall through to the path comparison
   }
   const canonical = (p: string): string => {
-    const full = resolve(p);
+    // Follow a symlinked final component by hand, DANGLING ONES INCLUDED (review finding).
+    // `existsSync` follows links, so a dangling `--out` symlink pointing at the not-yet-created
+    // published evidence file failed both existence checks above and then compared two different
+    // basenames — the guard allowed the ablation and the write followed the link onto the file it
+    // exists to protect. Bounded, because a symlink cycle is not a reason to hang.
+    let full = resolve(p);
+    for (let hops = 0; hops < 8; hops++) {
+      let link: string;
+      try {
+        if (!lstatSync(full).isSymbolicLink()) break;
+        link = readlinkSync(full);
+      } catch {
+        break;
+      }
+      full = resolve(dirname(full), link);
+    }
     const dir = dirname(full);
     const real = existsSync(dir) ? realpathSync(dir) : dir;
     return join(real, basename(full)).toLowerCase();
@@ -654,6 +669,20 @@ if (import.meta.main) {
     eq(namesTheSameFile(PUBLISHED_EVIDENCE, "evidence/benchmark.json"), false, "different files are different");
     eq(namesTheSameFile("evidence/nonexistent-a.json", "evidence/nonexistent-b.json"), false, "two paths that do not exist yet");
     eq(namesTheSameFile("evidence/nonexistent-a.json", "./evidence/../evidence/nonexistent-a.json"), true, "same not-yet-created file");
+    // A DANGLING symlink aimed at the published path: `existsSync` follows links, so both
+    // existence checks fail and a basename comparison would wave the ablation through — after
+    // which the write follows the link onto the file the guard exists to protect.
+    {
+      const linkDir = mkdtempSync(join(tmpdir(), "hay-outlink-"));
+      const dangling = join(linkDir, "ablation.json");
+      try {
+        symlinkSync(resolve("evidence/does-not-exist-yet.json"), dangling);
+        eq(namesTheSameFile(dangling, "evidence/does-not-exist-yet.json"), true, "a dangling symlink to the target is the same file");
+        eq(namesTheSameFile(dangling, "evidence/benchmark.json"), false, "a dangling symlink elsewhere is not");
+      } finally {
+        rmSync(linkDir, { recursive: true, force: true });
+      }
+    }
 
     console.log("selftest ok");
     process.exit(0);
