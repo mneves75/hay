@@ -167,12 +167,15 @@ fn the_unranked_modes_answer_instead_of_refusing() {
         .assert()
         .success()
         .stdout(predicate::str::contains("import x from 'y'"));
-    hay()
+    // `normalize` first: Windows prints `src\auth.ts`, and asserting on the raw bytes made this
+    // the only red leg of the matrix.
+    let streamed = hay()
         .args(["--stream", "-F", "validateSession", "."])
         .current_dir(d.path())
         .assert()
-        .success()
-        .stdout(predicate::str::contains("src/auth.ts"));
+        .success();
+    let streamed = normalize(&String::from_utf8(streamed.get_output().stdout.clone()).unwrap());
+    assert!(streamed.contains("src/auth.ts"), "streamed: {streamed}");
 
     // Still exit 1 for "found nothing", never 2.
     hay()
