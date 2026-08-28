@@ -166,6 +166,19 @@ destination is public. Use `=label` for repo identity and `--redact-names` for i
 
 ## Current state
 
+- **v0.2.0 RELEASED** (2026-08-28): `v0.2.0-beta1` (staging prerelease) then `v0.2.0`, both built
+  by `release.yml` at commit `14ed268`, five platform archives each with sha256 and SLSA
+  attestations; the arm64 macOS archive was downloaded back, checksum- and attestation-verified
+  against the expected workflow/ref/commit, and smoke-tested including `--no-diversify`. CI green
+  on all seven jobs. GitHub Release published (this cycle the owner asked for the prod deploy
+  explicitly, unlike 0.1.3/0.1.4 which stayed drafts). gh-pages redeployed and live-verified: 200
+  on all four pages, `v0.2.0` chip, new corpus bars, and the failed gate now stated on the landing
+  page itself.
+- **The public corpora need a case-sensitive filesystem** (2026-08-28): `~/haycorpora.sparsebundle`
+  (case-sensitive APFS, mounted at `/Volumes/haycorpora`) holds linux/openclaw/ripgrep/alamofire;
+  run the benchmark with `--corpora /Volumes/haycorpora`. The kernel cannot be checked out on
+  macOS's default filesystem — `xt_MARK.h` beside `xt_mark.h` — and the old dirty clone under
+  `~/.cache/hay/corpora/linux` was deleted so nothing silently measures it again.
 - **0.2.0 — first ranking change since going public** (2026-08-27): file interleaving + a graded
   `word` signal; a filename signal built, ablated and deleted. One confirmation run on the frozen
   binary: paired MRR 0.258 → **0.458** (+0.1995 [0.1754, 0.2243]), top-10 44.9% → **77.1%**
