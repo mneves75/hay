@@ -195,10 +195,10 @@ release workflow built, whose checksums entered the formula only after their bui
 attestations verified:</p>
 <div class="codewrap"><pre tabindex="0"><code>brew install mneves75/tap/hay</code></pre><button class="copy" type="button">copy</button></div>
 <p>Or build from source — one line, or inspect first (Rust edition 2024, MSRV 1.88):</p>
-<div class="codewrap"><pre tabindex="0"><code>curl -fsSL https://raw.githubusercontent.com/mneves75/hay/v0.2.0/install.sh | HAY_REF=v0.2.0 bash
+<div class="codewrap"><pre tabindex="0"><code>curl -fsSL https://raw.githubusercontent.com/mneves75/hay/v0.3.0/install.sh | HAY_REF=v0.3.0 bash
 
 # inspect-first form:
-git clone --depth 1 --branch v0.2.0 https://github.com/mneves75/hay.git &amp;&amp; cd hay &amp;&amp; HAY_REF=v0.2.0 ./install.sh</code></pre><button class="copy" type="button">copy</button></div>
+git clone --depth 1 --branch v0.3.0 https://github.com/mneves75/hay.git &amp;&amp; cd hay &amp;&amp; HAY_REF=v0.3.0 ./install.sh</code></pre><button class="copy" type="button">copy</button></div>
 <p>The script gates on the toolchain version, clones, builds release, installs via
 <code>cargo install</code>, and smoke-tests the installed binary. Set
 <code>CARGO_INSTALL_ROOT</code> to choose its destination; the script passes that root to Cargo
@@ -272,6 +272,24 @@ first page of ten files is worth more than ten lines of one module — measured 
 corpus, this alone lifted the answer-in-top-10 rate from 59.2% to 78.0% without changing a single
 score. The sequence of distinct files is unchanged, so <code>-l</code> output is identical.</p>
 <div class="codewrap"><pre tabindex="0"><code>hay --no-diversify config .   # strict score order instead</code></pre><button class="copy" type="button">copy</button></div>
+<h3 id="unranked">Modes that do not rank</h3>
+<p><code>-c</code>, <code>--count-matches</code>, <code>-v</code>, <code>-o</code> and
+<code>--stream</code> have nothing to order. They run ripgrep's way — its parallel traversal, its
+output, its per-file <code>-m</code>, and <strong>no candidate cap</strong>, so a pattern matching
+more than 20,000 lines is answered exhaustively rather than exiting 2. Until 0.3.0 the first four
+exited 2 telling you to go and use <code>rg</code>; a search tool you can only reach for once you
+already know the question ranks is a decision you have to make before you can use it.</p>
+<div class="codewrap"><pre tabindex="0"><code>hay --stream config .      # everything rg would print, streaming, no cap
+hay -c config .            # matching lines per file
+hay -o config .            # just the matched substrings
+hay -v config .            # the lines that did not match</code></pre><button class="copy" type="button">copy</button></div>
+<div class="callout warn">
+<p><strong>These are the only modes whose order is not deterministic</strong>, because the order is
+ripgrep's. A sorted walk was measured at 8.0 s to the first line of a Linux-kernel search against
+ripgrep's 1.1 s; the parallel walk brings that to 2.3 s. Every mode that ranks is deterministic.
+<code>--explain</code> is refused here — there is no ranking to explain.</p>
+</div>
+
 <h3>Turning signals off</h3>
 <p>Each signal has an ablation switch, because a contribution you cannot switch off is a belief,
 not a measurement:</p>
@@ -280,6 +298,10 @@ hay --no-path        validateSession .
 hay --no-word        validateSession .
 hay --no-tf          validateSession .
 hay --no-diversify   validateSession .</code></pre><button class="copy" type="button">copy</button></div>
+<p>Four <em>other</em> signals were built, measured and deleted: exact-case matching, a comment
+penalty, binary whole-word matching, a filename match, and (in 0.3.0) a markdown-heading signal
+that reversed hay's documentation deficit and still did not ship, because the benchmark that liked
+it defines its ground truth as the thing the signal detects.</p>
 <p>This is also how several published claims here were proven: the definition signal’s value on C
 was established by turning it off and watching the kernel score collapse to ripgrep’s.</p>
 </section>
@@ -548,9 +570,9 @@ grep -q "ranked the .* strongest" err.log &amp;&amp; echo "truncated — switch 
 <div class="codewrap"><pre tabindex="0"><code>brew install mneves75/tap/hay   # macOS and Linux
 
 # or from source:
-curl -fsSL https://raw.githubusercontent.com/mneves75/hay/v0.2.0/install.sh | HAY_REF=v0.2.0 bash   # inspect first!
+curl -fsSL https://raw.githubusercontent.com/mneves75/hay/v0.3.0/install.sh | HAY_REF=v0.3.0 bash   # inspect first!
 # inspect-first form:
-git clone --depth 1 --branch v0.2.0 https://github.com/mneves75/hay.git &amp;&amp; cd hay &amp;&amp; HAY_REF=v0.2.0 ./install.sh</code></pre><button class="copy" type="button">copy</button></div>
+git clone --depth 1 --branch v0.3.0 https://github.com/mneves75/hay.git &amp;&amp; cd hay &amp;&amp; HAY_REF=v0.3.0 ./install.sh</code></pre><button class="copy" type="button">copy</button></div>
 </section>
 
 <!-- ─────────────────────────────── faq ─────────────────────────────── -->

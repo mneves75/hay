@@ -3,9 +3,10 @@
 **A ranked grep for coding agents, built from a negative result.** `hay` uses ripgrep's search
 engine and reorders the complete result set from an equivalently configured ripgrep search:
 likely declarations first, stale prose and buried files later, and one line per file before any
-file's second line. Broad searches that hit the bounded candidate cap exit 2 instead of claiming
-completeness. It is stateless, deterministic, and still fails its pre-registered ship gate — by
-1.5 points on one of its two criteria as of 0.2.0, against 20 points at 0.1.4. See the
+file's second line. Ranked searches that hit the bounded candidate cap exit 2 instead of claiming
+completeness; `--stream` skips ranking and has no cap, so every valid ripgrep invocation has an
+answer here. It is stateless, deterministic where it ranks, and still fails its pre-registered
+ship gate — by 1.5 points on one of its two criteria, against 20 points at 0.1.4. See the
 [manual](https://mneves75.github.io/hay/MANUAL.html) for the command surface and
 [HOWTO.md](HOWTO.md) for setup.
 
@@ -135,25 +136,48 @@ brew install mneves75/tap/hay
 hay classify_path            # same flags, same path:line:text output, different order
 ```
 
-### It is not a better grep. It is a different order, and that is better for one job
+### One tool, and the row that is honestly still someone else's
 
-Use whichever row you are actually in. Every number is from the committed evidence in this
-repository, and the timings are one machine, one corpus (the Linux kernel, warm cache):
+The 2026 consensus on code search for agents is that there is no single grep replacement — there
+are [three modalities](https://zzet.org/gortex/grep-replacement-for-ai-agents/): lexical
+(ripgrep, BM25), structural (ast-grep, tree-sitter), and graph (LSP, code property graphs). That
+argument is right, and the honest response is not to dispute it but to ask which rows of the table
+below were the tool's own fault. Three were, and they are closed. One is not.
+
+The base layer is settled in lexical's favour for this workload: the CoREB benchmark reports that
+short keyword queries — the shape agents actually emit — collapse nearly every semantic model
+tested to near-zero nDCG@10.
+
+Every number below is from committed evidence in this repository. The timings are one machine, one
+corpus (the Linux kernel, warm cache):
 
 | what you are doing | use | why, measured |
 |---|---|---|
 | "where is this defined?" | **hay** | median rank of the declaring file is **1** on all four public corpora; ripgrep's is 1 to 5 |
 | an agent's first search, then opening a file | **hay** | answer inside the first ten results **44.9% → 77.1%** on 951 real agent searches |
-| searching documentation and prose | **`rg --sort path`** | hay is detectably **worse** on 3 of 5 doc corpora (−0.07 to −0.19 MRR). A definition ranker is the wrong tool here |
-| counting, inverting, or extracting matches (`-c`, `-v`, `-o`) | **`rg`** | hay refuses those flags on purpose — there is nothing to rank — and names the ripgrep equivalent when it does |
-| the first hit as fast as possible (`… \| head`) | **`rg`** | ~1.6 s to first line on the kernel against hay's ~2.5 s: a ranker must see every candidate before it can order any of them |
+| counting, inverting, extracting (`-c`, `-v`, `-o`) | **hay** | they used to exit 2 saying "use `rg`". They run unranked now, byte-identical to ripgrep, held there by 31 differential cases |
+| the first hit as fast as possible (`… \| head`) | **hay `--stream`** | ~2.3 s against ripgrep's ~1.6 s on a 95k-file tree — no longer a reason to leave, still not a win |
+| a very broad pattern, exhaustively | **hay `--stream`** | streaming has no candidate cap, so nothing is dropped and nothing exits 2 |
 | the complete result set, in a stable order | **hay** | ~2.5 s against `rg --sort path`'s ~8.6 s for the identical match set |
-| exhaustive output on a very broad pattern | **`rg`** | above 20,000 candidates hay ranks the strongest, says so on stderr, and **exits 2** rather than implying completeness |
-| structural queries — "every call with three arguments" | **`ast-grep`** | that needs a parser. hay is four lexical priors and a layout rule, and says so |
+| searching documentation and prose | **`rg --sort path`** | hay is detectably **worse** on 3 of 5 doc corpora (−0.07 to −0.19 MRR). A signal that fixes this was built, measured and deleted — see below |
+| structural queries — "every call with three arguments" | **`ast-grep`** | that needs a parser. hay is four lexical priors and a layout rule, and always will be |
 
-The short version: `hay` is ripgrep's matches in a different order. That is worth a lot when you
-are asking *where something lives*, worth nothing when you are counting, and actively worse when
-you are reading prose.
+So: `hay` is now the only tool you need to **find things by name**, which is most of what an agent
+does. It is not the only tool you need, and the last two rows say who else you want and why. The
+project has no plan to grow a parser or an index — `DESIGN-hay.md` ruled both out on day one,
+because funded products already occupy that ground.
+
+**The prose row has a fix that did not ship, and that is the interesting part.** A markdown heading
+declares the section about a term as `function foo` declares `foo`. Implemented, it reversed the
+documentation deficit outright — −0.010/−0.072/−0.087/−0.194/−0.054 became
++0.190/+0.109/+0.302/+0.151/+0.454 — and cost the code track exactly +0.0000, because it is gated
+on prose file extensions and cannot fire on source. It was deleted anyway: the documentation
+track's ground truth **is** "this token appears in exactly one markdown file's headings", so a
+heading detector wins there by construction rather than by working. That circularity was written
+down before the numbers were taken ([issue 13](docs/method/issues/13-heading-signal.md)), and
+SWE-Explore — the one public agent-shaped set nobody here designed — did not support it. The
+payloads, a patch that rebuilds the measured binary, and a note on what those payloads cannot show
+are in [`evidence/ablations/`](evidence/ablations/).
 
 Measured against the same corpus, **paired at the query level** — 951 queries across 12
 repositories where both retrievers return something (0.2.0, both retrievers rerun together):

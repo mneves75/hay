@@ -35,6 +35,8 @@ cargo test --manifest-path hay/Cargo.toml          # unit + tests/cli.rs contrac
 cargo clippy --manifest-path hay/Cargo.toml --all-targets -- -D warnings
 cargo fmt --manifest-path hay/Cargo.toml --check
 ./hay/differential-test.sh                          # exact match set under normalized traversal
+                                                    # 31 cases; 7 are flag COMBINATIONS, where
+                                                    # every unranked-mode defect actually lived
 bun measure-mrr.ts --selftest                       # each TS tool has a selftest
 bun measure-mrr.ts --min-queries 60 --compare       # paired A/B with bootstrap intervals
 ./benchmark-corpora.sh                              # clone missing corpora, run, render, clean up
@@ -113,6 +115,15 @@ This repository exists because a number was published as though validated and wa
   confirm on the behavioural one; never tune the numbers you publish on the set you tuned against.
   A held-out corpus from *another developer's* transcripts is still missing and would be better
   than either.
+- **A benchmark cannot judge a signal that detects its own ground-truth rule.** The docs track
+  defines relevance as "the token is in exactly one file's headings", so a heading signal is an
+  oracle for the generator, not a retrieval result — it reversed the whole documentation deficit
+  and still did not ship (issue 13). Write the circularity down BEFORE measuring; after the
+  numbers arrive it reads as an excuse either way you decide.
+- **A new metric that correlates 0.9 with an old one is a translation, not evidence.** Report the
+  correlation beside it or do not add it.
+- **Every gate reports its own exit code, on its own line.** Twice a red test passed unnoticed
+  inside a `&&` chain whose next command was a grep that succeeded.
 - **Measure which thing to build, do not guess.** The largest gap in the CLI was combined short
   flags (`-in`), 3,562 real occurrences; `--smart-case`, the obvious thing to add on instinct, was
   not in the top 28. The same applies to ranking signals: when a rule regressed Rust, counting what

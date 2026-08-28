@@ -6,6 +6,94 @@ history lives in git and `memory/`.
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-08-28
+
+**`hay` now answers every valid ripgrep invocation.** Four of the eight rows in the README's
+decision table used to send the reader to another tool; three were self-inflicted and are closed
+here. The ranking model is unchanged — same four signals, same weights, same failed gate.
+
+### Ranking modes that do not rank
+
+- `-c`, `--count-matches`, `-v` and `-o` used to exit 2 saying "use `rg`". They run now, unranked,
+  in ripgrep's own parallel traversal, and `differential-test.sh` holds them to ripgrep's exact
+  output. The `declined()` refusal mechanism is deleted rather than left empty.
+- `--stream` — pre-registered in `DESIGN-hay.md` before any Rust existed and never built — skips
+  ranking entirely. Matches leave as they are found, so there is **no candidate cap**: a pattern
+  matching more than 20,000 lines is answered exhaustively instead of exiting 2.
+- These are the only modes whose order is not deterministic, and that is the point. A sorted walk
+  was tried first and measured at 8.0 s to the first line of a Linux-kernel search against
+  ripgrep's 1.1 s; ripgrep's parallel traversal brings that to 2.3 s, with a complete search at
+  2.50 s against ripgrep's 2.57 s. Six times slower is not a drop-in. Every ranked mode is still
+  deterministic and `--help` says which is which.
+- `-m` takes ripgrep's per-file meaning in the unranked modes and keeps hay's total-results
+  meaning on the ranked page. It has no default there: stopping at 50 would return fewer matches
+  than `rg`, which is the one thing this tool promises never to do.
+
+### Measurement
+
+- **R-precision over distinct files**, reported beside MRR and nDCG: of the first R files shown,
+  where R is the number the agent opened, how many were ones it opened. rg 0.176 → hay 0.301.
+  It is a translation of the existing result into the units coding-agent retrieval work argues
+  about, **not independent evidence** — it correlates r=0.905 with reciprocal rank and r=0.845
+  with nDCG@10, and that near-collinearity is printed beside it.
+- `benchmark.ts --ablate` turns a signal off on either public track, refusing to write either
+  committed evidence path and recording the flags in the payload.
+
+### A signal built, measured, and deleted
+
+A markdown-heading signal (`## Foo` declares the section about `Foo`) aimed at the only row where
+`hay` is measurably worse than ripgrep. On the documentation track it reversed the deficit
+outright: −0.010/−0.072/−0.087/−0.194/−0.054 became +0.190/+0.109/+0.302/+0.151/+0.454. Its
+contribution to the code track was +0.0000, and being gated on prose extensions it cannot hurt
+code ranking.
+
+It does not ship. The docs track's ground truth *is* "this token appears in exactly one markdown
+file's headings", so a heading detector is an oracle for the benchmark's construction rule rather
+than a retrieval improvement — a circularity written down before the numbers were taken
+(`docs/method/issues/13-heading-signal.md`). SWE-Explore, the one public agent-shaped set nobody
+here designed, did not support it. Payloads, a README stating what they cannot show, and a patch
+that rebuilds the measured binary are in `evidence/ablations/`.
+
+### Fixed
+
+Nine wrong answers in the new unranked modes, found by an independent review and each verified
+against ripgrep before being fixed. Seven were silent:
+
+- `-o -v` printed **nothing** and exited 0 — the searcher delivers non-matching lines under `-v`,
+  so slicing match spans from them found none. `--count-matches -v` reported 0 for every file for
+  the same reason.
+- `-o` charged the `-m` budget per matched substring where ripgrep's `-m` caps matching lines;
+  `-c` and `--count-matches` ignored `-m` entirely; `-c -o` counted lines where ripgrep counts
+  matches; `-o` discarded `-A/-B/-C` context ripgrep prints; the `--` separator between file
+  blocks vanished when the walk went parallel; `--json -o` reported the substring as the `lines`
+  field, where ripgrep's JSON is line-oriented and identical with or without `-o`.
+- The differential test grows from 24 to 31 cases, and the seven new ones are all COMBINATIONS,
+  because every one of these lived in a pair of flags the single-flag cases could not reach.
+
+### Security
+
+- `brew-formula.sh` took the formula checksum with `awk '{print $1}'` over every line of a
+  `.sha256` asset, so an appended line became text interpolated into the generated Ruby. Now the
+  first field of the first line, validated as 64 hex characters.
+- Its attestation check was scoped to the repository, which any workflow holding id-token
+  permission satisfies. Now scoped to `release.yml` at the exact tag.
+- Its tag validation was the glob `v[0-9]*`, admitting `v1.0.0"; system("id"); #` into Ruby. Now
+  an exact `vN.N.N` match, with the injection shapes asserted in its selftest.
+- `-l --json` and `-c --json` wrote raw paths: **a filename containing a newline forged a record**
+  in a stream a consumer parses. Paths are JSON strings under `--json` now — a breaking change to
+  that output — with a regression test that creates such a file.
+- One file's output was buffered whole, ~38× ripgrep's peak RSS on a large named file. Bounded at
+  1 MiB per flush.
+
+### Corrected claims
+
+- The R-precision rationale cited **a withdrawn preprint** (arXiv 2606.14066) for a statistic that
+  is not in its abstract, taken from a search summary nobody opened. Removed, and recorded in
+  place — inside the file whose purpose is measuring this exact failure.
+- The printed "wasted early reads" percentage published an absolute level the same file calls
+  meaningless; `rPrecTruncated` was computed and discarded while its comment claimed invariant-7
+  compliance. Both fixed.
+
 ### Install
 
 - **Homebrew is now the supported install path**: `brew install mneves75/tap/hay`, prebuilt for

@@ -19,6 +19,35 @@ useful than what was attempted:
 
 ## Decisions, and why
 
+**A benchmark cannot judge a signal that detects its ground-truth rule** (2026-08-28). The docs
+track's ground truth is "the token appears in exactly one markdown file's headings"; a heading
+signal is an oracle for that rule, so its enormous win there (+0.19 to +0.45 across five corpora)
+measures agreement with the generator, not retrieval. Deleted, with the circularity written down
+*before* the numbers were taken — the difference from the v0.2.0 filename deletion, which was
+decided after seeing them. The reason matters more than the verdict: the SWE-Explore difference
+(−0.0054, n=96) is not distinguishable from zero, so leaning on it would have been its own
+overclaim. See `docs/method/issues/13-heading-signal.md`.
+
+**A new metric that correlates 0.9 with an old one is a translation, not evidence** (2026-08-28).
+R-precision was added because the field measures context precision, not rank. On this corpus it
+correlates r=0.905 with reciprocal rank and r=0.845 with nDCG@10. It stays — the field's units are
+worth speaking — but the correlation is printed beside it, because a fourth number that moves with
+the other three reads as fourfold confirmation to anyone who does not check.
+
+**Every gate must report its own exit code** (2026-08-28). Twice in two sessions a red test passed
+unnoticed inside a `&&` chain whose next command was a grep that succeeded. Run each gate on its
+own line with `echo "name=$?"`. A gate whose failure you cannot see is not a gate.
+
+**Refusing a valid invocation is a decision you push onto the caller** (2026-08-28). `-c`, `-v` and
+`-o` exited 2 saying "use rg", on the correct grounds that they leave nothing to rank. That made
+`hay` a tool you could only reach for once you already knew the question ranks. They run unranked
+now; the shape of a drop-in is answering everything, and ranking the part where rank means
+something.
+
+**A citation nobody opened** (2026-08-28). The motivation for R-precision cited a preprint that is
+WITHDRAWN, for a statistic that is not in its abstract — taken from a search summary. Caught by
+review, inside the file whose purpose is measuring exactly this class of failure. Open the source.
+
 **The unit of an answer is a file, and the metric counted lines** (2026-08-27). Judgments here are
 per file — an agent opens files — while MRR counts result lines, so a module with forty matching
 lines pushed the declaring file to line-rank forty-one. Round-robining the ranked list by file
@@ -165,6 +194,16 @@ destination is public. Use `=label` for repo identity and `--redact-names` for i
 `corpus/` is gitignored — it contains real queries and paths.
 
 ## Current state
+
+- **v0.3.0 — every valid ripgrep invocation now has an answer** (2026-08-28). `-c`,
+  `--count-matches`, `-v`, `-o` stop refusing and run unranked; `--stream` (pre-registered in
+  DESIGN, never built) skips ranking with **no candidate cap**. Ranking model untouched — same
+  four signals, same weights, same failed gate (0.4437 / 0.7849). Adds R-precision as the field's
+  "wasted reads" axis (rg 0.176 → hay 0.301) while publishing that it is r=0.905 with reciprocal
+  rank and therefore not independent evidence. A markdown-heading signal was built, reversed the
+  documentation deficit outright, and was deleted for circularity ([[13-heading-signal]]).
+  A three-way review workflow found 20 real defects in the first two commits, including a `-o -v`
+  that printed nothing and exited 0.
 
 - **v0.2.0 RELEASED** (2026-08-28): `v0.2.0-beta1` (staging prerelease) then `v0.2.0`, both built
   by `release.yml` at commit `14ed268`, five platform archives each with sha256 and SLSA

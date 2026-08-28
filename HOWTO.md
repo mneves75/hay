@@ -165,6 +165,10 @@ hay --no-ignore config        # ignore .gitignore
 hay -m 100 config             # show 100 results (default 50; 0 = no limit)
 hay --no-path config          # turn off one ranking signal, to see what it was doing
 hay --no-diversify config     # strict score order, without interleaving files
+hay --stream config           # skip ranking: stream in path order like rg, with no cap
+hay -c config                 # count matching lines per file (unranked)
+hay -v config                 # the lines that did NOT match (unranked)
+hay -o config                 # just the matched substrings (unranked)
 ```
 
 ### Where it differs from ripgrep
@@ -391,6 +395,18 @@ aggregates-only and safe to commit — that is why `evidence/` contains that one
 
 `--ablate` turns off a single ranking signal so you can see what it was contributing. Valid values:
 `no-definition`, `no-path`, `no-word`, `no-tf`, `no-diversify`.
+
+### Modes that do not rank
+
+`-c`, `--count-matches`, `-v`, `-o` and `--stream` have nothing to order, so they behave exactly
+as the corresponding ripgrep invocation does: ripgrep's parallel traversal, ripgrep's output,
+ripgrep's per-file `-m`, and no candidate cap. `differential-test.sh` holds them there with 31
+cases, seven of which are flag COMBINATIONS — every defect these modes shipped with lived in a
+pair of flags that single-flag cases could not reach.
+
+They are the only modes whose output order is not deterministic, because that order is ripgrep's.
+Sorting the walk instead was measured at 8.0 s to the first line of a kernel search against
+ripgrep's 1.1 s, and a drop-in six times slower than the tool it replaces is not one.
 
 **Public-corpus comparison**: `./benchmark-corpora.sh` clones whatever corpora `benchmark.ts`
 wants and is missing into `${XDG_CACHE_HOME:-$HOME/.cache}/hay/corpora` (`BENCH_CORPORA`
