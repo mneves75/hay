@@ -133,12 +133,13 @@ jobs:
       - run: bun benchmark-report.ts --selftest
       - run: bun explainer-html.ts --selftest
       - run: bash install.sh --selftest
+      - run: bash brew-formula.sh --selftest
       - name: Generated reports are current
         run: |
           bun benchmark-report.ts
           bun explainer-html.ts --in BENCHMARK_FEYNMAN.md --out BENCHMARK_FEYNMAN.html
           git diff --exit-code -- BENCHMARK.md benchmark.html BENCHMARK_FEYNMAN.html
-      - run: shellcheck benchmark-corpora.sh hay/differential-test.sh install.sh
+      - run: shellcheck benchmark-corpora.sh hay/differential-test.sh install.sh brew-formula.sh
 
   site:
     name: benchmark film source

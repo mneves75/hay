@@ -69,12 +69,19 @@ a line scored.
    corpus, so the corpus is not the reason. Failing a gate you wrote down is the point of writing
    it down first; the temptation to stratify it around the queries that fail arrives *after* you
    have seen which ones fail, which is why the answer is no.
-4. **`corpus/` is never committed.** It holds real queries and paths from private repositories.
+4. **A release is not finished until the Homebrew formula is bumped.** The tap
+   (`mneves75/homebrew-tap`) is the supported install path, so a published tag whose formula still
+   points at the previous version is a release nobody can install. Run
+   `./brew-formula.sh vX.Y.Z > ../homebrew-tap/Formula/hay.rb` — it takes the checksums from the
+   release's own manifest and refuses to emit one for an archive whose build-provenance
+   attestation does not verify, so the formula can never describe a binary nobody can trace.
+   Never hand-edit the urls or hashes.
+5. **`corpus/` is never committed.** It holds real queries and paths from private repositories.
    Publish only aggregates, with `path=label` and `--redact-names`.
-5. **Never weaken an error into silence.** Exit 1 means "searched fine, found nothing"; exit 2
+6. **Never weaken an error into silence.** Exit 1 means "searched fine, found nothing"; exit 2
    means the answer is incomplete. Every serious defect in this repo's history was a quiet wrong
    answer, never a crash.
-6. **Both retrievers see the same files, in every harness.** Every filtering flag given to `rg`
+7. **Both retrievers see the same files, in every harness.** Every filtering flag given to `rg`
    must have an exact counterpart in `hay`'s invocation or inside `hay` itself, and vice versa.
    Violated in *both* measurement harnesses at once: `measure-mrr.ts` gave `rg` `--hidden` and not
    `hay` (four versions), and `benchmark.ts` let `rg` honour the global gitignore and `.ignore`

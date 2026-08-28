@@ -10,10 +10,17 @@ completeness. It is stateless, deterministic, and still fails its pre-registered
 [HOWTO.md](HOWTO.md) for setup.
 
 ```bash
+brew install mneves75/tap/hay          # macOS and Linux, prebuilt and attested
+```
+
+<details><summary>from source instead</summary>
+
+```bash
 git clone https://github.com/mneves75/hay.git
 cd hay
 cargo install --locked --path hay
 ```
+</details>
 
 > **Version-history note:** the research record numbered internal development cycles 0.1.0–0.7.0
 > before public tags restarted at v0.1.0. Those unprefixed labels in method and lesson documents
@@ -124,9 +131,29 @@ Every flag, output format, traversal difference, and exit code is documented in 
 search.
 
 ```bash
-cargo install --locked --path hay
+brew install mneves75/tap/hay
 hay classify_path            # same flags, same path:line:text output, different order
 ```
+
+### It is not a better grep. It is a different order, and that is better for one job
+
+Use whichever row you are actually in. Every number is from the committed evidence in this
+repository, and the timings are one machine, one corpus (the Linux kernel, warm cache):
+
+| what you are doing | use | why, measured |
+|---|---|---|
+| "where is this defined?" | **hay** | median rank of the declaring file is **1** on all four public corpora; ripgrep's is 1 to 5 |
+| an agent's first search, then opening a file | **hay** | answer inside the first ten results **44.9% → 77.1%** on 951 real agent searches |
+| searching documentation and prose | **`rg --sort path`** | hay is detectably **worse** on 3 of 5 doc corpora (−0.07 to −0.19 MRR). A definition ranker is the wrong tool here |
+| counting, inverting, or extracting matches (`-c`, `-v`, `-o`) | **`rg`** | hay refuses those flags on purpose — there is nothing to rank — and names the ripgrep equivalent when it does |
+| the first hit as fast as possible (`… \| head`) | **`rg`** | ~1.6 s to first line on the kernel against hay's ~2.5 s: a ranker must see every candidate before it can order any of them |
+| the complete result set, in a stable order | **hay** | ~2.5 s against `rg --sort path`'s ~8.6 s for the identical match set |
+| exhaustive output on a very broad pattern | **`rg`** | above 20,000 candidates hay ranks the strongest, says so on stderr, and **exits 2** rather than implying completeness |
+| structural queries — "every call with three arguments" | **`ast-grep`** | that needs a parser. hay is four lexical priors and a layout rule, and says so |
+
+The short version: `hay` is ripgrep's matches in a different order. That is worth a lot when you
+are asking *where something lives*, worth nothing when you are counting, and actively worse when
+you are reading prose.
 
 Measured against the same corpus, **paired at the query level** — 951 queries across 12
 repositories where both retrievers return something (0.2.0, both retrievers rerun together):

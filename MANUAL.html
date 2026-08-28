@@ -190,7 +190,11 @@ headings, flag names, and body text.</p>
 <!-- ─────────────────────────────── start ─────────────────────────────── -->
 <section id="start">
 <h2>Start here</h2>
-<p>Install from source — one line, or inspect first (Rust edition 2024, MSRV 1.88):</p>
+<p>Homebrew is the supported install path on macOS and Linux. It installs the exact archives the
+release workflow built, whose checksums entered the formula only after their build-provenance
+attestations verified:</p>
+<div class="codewrap"><pre tabindex="0"><code>brew install mneves75/tap/hay</code></pre><button class="copy" type="button">copy</button></div>
+<p>Or build from source — one line, or inspect first (Rust edition 2024, MSRV 1.88):</p>
 <div class="codewrap"><pre tabindex="0"><code>curl -fsSL https://raw.githubusercontent.com/mneves75/hay/v0.2.0/install.sh | HAY_REF=v0.2.0 bash
 
 # inspect-first form:
@@ -541,7 +545,10 @@ hay --json -F "$symbol" "$root" \
 <div class="codewrap"><pre tabindex="0"><code>hay -m 0 -F "$symbol" "$root" 2&gt;err.log || true
 grep -q "ranked the .* strongest" err.log &amp;&amp; echo "truncated — switch to rg for exhaustiveness"</code></pre><button class="copy" type="button">copy</button></div>
 <h3>Install on an agent's machine</h3>
-<div class="codewrap"><pre tabindex="0"><code>curl -fsSL https://raw.githubusercontent.com/mneves75/hay/v0.2.0/install.sh | HAY_REF=v0.2.0 bash   # inspect first!
+<div class="codewrap"><pre tabindex="0"><code>brew install mneves75/tap/hay   # macOS and Linux
+
+# or from source:
+curl -fsSL https://raw.githubusercontent.com/mneves75/hay/v0.2.0/install.sh | HAY_REF=v0.2.0 bash   # inspect first!
 # inspect-first form:
 git clone --depth 1 --branch v0.2.0 https://github.com/mneves75/hay.git &amp;&amp; cd hay &amp;&amp; HAY_REF=v0.2.0 ./install.sh</code></pre><button class="copy" type="button">copy</button></div>
 </section>

@@ -6,6 +6,17 @@ history lives in git and `memory/`.
 
 ## [Unreleased]
 
+### Install
+
+- **Homebrew is now the supported install path**: `brew install mneves75/tap/hay`, prebuilt for
+  macOS and Linux on both architectures. `brew-formula.sh` renders the formula from the release's
+  own checksums and refuses to emit one for an archive whose build-provenance attestation does not
+  verify, so the tap can only ever describe binaries whose build is traceable to a tag. Bumping
+  the formula is now an invariant of releasing, recorded in `AGENTS.md`.
+- The README gained a decision table for when *not* to use `hay` — prose search, counting,
+  inverting, streaming to `head`, and structural queries all belong to other tools, with the
+  measured numbers for each.
+
 ### Measurement kit
 
 - The SWE-Explore ablation guard could be walked past with a dangling symlink: `existsSync`
