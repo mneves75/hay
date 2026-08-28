@@ -133,6 +133,37 @@ export function retrieverArgv(retriever: Retriever, query: string): string[] {
  * and deflates nDCG for both. The design is paired, so the DIFFERENCE is unaffected; only the
  * absolute level is pessimistic.
  */
+/**
+ * R-precision over distinct files: of the first R files a retriever shows, where R is the number
+ * of files the agent actually opened, how many were ones it opened?
+ *
+ * Why this exists beside MRR and nDCG. MRR asks how far you read before the FIRST useful file;
+ * this asks how much of what you read was useless — the quantity the field argues about.
+ * ContextBench (arXiv 2602.05892) formalises context precision for coding agents and finds a
+ * large gap between context explored and context used. FastContext (arXiv 2606.14066) puts the
+ * stake in tokens: reading and searching are 56% of an agent's tool calls and 46% of its tokens.
+ * `MEMORY.md` has listed "MRR is a proxy; the field measures tokens and tool calls per resolved
+ * task" as an open blocker since the beginning, and this is the part of that gap the existing
+ * corpus can close without a new measurement.
+ *
+ * **The absolute level here is NOT comparable to the wasted-read figures quoted around
+ * ContextBench**, and reporting it as if it were would be this project's founding mistake with a
+ * new number. Their gold context is human-annotated relevance; ours is the specific files one
+ * agent opened after one search, so a file that was genuinely useful but opened after a different
+ * search counts as wasted. The level is pessimistic by construction. The DIFFERENCE between two
+ * retrievers measured the same way is the part that means something.
+ *
+ * R-precision rather than precision@10 (Buckley & Voorhees): with a mean of 2.27 answer files,
+ * precision@10 is capped at 0.23 for a PERFECT retriever, so the absolute number would be
+ * unreadable and only the difference would mean anything. At R the ideal is 1.0.
+ */
+export function rPrecision(filesInOrder: string[], answers: Set<string>): number {
+  if (answers.size === 0) return 0;
+  const r = answers.size;
+  const head = filesInOrder.slice(0, r);
+  return head.filter((f) => answers.has(f)).length / r;
+}
+
 export function ndcgAt(filesInOrder: string[], answers: Set<string>, k: number): number {
   let dcg = 0;
   filesInOrder.slice(0, k).forEach((f, i) => {
@@ -197,6 +228,18 @@ export class ResultScan {
   get ndcg(): number {
     return ndcgAt(this.files, this.answers, this.k);
   }
+
+  get rPrecision(): number {
+    return rPrecision(this.files, this.answers);
+  }
+
+  /**
+   * True when the answer set is larger than the page of distinct files collected, so R-precision
+   * is measured over fewer files than R. Counted rather than absorbed, per invariant 7.
+   */
+  get rPrecisionTruncated(): boolean {
+    return this.answers.size > this.files.length && this.files.length >= this.k;
+  }
 }
 
 export async function rankOfAnswer(
@@ -204,7 +247,7 @@ export async function rankOfAnswer(
   query: string,
   answers: Set<string>,
   retriever: Retriever = RETRIEVER,
-): Promise<{ rank: number | null; scanned: number; ndcg: number; pageComplete: boolean; files: string[]; truncated: boolean }> {
+): Promise<{ rank: number | null; scanned: number; ndcg: number; rPrec: number; rPrecTruncated: boolean; pageComplete: boolean; files: string[]; truncated: boolean }> {
   // hay's stderr carries the candidate-cap warning — "N matches; ranked the 20000
   // strongest-by-prescore candidates" (format pinned by a contract test in hay/tests/cli.rs). On
   // a query that hits the cap, hay ranked only the strongest-prescore candidates and the answer
@@ -236,7 +279,11 @@ export async function rankOfAnswer(
   const diagnostic = await errText;
   assertCompleteExit(code, stoppedEarly, retriever, diagnostic);
   const truncated = /ranked the \d+ strongest/.test(diagnostic);
-  return { rank: scan.rank, scanned: scan.scanned, ndcg: scan.ndcg, pageComplete: scan.pageComplete, files: scan.files, truncated };
+  return {
+    rank: scan.rank, scanned: scan.scanned, ndcg: scan.ndcg,
+    rPrec: scan.rPrecision, rPrecTruncated: scan.rPrecisionTruncated,
+    pageComplete: scan.pageComplete, files: scan.files, truncated,
+  };
 }
 
 /** A deliberate early stop is part of rank measurement; a natural incomplete exit is not. */
@@ -375,6 +422,8 @@ export type Pair = {
   rrRg: number; rrHay: number;
   top10Rg: number; top10Hay: number;
   ndcgRg: number; ndcgHay: number;
+  /** R-precision over distinct files: 1 − this is the share of early reads that were wasted. */
+  rPrecRg: number; rPrecHay: number;
   /** False when either retriever's first page could not be filled inside the line budget. */
   pageComplete: boolean;
   // Diagnostics for `--dump-pairs`, optional so aggregate-only consumers and the selftest's
@@ -588,6 +637,7 @@ export async function pairRepo(repo: string, entries: CorpusEntry[], label?: str
       rrRg: rr(a.rank), rrHay: rr(b.rank),
       top10Rg: top10(a.rank), top10Hay: top10(b.rank),
       ndcgRg: a.ndcg, ndcgHay: b.ndcg,
+      rPrecRg: a.rPrec, rPrecHay: b.rPrec,
       pageComplete: a.pageComplete && b.pageComplete,
       rankRg: a.rank, rankHay: b.rank,
       filesRg: a.files, filesHay: b.files,
@@ -653,7 +703,8 @@ if (import.meta.main) {
     if (none.p < 0.5) throw new Error(`null effect should not be significant, p=${none.p}`);
     // Clustering must be preserved: two repos, one per group.
     const mk = (repo: string, label: string, query: string, rrHay: number, rrRg = 0) =>
-      ({ repo, label, query, rrRg, rrHay, top10Rg: 0, top10Hay: 1, ndcgRg: 0, ndcgHay: rrHay, pageComplete: true });
+      ({ repo, label, query, rrRg, rrHay, top10Rg: 0, top10Hay: 1, ndcgRg: 0, ndcgHay: rrHay,
+         rPrecRg: 0, rPrecHay: rrHay, pageComplete: true });
     const clusters = byCluster(
       [mk("/x/a", "a", "q", 1), mk("/x/a", "a", "r", 1), mk("/x/b", "b", "s", 1)],
       (p) => p.rrHay - p.rrRg,
@@ -688,6 +739,21 @@ if (import.meta.main) {
     const many = new Set(["a", "b", "c", "d"]);
     close(ndcgAt(["a", "b"], many, 2), 1, 1e-12, "IDCG is capped at the cutoff");
     close(ndcgAt(["a", "b", "c"], new Set<string>(), 10), 0, 1e-12, "no judgments, no score");
+
+    // R-precision, against values computed by hand. The metric the field argues on is worth as
+    // much checking as the ones this project already had wrong once.
+    {
+      const two = new Set(["a", "b"]);
+      close(rPrecision(["a", "b", "c"], two), 1, 1e-12, "both answers in the first two");
+      close(rPrecision(["a", "z", "b"], two), 0.5, 1e-12, "one of the first two is wasted");
+      close(rPrecision(["z", "y", "a", "b"], two), 0, 1e-12, "both early reads wasted");
+      close(rPrecision(["a"], new Set(["a"])), 1, 1e-12, "single answer, found first");
+      close(rPrecision([], two), 0, 1e-12, "nothing retrieved");
+      close(rPrecision(["a", "b"], new Set<string>()), 0, 1e-12, "no judgments, no score");
+      // R is the ANSWER count, not the page size: a retriever is not penalised for the seven
+      // files it showed after the two that were wanted.
+      close(rPrecision(["a", "b", "c", "d", "e"], two), 1, 1e-12, "R is the answer count");
+    }
 
     // The scan's two stopping conditions. Review caught these sharing one cap: a query whose first
     // file carries a thousand matching lines ended the scan holding ONE file, so an answer at
@@ -875,6 +941,7 @@ if (import.meta.main) {
     const dRR = (p: Pair) => p.rrHay - p.rrRg;
     const dTop = (p: Pair) => p.top10Hay - p.top10Rg;
     const dNdcg = (p: Pair) => p.ndcgHay - p.ndcgRg;
+    const dRPrec = (p: Pair) => p.rPrecHay - p.rPrecRg;
     // Every effect gets the same treatment: a bootstrap interval both by query and clustered by
     // repository, plus the randomization test at both levels. Reporting one number per effect is
     // how a favourable analysis choice hides.
@@ -897,6 +964,11 @@ if (import.meta.main) {
       deltaMrr: effect(dRR),
       deltaTop10: effect(dTop),
       deltaNdcg10: effect(dNdcg),
+      // The field's axis: how much of what an agent opens is useful. 1 − R-precision is the
+      // wasted-read rate that ContextBench-style evaluations report.
+      rPrecRg: mean(pairs.map((p) => p.rPrecRg)),
+      rPrecHay: mean(pairs.map((p) => p.rPrecHay)),
+      deltaRPrecision: effect(dRPrec),
       // Descriptive only. Smucker et al. show the sign test detects poorly; it is not the test.
       better: pairs.filter((p) => dRR(p) > 0).length,
       worse: pairs.filter((p) => dRR(p) < 0).length,
@@ -925,6 +997,11 @@ if (import.meta.main) {
     show("dMRR", report.deltaMrr);
     show("dTop10", report.deltaTop10);
     show("dNDCG10", report.deltaNdcg10);
+    console.error(
+      `  R-precision  rg ${report.rPrecRg.toFixed(4)}  ->  hay ${report.rPrecHay.toFixed(4)}` +
+      `   (wasted early reads ${((1 - report.rPrecRg) * 100).toFixed(1)}% -> ${((1 - report.rPrecHay) * 100).toFixed(1)}%)`,
+    );
+    show("dRPrecision", report.deltaRPrecision);
     console.error(`  better ${report.better} / worse ${report.worse} / tied ${report.tied}`);
     console.error(`  nDCG first page truncated on ${report.ndcgTruncated} of ${report.queries} queries`);
     console.error(`  hay candidate cap hit on ${report.hayTruncatedQueries} of ${report.queries} queries`);

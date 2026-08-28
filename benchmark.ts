@@ -25,7 +25,7 @@
 
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 
 import { assertCompleteExit, bootstrapCI, mean, median, mulberry32, randomizationP, type Interval } from "./measure-mrr.ts";
 
@@ -186,13 +186,29 @@ export function astLang(lang: string): string {
  */
 export const RG_PARITY = ["--no-config", "--no-ignore-dot", "--no-ignore-global", "--no-ignore-exclude"];
 
+/**
+ * Extra hay flags for an ablation run of either track.
+ *
+ * DESIGN-hay.md requires every signal to be measured with and without, and this is the third
+ * harness to need it (after `measure-mrr.ts` and `swe-explore.ts`). Empty in every published run;
+ * a run that sets it refuses to write the committed evidence path and records the flags in the
+ * payload, so an ablation cannot be mistaken for the headline number.
+ */
+let HAY_ABLATE: string[] = [];
+export function setHayAblation(flags: string[]): void {
+  HAY_ABLATE = flags;
+}
+export function hayAblation(): string[] {
+  return [...HAY_ABLATE];
+}
+
 export const TOOLS: Tool[] = [
   {
     id: "hay",
     label: "hay (this project)",
     bin: "hay",
     prefer: [new URL("./hay/target/release/hay", import.meta.url).pathname],
-    args: (q) => ["-F", "-n", "-m", "0", "-e", q, "."],
+    args: (q) => ["-F", "-n", "-m", "0", ...HAY_ABLATE, "-e", q, "."],
     parse: plain,
     scope: "gitignore-aware",
     ranked: true,
@@ -1032,7 +1048,19 @@ if (import.meta.main) {
   if (corpusName && selectedCorpora.length === 0)
     throw new Error(`unknown corpus ${JSON.stringify(corpusName)}; choose ${CORPORA.map((c) => c.name).join(", ")}`);
   const docsTrack = argv.includes("--docs-track");
-  const out = flag("--out", docsTrack ? "evidence/docs-track.json" : "evidence/benchmark.json")!;
+  const ablate = flag("--ablate", "")!.split(",").filter(Boolean);
+  const publishedEvidence = docsTrack ? "evidence/docs-track.json" : "evidence/benchmark.json";
+  const out = flag("--out", publishedEvidence)!;
+  if (ablate.length > 0) {
+    setHayAblation(ablate.map((f) => `--${f}`));
+    // Resolved, not string-compared: `./evidence/benchmark.json` is the same file, and a check
+    // that only rejects one spelling of a path is not a check.
+    if (resolve(out) === resolve(publishedEvidence)) {
+      console.error("--ablate needs its own --out: an ablation is not the published run");
+      process.exit(2);
+    }
+    console.error(`ablation run: hay ${hayAblation().join(" ")}`);
+  }
 
   if (docsTrack) {
     const payload = await runDocsTrack(selectedCorpora, corporaDir, sampleSize, seed, out);
