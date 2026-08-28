@@ -88,11 +88,12 @@ footer a{color:inherit}
 <div class="wrap">
 
 <header class="hero">
-  <p class="eyebrow">grep-hygiene · hay · v0.1.4</p>
+  <p class="eyebrow">grep-hygiene · hay · v0.2.0</p>
   <h1>A ranked grep for coding agents.</h1>
   <p class="lede"><code>hay</code> returns <strong>exactly ripgrep's matches</strong> — never more,
-  never fewer — reordered so the line that declares what you asked about comes first. Because an
-  agent reads the first page and acts on it.</p>
+  never fewer — reordered so the line that declares what you asked about comes first, and so the
+  first page is ten files rather than ten lines of one file. Because an agent reads the first page
+  and opens something.</p>
   <div>
     <a class="cta primary" href="#numbers">See the benchmark</a>
     <a class="cta" href="MANUAL.html">Read the manual</a>
@@ -123,7 +124,9 @@ footer a{color:inherit}
     <div class="card"><span class="tag">the honesty</span><h3>The win says how weak it is.</h3>
       <p>The public benchmark's ground truth <em>is</em> declarations — hay's home turf. So the
       report leads with its own warning, shows intervals, cross-checks with Fisher randomization,
-      and points at the behavioural evaluation nobody designed around the tool.</p></div>
+      and points at the behavioural evaluation nobody designed around the tool. That evaluation
+      still <strong>fails the ship gate written before the first line of Rust</strong>: 0.44 median
+      MRR against 0.50, 78.5% against 80%. The gate has not been moved.</p></div>
   </div>
 </section>
 
@@ -146,20 +149,20 @@ footer a{color:inherit}
   <p class="kicker">the numbers, animated</p>
   <h2>MRR by corpus — scroll to grow.</h2>
   <p class="sub">Mean reciprocal rank of the declaring file against deterministic <code>rg --sort path</code>.
-  This definition-finding track is hay&rsquo;s home turf; the separate docs track has no detected wins and two regressions.
+  This definition-finding track is hay&rsquo;s home turf; the separate docs track has no detected wins and three regressions.
   Full intervals, exclusions, and tests are in the <a href="benchmark.html">complete report</a>.</p>
   <div class="chart" id="chart">
     <div class="crow"><div class="cname">linux kernel</div><div class="cbars">
-      <div class="bar rg" style="--v:.541"></div><div class="bar hay" style="--v:.907"><span class="bval">MRR 0.907</span></div>
+      <div class="bar rg" style="--v:.541"></div><div class="bar hay" style="--v:.933"><span class="bval">MRR 0.933</span></div>
     </div></div>
     <div class="crow"><div class="cname">openclaw</div><div class="cbars">
-      <div class="bar rg" style="--v:.819"></div><div class="bar hay" style="--v:.911"><span class="bval">MRR 0.911</span></div>
+      <div class="bar rg" style="--v:.819"></div><div class="bar hay" style="--v:.928"><span class="bval">MRR 0.928</span></div>
     </div></div>
     <div class="crow"><div class="cname">ripgrep source</div><div class="cbars">
-      <div class="bar rg" style="--v:.419"></div><div class="bar hay" style="--v:.800"><span class="bval">MRR 0.800</span></div>
+      <div class="bar rg" style="--v:.419"></div><div class="bar hay" style="--v:.877"><span class="bval">MRR 0.877</span></div>
     </div></div>
     <div class="crow"><div class="cname">alamofire (swift)</div><div class="cbars">
-      <div class="bar rg" style="--v:.433"></div><div class="bar hay" style="--v:.691"><span class="bval">MRR 0.691</span></div>
+      <div class="bar rg" style="--v:.433"></div><div class="bar hay" style="--v:.776"><span class="bval">MRR 0.776</span></div>
     </div></div>
     <div class="legend">muted = deterministic rg --sort path · gold = hay · n = 30/30/23/29 sampled queries · ground truth: ast-grep</div>
   </div>
@@ -173,8 +176,10 @@ footer a{color:inherit}
       <p><code>path:line:text</code>, globs, file types, context windows, JSON Lines — combined short
       flags included, via lexopt.</p></div>
     <div class="card"><span class="tag">the product</span><h3>Definition-first ranking</h3>
-      <p>Three signals with ablation switches (<code>--no-definition</code>, <code>--no-path</code>,
-      <code>--no-tf</code>): a contribution you cannot switch off is a belief, not a measurement.</p></div>
+      <p>Four signals and a file-interleaved layout, each with an ablation switch
+      (<code>--no-definition</code>, <code>--no-path</code>, <code>--no-word</code>,
+      <code>--no-tf</code>, <code>--no-diversify</code>): a contribution you cannot switch off is a
+      belief, not a measurement. Four more were built, measured and deleted.</p></div>
     <div class="card"><span class="tag">for agents</span><h3>Loud by design</h3>
       <p>Candidate cap hit? stderr notice plus exit 2. Flag refused? The reason, out loud, with the
       ripgrep equivalent named. Quiet wrong answers are the defect this tool exists to prevent.</p></div>

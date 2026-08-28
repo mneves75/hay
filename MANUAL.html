@@ -191,10 +191,10 @@ headings, flag names, and body text.</p>
 <section id="start">
 <h2>Start here</h2>
 <p>Install from source — one line, or inspect first (Rust edition 2024, MSRV 1.88):</p>
-<div class="codewrap"><pre tabindex="0"><code>curl -fsSL https://raw.githubusercontent.com/mneves75/hay/v0.1.4/install.sh | HAY_REF=v0.1.4 bash
+<div class="codewrap"><pre tabindex="0"><code>curl -fsSL https://raw.githubusercontent.com/mneves75/hay/v0.2.0/install.sh | HAY_REF=v0.2.0 bash
 
 # inspect-first form:
-git clone --depth 1 --branch v0.1.4 https://github.com/mneves75/hay.git &amp;&amp; cd hay &amp;&amp; HAY_REF=v0.1.4 ./install.sh</code></pre><button class="copy" type="button">copy</button></div>
+git clone --depth 1 --branch v0.2.0 https://github.com/mneves75/hay.git &amp;&amp; cd hay &amp;&amp; HAY_REF=v0.2.0 ./install.sh</code></pre><button class="copy" type="button">copy</button></div>
 <p>The script gates on the toolchain version, clones, builds release, installs via
 <code>cargo install</code>, and smoke-tests the installed binary. Set
 <code>CARGO_INSTALL_ROOT</code> to choose its destination; the script passes that root to Cargo
@@ -234,7 +234,7 @@ It assumes no information-retrieval background.</p>
 <!-- ─────────────────────────────── ranking ────────────────────────────── -->
 <section id="ranking">
 <h2>How results are ranked</h2>
-<p>Every matching line gets a score from three signals. The defaults:</p>
+<p>Every matching line gets a score from four signals. The defaults:</p>
 <table>
 <thead><tr><th scope="col">signal</th><th scope="col">weight</th><th scope="col">what it rewards</th></tr></thead>
 <tbody>
@@ -249,18 +249,33 @@ typed-declaration shapes like <code>static int foo(</code>), or key-style shapes
 …) score up; tests, fixtures/prose/data, and buried trees (<code>/vendor/</code>, <code>/dist/</code>,
 <code>/archive/</code>, <code>/node_modules/</code>, …) score down. A vendored test is buried first:
 buried wins over everything.</td></tr>
+<tr><th scope="row"><code>word</code></th><td>+0.5 … +1.0</td>
+<td>How exactly the match sits inside the line’s identifiers: <code>+1.0</code> for a whole
+identifier (<code>auth</code>), <code>+0.5</code> when the query starts one
+(<code>authenticate</code>), nothing when it is buried inside a longer name
+(<code>oauthToken</code>). Pre-registered in the design document and finally measured in 0.2.0:
++0.010 to +0.022 MRR across the public corpora.</td></tr>
 <tr><th scope="row"><code>tf</code></th><td>0.5 max</td>
 <td>Gentle term frequency within the line — a line naming the symbol twice outranks a drive-by
 mention, deliberately damped so repetition cannot buy a win.</td></tr>
 </tbody>
 </table>
 <p>Tie-breaks fall back to file path, so output is deterministic for a given tree.</p>
+<h3 id="diversify">Results are interleaved by file</h3>
+<p>After scoring, <code>hay</code> round-robins the ranked list by file: the first pass carries each
+file’s strongest line, the second its next-strongest, and so on. An agent opens <em>files</em>, so a
+first page of ten files is worth more than ten lines of one module — measured on the behavioural
+corpus, this alone lifted the answer-in-top-10 rate from 59.2% to 78.0% without changing a single
+score. The sequence of distinct files is unchanged, so <code>-l</code> output is identical.</p>
+<div class="codewrap"><pre tabindex="0"><code>hay --no-diversify config .   # strict score order instead</code></pre><button class="copy" type="button">copy</button></div>
 <h3>Turning signals off</h3>
 <p>Each signal has an ablation switch, because a contribution you cannot switch off is a belief,
 not a measurement:</p>
 <div class="codewrap"><pre tabindex="0"><code>hay --no-definition validateSession .
 hay --no-path        validateSession .
-hay --no-tf          validateSession .</code></pre><button class="copy" type="button">copy</button></div>
+hay --no-word        validateSession .
+hay --no-tf          validateSession .
+hay --no-diversify   validateSession .</code></pre><button class="copy" type="button">copy</button></div>
 <p>This is also how several published claims here were proven: the definition signal’s value on C
 was established by turning it off and watching the kernel score collapse to ripgrep’s.</p>
 </section>
@@ -360,13 +375,14 @@ cleanly (recipe below).</li>
 <h2><code>--explain</code>: reading a score</h2>
 <p>Each result is prefixed with its total score and the per-signal breakdown:</p>
 <div class="codewrap"><pre tabindex="0"><code>$ hay --explain -F validateSession src/ | head -1
-6.00 [def +6.0 path +1.0 tf +1.00]  src/auth.ts:2:export function validateSession(t: string) {</code></pre><button class="copy" type="button">copy</button></div>
+   9.00 [def +6.0 path +1.0 word +1.0 tf +1.00]  src/auth.ts:2:export function validateSession(t: string) {</code></pre><button class="copy" type="button">copy</button></div>
 <table>
 <thead><tr><th scope="col">field</th><th scope="col">meaning</th></tr></thead>
 <tbody>
 <tr><th scope="row">total</th><td>Sum of the weighted signals. Higher ranks first; equal totals tie-break by path.</td></tr>
 <tr><th scope="row"><code>def</code></th><td>Definition signal: <code>+6.0</code> when the line declares the query, <code>+0.0</code> otherwise.</td></tr>
 <tr><th scope="row"><code>path</code></th><td>Path-class prior for the file’s directory class (source up, tests down, buried furthest down).</td></tr>
+<tr><th scope="row"><code>word</code></th><td>Match exactness: <code>+1.0</code> whole identifier, <code>+0.5</code> prefix of one, <code>+0.0</code> buried inside a longer name.</td></tr>
 <tr><th scope="row"><code>tf</code></th><td>Damped term frequency within the line.</td></tr>
 </tbody>
 </table>
@@ -525,9 +541,9 @@ hay --json -F "$symbol" "$root" \
 <div class="codewrap"><pre tabindex="0"><code>hay -m 0 -F "$symbol" "$root" 2&gt;err.log || true
 grep -q "ranked the .* strongest" err.log &amp;&amp; echo "truncated — switch to rg for exhaustiveness"</code></pre><button class="copy" type="button">copy</button></div>
 <h3>Install on an agent's machine</h3>
-<div class="codewrap"><pre tabindex="0"><code>curl -fsSL https://raw.githubusercontent.com/mneves75/hay/v0.1.4/install.sh | HAY_REF=v0.1.4 bash   # inspect first!
+<div class="codewrap"><pre tabindex="0"><code>curl -fsSL https://raw.githubusercontent.com/mneves75/hay/v0.2.0/install.sh | HAY_REF=v0.2.0 bash   # inspect first!
 # inspect-first form:
-git clone --depth 1 --branch v0.1.4 https://github.com/mneves75/hay.git &amp;&amp; cd hay &amp;&amp; HAY_REF=v0.1.4 ./install.sh</code></pre><button class="copy" type="button">copy</button></div>
+git clone --depth 1 --branch v0.2.0 https://github.com/mneves75/hay.git &amp;&amp; cd hay &amp;&amp; HAY_REF=v0.2.0 ./install.sh</code></pre><button class="copy" type="button">copy</button></div>
 </section>
 
 <!-- ─────────────────────────────── faq ─────────────────────────────── -->
