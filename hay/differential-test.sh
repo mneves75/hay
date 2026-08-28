@@ -55,6 +55,21 @@ for repo in "${REPOS[@]}"; do
   compare_case "$repo" only-matching -o -i -F -e config
   compare_case "$repo" count -c -i -F -e config
   compare_case "$repo" count-matches --count-matches -i -F -e config
+  # COMBINATIONS. Every one of these was wrong when the modes shipped, and each was wrong in a
+  # way the single-flag cases above could not see: `-o -v` printed nothing at all (the searcher
+  # inverts, so there is no span to slice), `--count-matches -v` reported 0 for every file, `-o`
+  # dropped context ripgrep prints, `-o -m` charged the budget per substring instead of per line,
+  # `-c -o` counted lines where ripgrep counts matches, and `-c -m` ignored the cap.
+  compare_case "$repo" invert-only-matching -v -o -i -F -e config
+  compare_case "$repo" invert-count -v -c -i -F -e config
+  compare_case "$repo" invert-count-matches -v --count-matches -i -F -e config
+  compare_case "$repo" count-with-only-matching -c -o -i -F -e config
+  compare_case "$repo" only-matching-context -o -C1 -i -F -e config
+  compare_case "$repo" only-matching-max -o -m 3 -i -F -e config
+  compare_case "$repo" count-max -c -m 3 -i -F -e config
+  # Sorted comparison still counts the `--` separators, so a missing or extra one between files
+  # shows up as a multiset difference even though the parallel walk has no fixed order.
+  compare_case "$repo" invert-context -v -C1 -i -F -e config
 
   compare_case "$repo" regex-definitions -e '(fn|function|class)[[:space:]]+[A-Za-z_]'
   compare_case "$repo" whole-word -i -w -F -e config

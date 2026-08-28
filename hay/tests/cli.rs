@@ -287,10 +287,12 @@ fn json_preserves_zero_width_submatches() {
 }
 
 #[test]
-fn files_with_matches_prints_plain_paths_even_under_json() {
-    // `--json`'s documented contract is match/context messages only, so there is no JSON form
-    // of `-l` output — a lone `begin` record per file was neither that contract nor rg-shaped.
-    // `-l` wins and prints exactly what plain `-l` prints.
+fn files_with_matches_prints_one_path_per_line_quoted_under_json() {
+    // `--json`'s documented contract is match/context messages only, so there is no JSON form of
+    // `-l` output — a lone `begin` record per file was neither that contract nor rg-shaped. `-l`
+    // still wins and prints one path per line, but under `--json` the path is a JSON STRING:
+    // review found that a filename containing a newline splits one line into two and forges a
+    // record in a stream a consumer parses. Quoting keeps every path on one parseable line.
     let d = fixture("files-json");
     let out = hay()
         .args(["-l", "--json", "-F", "validateSession", "."])
@@ -300,9 +302,45 @@ fn files_with_matches_prints_plain_paths_even_under_json() {
     let stdout = String::from_utf8(out.get_output().stdout.clone()).unwrap();
     let paths: Vec<String> = stdout
         .lines()
-        .map(|l| normalize(l).trim_start_matches("./").into())
+        .map(|l| {
+            let unquoted: String = serde_json::from_str(l).expect("each line is a JSON string");
+            normalize(&unquoted).trim_start_matches("./").into()
+        })
         .collect();
     assert_eq!(paths, ["src/auth.ts", "docs/archive/plan-v3.md"]);
+
+    // Without `--json` it is the bare path, unchanged.
+    let plain = hay()
+        .args(["-l", "-F", "validateSession", "."])
+        .current_dir(d.path())
+        .assert()
+        .success();
+    let stdout = normalize(&String::from_utf8(plain.get_output().stdout.clone()).unwrap());
+    assert_eq!(stdout.lines().next().unwrap(), "./src/auth.ts");
+}
+
+#[test]
+fn a_newline_in_a_filename_cannot_forge_a_json_record() {
+    // The defect this quoting exists for, reproduced: a file whose NAME contains a newline used
+    // to end one `-l --json` line early and start a second that a consumer would read as another
+    // path. Now the whole name is one JSON string on one line.
+    let d = tempfile::Builder::new().prefix("forge").tempdir().unwrap();
+    let evil = "we\nplan-v3.md";
+    if fs::write(d.path().join(evil), "validateSession\n").is_err() {
+        return; // a filesystem that rejects newlines in names has nothing to forge
+    }
+    let out = hay()
+        .args(["-l", "--json", "-F", "validateSession", "."])
+        .current_dir(d.path())
+        .assert()
+        .success();
+    let stdout = String::from_utf8(out.get_output().stdout.clone()).unwrap();
+    assert_eq!(stdout.lines().count(), 1, "one path, one line: {stdout:?}");
+    let decoded: String = serde_json::from_str(stdout.lines().next().unwrap()).unwrap();
+    assert!(
+        decoded.contains('\n'),
+        "the newline survives inside the string"
+    );
 }
 
 #[test]

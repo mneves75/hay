@@ -1,0 +1,142 @@
+diff --git a/hay/src/score.rs b/hay/src/score.rs
+index 123b87b..7861caa 100644
+--- a/hay/src/score.rs
++++ b/hay/src/score.rs
+@@ -364,6 +364,26 @@ pub fn word_affinity(line: &str, query: &str) -> f64 {
+     best
+ }
+ 
++/// Does this line *head a section about* the query?
++///
++/// A markdown heading declares the section about a term exactly as `function foo` declares `foo`.
++/// ATX headings only (`## Foo`): setext headings underline the previous line, which a per-line
++/// signal cannot see. The `#` test runs first because it rejects almost every line in a code file
++/// for the price of one byte comparison, before the path is lowercased.
++pub fn looks_like_heading(path: &str, line: &str, query: &str) -> bool {
++    let t = line.trim_start();
++    let hashes = t.bytes().take_while(|b| *b == b'#').count();
++    if hashes == 0 || hashes > 6 || !t[hashes..].starts_with(' ') {
++        return false;
++    }
++    if !is_prose(&path.to_ascii_lowercase()) {
++        return false;
++    }
++    // A WHOLE word of the heading, not a prefix of one: at four times the word signal's weight a
++    // wrong firing outranks the real declaration's own file.
++    word_affinity(&t[hashes..], query) >= 1.0
++}
++
+ /// Weights. Named constants rather than magic numbers so ablation can zero them individually.
+ /// Only signals that measurably improve MRR are here. `exact_case` (matching the query's own
+ /// casing) and `comment_penalty` (down-ranking comment lines) were implemented, ablated against
+@@ -393,6 +413,7 @@ pub struct Weights {
+     pub definition: f64,
+     pub path: f64,
+     pub word: f64,
++    pub heading: f64,
+     pub term_frequency: f64,
+ }
+ 
+@@ -402,6 +423,7 @@ impl Default for Weights {
+             definition: 6.0,
+             path: 1.0,
+             word: 1.0,
++            heading: 4.0,
+             term_frequency: 0.5,
+         }
+     }
+@@ -423,6 +445,7 @@ pub struct ScoreBreakdown {
+     pub definition: f64,
+     pub path: f64,
+     pub word: f64,
++    pub heading: f64,
+     pub tf: f64,
+     pub total: f64,
+ }
+@@ -437,6 +460,11 @@ pub fn explain_line(inp: &LineInput, w: &Weights) -> ScoreBreakdown {
+     };
+     let path = w.path * path_weight(classify_path(inp.path));
+     let word = w.word * word_affinity(inp.line, inp.query);
++    let heading = if looks_like_heading(inp.path, inp.line, inp.query) {
++        w.heading
++    } else {
++        0.0
++    };
+     // Saturating AND capped. Uncapped, ln(1+n) on a half-million-match query reaches ~6.5 and can
+     // outweigh the definition signal (6.0) — which would also make bounded retention by prescore
+     // unsound, since a dropped candidate could out-score a kept one purely on frequency.
+@@ -446,8 +474,9 @@ pub fn explain_line(inp: &LineInput, w: &Weights) -> ScoreBreakdown {
+         definition,
+         path,
+         word,
++        heading,
+         tf,
+-        total: definition + path + word + tf,
++        total: definition + path + word + heading + tf,
+     }
+ }
+ 
+@@ -765,7 +794,7 @@ mod tests {
+             file_matches: 7,
+         };
+         let b = explain_line(&inp, &w);
+-        assert!((b.definition + b.path + b.word + b.tf - b.total).abs() < 1e-12);
++        assert!((b.definition + b.path + b.word + b.heading + b.tf - b.total).abs() < 1e-12);
+         assert!((b.total - score_line(&inp, &w)).abs() < 1e-12);
+         assert!(b.definition > 0.0 && b.path > 0.0 && b.tf > 0.0 && b.word > 0.0);
+     }
+diff --git a/hay/src/main.rs b/hay/src/main.rs
+index 10b50b7..7bd6a2f 100644
+--- a/hay/src/main.rs
++++ b/hay/src/main.rs
+@@ -244,6 +244,7 @@ fn parse_args(argv: Vec<String>) -> Result<Opts, String> {
+             Long("no-definition") => o.weights.definition = 0.0,
+             Long("no-path") => o.weights.path = 0.0,
+             Long("no-word") => o.weights.word = 0.0,
++            Long("no-heading") => o.weights.heading = 0.0,
+             Long("no-tf") => o.weights.term_frequency = 0.0,
+             Long("no-diversify") => o.diversify = false,
+             Long("stream") => o.stream = true,
+@@ -1003,6 +1004,7 @@ const NO_SCORE: ScoreBreakdown = ScoreBreakdown {
+     definition: 0.0,
+     path: 0.0,
+     word: 0.0,
++    heading: 0.0,
+     tf: 0.0,
+     total: 0.0,
+ };
+@@ -1397,8 +1399,8 @@ fn emit_match(
+         // where it is. Format is pinned by a contract test in tests/cli.rs.
+         writeln!(
+             w,
+-            "{:>7.2} [def {:+.1} path {:+.1} word {:+.1} tf {:+.2}]  {}:{}:{}",
+-            s.total, s.definition, s.path, s.word, s.tf, h.path, h.line_no, h.text
++            "{:>7.2} [def {:+.1} path {:+.1} word {:+.1} head {:+.1} tf {:+.2}]  {}:{}:{}",
++            s.total, s.definition, s.path, s.word, s.heading, s.tf, h.path, h.line_no, h.text
+         )
+     } else if o.line_numbers {
+         writeln!(w, "{}:{}:{}", h.path, h.line_no, h.text)
+@@ -1676,6 +1678,7 @@ mod tests {
+                         definition: 0.0,
+                         path: 0.0,
+                         word: 0.0,
++                        heading: 0.0,
+                         tf: 0.0,
+                         total,
+                     },
+@@ -1720,6 +1723,7 @@ mod tests {
+             definition: 0.0,
+             path: 0.0,
+             word: 0.0,
++            heading: 0.0,
+             tf: 0.0,
+             total: 1.0,
+         };
+@@ -1769,6 +1773,7 @@ mod tests {
+             definition: 0.0,
+             path: 0.0,
+             word: 0.0,
++            heading: 0.0,
+             tf: 0.0,
+             total: 1.0,
+         };

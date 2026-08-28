@@ -122,9 +122,25 @@ checksum_of_verified_asset() {
   gh release download "$tag" -R "$REPO_SLUG" -p "$asset" -p "$asset.sha256" \
     -D "$workdir" --clobber >&2
   ( cd "$workdir" && shasum -a 256 -c "$asset.sha256" >&2 )
-  gh attestation verify "$workdir/$asset" -R "$REPO_SLUG" >/dev/null 2>&1 ||
+  # Scoped to the workflow AND the tag, not just the repository (review finding): an attestation
+  # proving only "something in this repo built it" would be satisfied by any other workflow with
+  # id-token permission, including one added by an attacker with write access.
+  gh attestation verify "$workdir/$asset" -R "$REPO_SLUG" \
+    --signer-workflow "${REPO_SLUG}/.github/workflows/release.yml" \
+    --source-ref "refs/tags/${tag}" >/dev/null 2>&1 ||
     { echo "brew-formula: provenance attestation failed for $asset" >&2; exit 2; }
-  awk '{ print $1 }' "$workdir/$asset.sha256"
+  # ONE checksum, from the first line, and only if it is one. `awk '{print $1}'` over the whole
+  # file printed a field per line, so an extra line in a `.sha256` asset became extra text
+  # substituted straight into the generated Ruby — arbitrary code in the formula the tap installs
+  # (review finding). The hash is validated before it can be interpolated anywhere.
+  local sum
+  sum="$(awk 'NR == 1 { print $1 }' "$workdir/$asset.sha256")"
+  case "$sum" in
+    [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]*)
+      [ "${#sum}" -eq 64 ] || { echo "brew-formula: $asset checksum is not 64 hex chars" >&2; exit 2; } ;;
+    *) echo "brew-formula: $asset checksum is not hexadecimal" >&2; exit 2 ;;
+  esac
+  printf '%s\n' "$sum"
 }
 
 selftest() {
@@ -144,6 +160,19 @@ selftest() {
     *"hay-v9.9.9-${LINUX_INTEL_TARGET}.tar.gz"*) ;;
     *) echo "selftest: linux intel url missing" >&2; exit 1 ;;
   esac
+  # A tag that is not exactly vN.N.N must be refused before it reaches the formula, because it is
+  # interpolated into Ruby. These are the shapes an injection would take.
+  local bad
+  # shellcheck disable=SC2016  # these are hostile literals, not expressions to expand
+  for bad in 'v1.0.0"; system("id"); #' 'v1.0.0 #{`id`}' 'main' 'v1' 'v1.0' '../v1.0.0'; do
+    if printf '%s' "$bad" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+      echo "selftest: tag validation admits '$bad'" >&2
+      exit 1
+    fi
+  done
+  printf '%s' 'v10.20.30' | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$' ||
+    { echo "selftest: tag validation rejects a real tag" >&2; exit 1; }
+
   # Four distinct checksums, each landing under its own url: a rendering bug that reused one hash
   # for every platform would install the wrong binary and still pass every other check here.
   local hashes
@@ -188,10 +217,14 @@ main() {
   if [ -z "$tag" ]; then
     tag="$(gh release view -R "$REPO_SLUG" --json tagName -q .tagName)"
   fi
-  case "$tag" in
-    v[0-9]*) ;;
-    *) echo "brew-formula: expected a published tag like v0.2.0, got '${tag}'" >&2; exit 2 ;;
-  esac
+  # Exact shape, not a glob. `v[0-9]*` admits `v1"; system("…")` and every other character that
+  # goes on to be interpolated verbatim into Ruby (review finding); the tag reaches the formula's
+  # urls and its `#{version}` assertion, so anything but digits and dots is a code-injection
+  # vector into the file the tap installs.
+  if ! printf '%s' "$tag" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+    echo "brew-formula: expected a published release tag like v0.2.0, got '${tag}'" >&2
+    exit 2
+  fi
   # A prerelease must never become the formula: the tap is the stable install path.
   local prerelease draft
   prerelease="$(gh release view "$tag" -R "$REPO_SLUG" --json isPrerelease -q .isPrerelease)"

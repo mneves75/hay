@@ -16,6 +16,8 @@ use std::collections::HashMap;
 use std::io::{self, BufRead, BufReader, BufWriter, Write};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
+use std::sync::Mutex;
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::mpsc;
 
 use cap_std::{ambient_authority, fs::Dir};
@@ -150,6 +152,16 @@ impl Opts {
     /// the ones where rank means something, is the only shape that removes that decision.
     fn unranked(&self) -> bool {
         self.stream || self.count_lines || self.count_matches || self.invert || self.only_matching
+    }
+
+    /// Does a counting mode report MATCHES rather than matching lines?
+    ///
+    /// ripgrep's rule, verified against ripgrep rather than assumed: `-c` counts lines,
+    /// `--count-matches` counts matches, and `-c -o` counts matches too. Under `-v` the delivered
+    /// lines contain no match at all, so every counting mode falls back to lines — which is what
+    /// ripgrep reports there as well.
+    fn counts_matches(&self) -> bool {
+        (self.count_matches || self.only_matching) && !self.invert
     }
 }
 
@@ -692,7 +704,7 @@ Narrow the pattern for an exhaustive result."
     };
 
     if o.files_only {
-        emit_files(&mut w, &scored, limit)
+        emit_files(&mut w, &scored, limit, o)
     } else {
         let page: Vec<(ScoreBreakdown, &Hit)> = scored.into_iter().take(limit).collect();
         let ctx = read_context(&page, o.before, o.after, context_root.as_ref())
@@ -765,17 +777,20 @@ fn run_unranked<M: Matcher + Clone + Send>(
     matcher: &M,
     builder: &mut WalkBuilder,
 ) -> Result<SearchOutcome, String> {
-    use std::sync::Mutex;
-    use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
-
     let counting = o.count_lines || o.count_matches;
-    let context_wanted = !o.files_only && !counting && !o.only_matching;
+    // `-o` does NOT suppress context in ripgrep: `rg -o -C1` prints the surrounding lines around
+    // the matched substrings. Excluding it here silently dropped context the caller asked for.
+    let context_wanted = !o.files_only && !counting;
     let out = Mutex::new(BufWriter::new(io::stdout()));
     let found = AtomicBool::new(false);
     let errors = AtomicUsize::new(0);
     // Broken pipe is how `| head` ends, and it is a success: ripgrep stops quietly and so does
     // this. Reporting it as an unreadable path would turn a normal shell idiom into exit 2.
     let broken_pipe = AtomicBool::new(false);
+    // ripgrep separates context blocks with `--` across files as well as within one. The walk is
+    // parallel, so which block is first is not fixed — but every block after the first still gets
+    // a separator, and the flag flips under the output lock so two workers cannot both be first.
+    let wrote_any = AtomicBool::new(false);
 
     builder.build_parallel().run(|| {
         // One matcher per worker, exactly as the ranked walk does: cloning is what ripgrep's own
@@ -784,6 +799,7 @@ fn run_unranked<M: Matcher + Clone + Send>(
         // References, taken before the `move` closure below: moving the atomics into a per-worker
         // closure would give every thread its own counters.
         let (found, errors, broken_pipe, out) = (&found, &errors, &broken_pipe, &out);
+        let wrote_any = &wrote_any;
         let mut searcher = SearcherBuilder::new()
             .line_number(true)
             .binary_detection(BinaryDetection::quit(b'\x00'))
@@ -810,9 +826,12 @@ fn run_unranked<M: Matcher + Clone + Send>(
             // Searched into a per-file buffer and written under one lock: workers must not
             // interleave halfway through a file's context block, which would hand a consumer a
             // `--` separated group whose lines came from two different files.
-            let mut buf: Vec<u8> = Vec::new();
             let mut sink = StreamSink {
-                w: &mut buf,
+                buf: Vec::new(),
+                out,
+                wrote_any,
+                separate_blocks: context_wanted && (o.before > 0 || o.after > 0),
+                opened: false,
                 o,
                 matcher: &matcher,
                 path: &display,
@@ -834,24 +853,20 @@ fn run_unranked<M: Matcher + Clone + Send>(
                 errors.fetch_add(1, Ordering::Relaxed);
                 return ignore::WalkState::Continue;
             }
-            let (lines, matches) = (sink.lines, sink.matches);
-            if lines == 0 {
+            if sink.lines == 0 {
                 return ignore::WalkState::Continue;
             }
             found.store(true, Ordering::Relaxed);
             if counting {
-                let n = if o.count_matches { matches } else { lines };
-                buf.clear();
-                let _ = writeln!(&mut buf, "{display}:{n}");
+                let n = if o.counts_matches() {
+                    sink.matches
+                } else {
+                    sink.lines
+                };
+                sink.buf.clear();
+                let _ = writeln!(&mut sink.buf, "{}", count_line(&display, n, o));
             }
-            if buf.is_empty() {
-                return ignore::WalkState::Continue;
-            }
-            let mut w = match out.lock() {
-                Ok(w) => w,
-                Err(_) => return ignore::WalkState::Quit,
-            };
-            match w.write_all(&buf) {
+            match sink.flush_block() {
                 Ok(()) => ignore::WalkState::Continue,
                 Err(e) if e.kind() == io::ErrorKind::BrokenPipe => {
                     broken_pipe.store(true, Ordering::Relaxed);
@@ -885,10 +900,21 @@ fn run_unranked<M: Matcher + Clone + Send>(
     })
 }
 
-/// Per-file sink for the unranked path. Counts are per file because `-c` reports per file, and
-/// `printed` is per file because ripgrep's `-m` is a per-file cap.
-struct StreamSink<'a, W: Write, M: Matcher> {
-    w: &'a mut W,
+/// Per-file sink for the unranked path.
+///
+/// Output accumulates in `buf` and is written under one lock, so two workers cannot interleave
+/// halfway through a file's context block. The buffer flushes once it passes `FLUSH_BYTES`, which
+/// bounds memory: holding a whole file's output was measured at ~38x ripgrep's peak RSS on a large
+/// explicitly-named file. A block larger than the threshold can therefore interleave with another
+/// file's — the honest trade against growth driven entirely by the caller's pattern.
+struct StreamSink<'a, M: Matcher> {
+    buf: Vec<u8>,
+    out: &'a Mutex<BufWriter<io::Stdout>>,
+    wrote_any: &'a AtomicBool,
+    /// Whether `--` belongs between this block and the previous one, i.e. whether context prints.
+    separate_blocks: bool,
+    /// Set once this file has flushed, so its separator is written only once.
+    opened: bool,
     o: &'a Opts,
     matcher: &'a M,
     path: &'a str,
@@ -899,7 +925,51 @@ struct StreamSink<'a, W: Write, M: Matcher> {
     limit: usize,
 }
 
-impl<W: Write, M: Matcher> StreamSink<'_, W, M> {
+/// Flush threshold for one file's buffered output.
+const FLUSH_BYTES: usize = 1 << 20;
+
+/// A `-c` / `--count-matches` line. Under `--json` the path is a JSON string: a path containing a
+/// newline would otherwise split one record into two, letting a filename forge a line in a stream
+/// a consumer parses.
+fn count_line(path: &str, n: u64, o: &Opts) -> String {
+    if o.json {
+        format!("{}:{n}", serde_json::Value::String(path.to_string()))
+    } else {
+        format!("{path}:{n}")
+    }
+}
+
+impl<M: Matcher> StreamSink<'_, M> {
+    /// Write everything buffered so far, preceded by the between-blocks separator if one is due.
+    fn flush_block(&mut self) -> io::Result<()> {
+        if self.buf.is_empty() {
+            return Ok(());
+        }
+        let mut w = self
+            .out
+            .lock()
+            .map_err(|_| io::Error::other("output lock poisoned"))?;
+        if self.separate_blocks {
+            // `swap` under the lock: two workers must not both conclude they are the first block.
+            let previous = self.wrote_any.swap(true, Ordering::Relaxed);
+            if previous && !self.opened {
+                writeln!(w, "--")?;
+            }
+        }
+        self.opened = true;
+        w.write_all(&self.buf)?;
+        self.buf.clear();
+        Ok(())
+    }
+
+    /// Flush once the buffer passes the bound, so memory does not follow the caller's pattern.
+    fn maybe_flush(&mut self) -> io::Result<()> {
+        if self.buf.len() >= FLUSH_BYTES {
+            self.flush_block()?;
+        }
+        Ok(())
+    }
+
     /// A ranked-path `Hit`, so both paths print through `emit_match` and cannot drift apart on
     /// JSON shape, line-number handling or the `:`/`-` separator convention.
     fn hit(&self, line_no: u64, offset: u64, bytes: &[u8]) -> Hit {
@@ -937,17 +1007,17 @@ const NO_SCORE: ScoreBreakdown = ScoreBreakdown {
     total: 0.0,
 };
 
-impl<W: Write, M: Matcher> Sink for StreamSink<'_, W, M> {
+impl<M: Matcher> Sink for StreamSink<'_, M> {
     type Error = io::Error;
 
     fn matched(&mut self, _searcher: &Searcher, m: &SinkMatch<'_>) -> Result<bool, io::Error> {
         self.lines += 1;
         let line_no = m.line_number().unwrap_or(0);
         let bytes = m.bytes();
+        let body = bytes.strip_suffix(b"\n").unwrap_or(bytes);
 
         if self.o.count_lines || self.o.count_matches {
-            if self.o.count_matches {
-                let body = bytes.strip_suffix(b"\n").unwrap_or(bytes);
+            if self.o.counts_matches() {
                 let mut n = 0u64;
                 self.matcher
                     .find_iter(body, |_| {
@@ -957,17 +1027,31 @@ impl<W: Write, M: Matcher> Sink for StreamSink<'_, W, M> {
                     .map_err(|_| io::Error::other("matcher failed while counting"))?;
                 self.matches += n;
             }
-            return Ok(true);
+            // `-m` caps the LINES counted, so `rg -c -m 1` reports 1. Counting past the cap
+            // inflates the very number the caller asked to bound.
+            return Ok((self.lines as usize) < self.limit);
         }
 
         if self.o.files_only {
-            writeln!(self.w, "{}", self.path)?;
+            if self.o.json {
+                writeln!(
+                    self.buf,
+                    "{}",
+                    serde_json::Value::String(self.path.to_string())
+                )?;
+            } else {
+                writeln!(self.buf, "{}", self.path)?;
+            }
             self.printed += 1;
             return Ok(false); // one line per file is the whole answer
         }
 
-        if self.o.only_matching {
-            let body = bytes.strip_suffix(b"\n").unwrap_or(bytes);
+        // `-o` is inert under `-v` — the delivered line contains no match to slice out — and under
+        // `--json`, whose records ripgrep emits identically with and without it. Both checked
+        // against ripgrep. The first case is the one that mattered: slicing spans out of a
+        // non-matching line found none, so `hay -o -v` printed NOTHING and exited 0, which is a
+        // silent wrong answer and a direct breach of "hay returns everything ripgrep returns".
+        if self.o.only_matching && !self.o.invert && !self.o.json {
             let mut spans = Vec::new();
             self.matcher
                 .find_iter(body, |m| {
@@ -976,19 +1060,20 @@ impl<W: Write, M: Matcher> Sink for StreamSink<'_, W, M> {
                 })
                 .map_err(|_| io::Error::other("matcher failed while emitting -o"))?;
             for (start, end) in spans {
-                if self.printed >= self.limit {
-                    return Ok(false);
-                }
                 let hit = self.hit(line_no, m.absolute_byte_offset(), &body[start..end]);
-                emit_match(self.w, NO_SCORE, &hit, self.matcher, self.o)?;
-                self.printed += 1;
+                emit_match(&mut self.buf, NO_SCORE, &hit, self.matcher, self.o)?;
             }
+            // ONE line of the budget however many substrings it held: ripgrep's `-m` caps matching
+            // lines, and charging per span truncated a line that matched several times.
+            self.printed += 1;
+            self.maybe_flush()?;
             return Ok(self.printed < self.limit);
         }
 
         let hit = self.hit(line_no, m.absolute_byte_offset(), bytes);
-        emit_match(self.w, NO_SCORE, &hit, self.matcher, self.o)?;
+        emit_match(&mut self.buf, NO_SCORE, &hit, self.matcher, self.o)?;
         self.printed += 1;
+        self.maybe_flush()?;
         Ok(self.printed < self.limit)
     }
 
@@ -998,18 +1083,19 @@ impl<W: Write, M: Matcher> Sink for StreamSink<'_, W, M> {
             bytes: c.bytes().to_vec(),
         };
         emit_context(
-            self.w,
+            &mut self.buf,
             self.path,
             c.line_number().unwrap_or(0),
             &line,
             self.o,
         )?;
+        self.maybe_flush()?;
         Ok(true)
     }
 
     fn context_break(&mut self, _searcher: &Searcher) -> Result<bool, io::Error> {
         if !self.o.json {
-            writeln!(self.w, "--")?;
+            writeln!(self.buf, "--")?;
         }
         Ok(true)
     }
@@ -1019,6 +1105,7 @@ fn emit_files(
     w: &mut impl Write,
     scored: &[(ScoreBreakdown, &Hit)],
     limit: usize,
+    o: &Opts,
 ) -> io::Result<()> {
     let mut seen = std::collections::HashSet::new();
     let mut n = 0;
@@ -1026,9 +1113,15 @@ fn emit_files(
         if !seen.insert(h.path.as_str()) {
             continue;
         }
-        // Plain paths even under `--json`: hay's JSON contract is match/context messages only
-        // (see HELP), and a bare `begin` with no `end` would be neither that nor rg-shaped.
-        writeln!(w, "{}", h.path)?;
+        // Plain paths, except under `--json` where the path is a JSON string. hay's JSON contract
+        // is match/context messages only (see HELP), and a bare `begin` with no `end` would be
+        // neither that nor rg-shaped — but a path containing a newline would split one record into
+        // two, letting a filename forge a line in a stream a consumer parses (review finding).
+        if o.json {
+            writeln!(w, "{}", serde_json::Value::String(h.path.clone()))?;
+        } else {
+            writeln!(w, "{}", h.path)?;
+        }
         n += 1;
         if n >= limit {
             break;

@@ -1,0 +1,70 @@
+{
+  "benchmark": "SWE-Explore-Bench (arXiv 2606.07297), verified + multilingual splits",
+  "claim": "given identical mechanically-derived queries, does hay's reordering surface gold files earlier than rg's path order — this does not measure issue localization",
+  "qderive": "qderive-v1",
+  "seed": 20260820,
+  "hayAblation": [],
+  "instances": 96,
+  "byLanguage": {
+    "python": 19,
+    "rust": 11,
+    "ruby": 9,
+    "js/ts": 16,
+    "go": 7,
+    "php": 11,
+    "c/c++": 13,
+    "java": 10
+  },
+  "excluded": {
+    "noPublicIssueText": 215,
+    "repoSkipped": 1,
+    "noDerivableQueries": 0,
+    "noVisibleGold": 0
+  },
+  "archiveLinkMembersDropped": 206,
+  "checkoutsWithUnrecordedDrops": 0,
+  "mrrRg": 0.24197286812508353,
+  "mrrHay": 0.5450834187163102,
+  "top10Rg": 0.40625,
+  "top10Hay": 0.6875,
+  "ndcg10Rg": 0.22506334581568666,
+  "ndcg10Hay": 0.37251830544681597,
+  "deltaMrr": {
+    "byInstance": {
+      "mean": 0.3031105505912266,
+      "lo": 0.22804380223383303,
+      "hi": 0.38191364201379363,
+      "p": 0.00019998000199980003,
+      "n": 96,
+      "clusters": 96
+    },
+    "randomizationByInstance": 0.00009999000099990002
+  },
+  "deltaTop10": {
+    "byInstance": {
+      "mean": 0.28125,
+      "lo": 0.19791666666666666,
+      "hi": 0.375,
+      "p": 0.00019998000199980003,
+      "n": 96,
+      "clusters": 96
+    },
+    "randomizationByInstance": 0.00009999000099990002
+  },
+  "deltaNdcg10": {
+    "byInstance": {
+      "mean": 0.1474549596311291,
+      "lo": 0.10512182619642606,
+      "hi": 0.19234628946021168,
+      "p": 0.00019998000199980003,
+      "n": 96,
+      "clusters": 96
+    },
+    "randomizationByInstance": 0.00009999000099990002
+  },
+  "hayTruncatedQueries": 2,
+  "toolVersions": {
+    "hay": "hay 0.2.0",
+    "rg": "ripgrep 15.2.0"
+  }
+}

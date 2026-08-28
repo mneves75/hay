@@ -371,16 +371,23 @@ pub fn word_affinity(line: &str, query: &str) -> f64 {
 /// they sounded sensible.
 ///
 /// `heading` — a bonus for a markdown ATX heading naming the query — was built in 0.3.0, measured,
-/// and deleted. It is the reason the documentation track exists, and on that track it reversed the
-/// deficit outright: hay went from −0.010/−0.072/−0.087/−0.194/−0.054 against `rg --sort path` to
-/// **+0.190/+0.109/+0.302/+0.151/+0.454**. It cannot hurt code ranking — it is gated on prose
-/// paths, and the code track measured its contribution at exactly +0.0000 on three corpora. It
-/// was deleted anyway, because the docs track's ground truth *is* "the token appears in exactly
-/// one file's headings", so a heading detector wins there by construction rather than by working;
-/// and on SWE-Explore, the one public agent-shaped set whose ground truth nobody here designed,
-/// it cost −0.0054 MRR (0.5505 → 0.5451, deterministic, same 96 instances). A signal validated
-/// only by the benchmark it reverse-engineers is the exact failure this repository was built to
-/// document. See DESIGN-hay.md for the full record.
+/// and deleted. Full record in `docs/method/issues/13-heading-signal.md`; payloads and a patch
+/// that rebuilds the measured binary in `evidence/ablations/`.
+///
+/// It aimed at the only row where hay is measurably worse than ripgrep, and on the documentation
+/// track it reversed the deficit outright (−0.010/−0.072/−0.087/−0.194/−0.054 became
+/// +0.190/+0.109/+0.302/+0.151/+0.454). It cannot hurt code ranking, because it is gated on prose
+/// file extensions; the code track's +0.0000 contribution across three corpora is consistent with
+/// that, and is a null measurement rather than a proof.
+///
+/// It does not ship because the docs track's ground truth *is* "this token appears in exactly one
+/// markdown file's headings" — a heading detector is an oracle for that construction rule, so a
+/// win there measures agreement with the generator rather than retrieval. That was written down
+/// before the numbers were taken. On SWE-Explore, the one public agent-shaped set nobody here
+/// designed, hay scored 0.5505 without it and 0.5451 with it; on n=96 that difference is not
+/// distinguishable from zero, and the harness computes no interval between two hay variants, so
+/// it is not offered as a measured regression. The deletion rests on the circularity, not on that
+/// number.
 ///
 /// `filename` — a bonus for a file whose own name is the query — was added in the previous cycle, ablated
 /// on both public sets, and deleted: +0.008 MRR on openclaw, +0.000 on ripgrep, -0.002 on

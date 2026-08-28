@@ -780,6 +780,8 @@ export type DocsTrackPayload = {
   groundTruth: string;
   meta: {
     date: string;
+    /** Signals turned off for this run. Empty in every published payload. */
+    hayAblation: string[];
     seed: number;
     sample: number;
     rankCap: number;
@@ -881,6 +883,9 @@ async function runDocsTrack(
     groundTruth: "identifier-like token in an ATX heading of exactly one markdown file and present in at least three parity-visible files",
     meta: {
       date: new Date().toISOString().slice(0, 10),
+      // Empty in every published run; an ablation records which signals it turned off, so a
+      // payload can always say which binary produced it.
+      hayAblation: hayAblation(),
       seed,
       sample: sampleSize,
       rankCap: RANK_CAP,
@@ -1053,11 +1058,15 @@ if (import.meta.main) {
   const out = flag("--out", publishedEvidence)!;
   if (ablate.length > 0) {
     setHayAblation(ablate.map((f) => `--${f}`));
-    // Resolved, not string-compared: `./evidence/benchmark.json` is the same file, and a check
-    // that only rejects one spelling of a path is not a check.
-    if (resolve(out) === resolve(publishedEvidence)) {
-      console.error("--ablate needs its own --out: an ablation is not the published run");
-      process.exit(2);
+    // BOTH committed evidence paths, not just this run's (review finding): `--docs-track --out
+    // evidence/benchmark.json` would have overwritten the other track's published payload with an
+    // ablation. Resolved rather than string-compared, because a check that rejects one spelling
+    // of a path is not a check.
+    for (const published of ["evidence/benchmark.json", "evidence/docs-track.json"]) {
+      if (resolve(out) === resolve(published)) {
+        console.error(`--ablate needs its own --out: ${published} is a published run`);
+        process.exit(2);
+      }
     }
     console.error(`ablation run: hay ${hayAblation().join(" ")}`);
   }
@@ -1180,6 +1189,10 @@ if (import.meta.main) {
   const payload = {
     generatedBy: "benchmark.ts",
     generatedAt: new Date().toISOString(),
+    // Empty in every published run. An ablation writes its own `--out`, and recording the flags
+    // means a payload can always say which binary produced it (review finding: they were set but
+    // never reached the artifact).
+    hayAblation: hayAblation(),
     task: "definition finding: given a symbol declared exactly once, rank of the declaring file",
     groundTruth: "ast-grep (a parser), independent of every heuristic under test",
     rankCap: RANK_CAP,

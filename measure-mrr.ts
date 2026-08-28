@@ -137,25 +137,37 @@ export function retrieverArgv(retriever: Retriever, query: string): string[] {
  * R-precision over distinct files: of the first R files a retriever shows, where R is the number
  * of files the agent actually opened, how many were ones it opened?
  *
- * Why this exists beside MRR and nDCG. MRR asks how far you read before the FIRST useful file;
- * this asks how much of what you read was useless — the quantity the field argues about.
- * ContextBench (arXiv 2602.05892) formalises context precision for coding agents and finds a
- * large gap between context explored and context used. FastContext (arXiv 2606.14066) puts the
- * stake in tokens: reading and searching are 56% of an agent's tool calls and 46% of its tokens.
- * `MEMORY.md` has listed "MRR is a proxy; the field measures tokens and tool calls per resolved
- * task" as an open blocker since the beginning, and this is the part of that gap the existing
- * corpus can close without a new measurement.
- *
- * **The absolute level here is NOT comparable to the wasted-read figures quoted around
- * ContextBench**, and reporting it as if it were would be this project's founding mistake with a
- * new number. Their gold context is human-annotated relevance; ours is the specific files one
- * agent opened after one search, so a file that was genuinely useful but opened after a different
- * search counts as wasted. The level is pessimistic by construction. The DIFFERENCE between two
- * retrievers measured the same way is the part that means something.
+ * Why it is here. MRR asks how far you read before the FIRST useful file; this asks how much of
+ * what you read was useless — the quantity coding-agent retrieval work argues about. ContextBench
+ * (arXiv 2602.05892 v3, checked: not withdrawn) measures "context recall, precision, and
+ * efficiency throughout issue resolution" and reports that "LLMs consistently favor recall over
+ * precision" with "substantial gaps between explored and utilized context". `MEMORY.md` has
+ * listed "MRR is a proxy, the field measures tokens and tool calls per resolved task" as an open
+ * blocker since the beginning; this closes the part of it the existing corpus can answer.
  *
  * R-precision rather than precision@10 (Buckley & Voorhees): with a mean of 2.27 answer files,
- * precision@10 is capped at 0.23 for a PERFECT retriever, so the absolute number would be
- * unreadable and only the difference would mean anything. At R the ideal is 1.0.
+ * precision@10 is capped at 0.23 for a PERFECT retriever, so its absolute value would be an
+ * artefact of the cutoff.
+ *
+ * **Three caveats, because this metric arrived with two mistakes already made.**
+ *
+ * 1. The absolute level is NOT comparable to wasted-read figures quoted elsewhere. Their gold
+ *    context is human-annotated relevance; ours is the specific files one agent opened after one
+ *    search, so a genuinely useful file opened after a DIFFERENT search counts here as wasted.
+ *    Only the difference between two retrievers measured the same way means anything.
+ * 2. It is largely NOT independent evidence. Measured on the 951-query corpus, R-precision
+ *    correlates r=0.905 with reciprocal rank and r=0.845 with nDCG@10 for hay (0.922 and 0.801
+ *    for ripgrep); the paired DIFFERENCES correlate r=0.757 with the nDCG difference. Reporting
+ *    it as a fourth confirmation would be padding — which is the argument this project already
+ *    made for keeping nDCG out of `benchmark.ts`. It is here as a TRANSLATION of the same result
+ *    into the units the field uses, and that near-collinearity is itself the finding: on this
+ *    corpus, "wasted reads" and "how far down the answer sits" are one fact.
+ * 3. An earlier draft of this comment cited FastContext (arXiv 2606.14066) for "reading and
+ *    searching are 56% of an agent's tool calls and 46% of its tokens". That paper is WITHDRAWN
+ *    ("involves some product IP issues"), and the figures are not in its abstract at all — they
+ *    came from a search summary that was never checked against the source. Caught in review. It
+ *    is left recorded here because a citation nobody opened is exactly the defect this repository
+ *    exists to document, and it happened in the file that measures the defect.
  */
 export function rPrecision(filesInOrder: string[], answers: Set<string>): number {
   if (answers.size === 0) return 0;
@@ -424,6 +436,8 @@ export type Pair = {
   ndcgRg: number; ndcgHay: number;
   /** R-precision over distinct files: 1 − this is the share of early reads that were wasted. */
   rPrecRg: number; rPrecHay: number;
+  /** True when the answer set outran the collected page, so R-precision saw fewer than R files. */
+  rPrecTruncated: boolean;
   /** False when either retriever's first page could not be filled inside the line budget. */
   pageComplete: boolean;
   // Diagnostics for `--dump-pairs`, optional so aggregate-only consumers and the selftest's
@@ -453,6 +467,20 @@ export function mulberry32(seed: number): () => number {
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
+}
+
+/** Pearson correlation, for saying out loud when a new measure is not independent of an old one. */
+export function pearson(a: number[], b: number[]): number {
+  const n = Math.min(a.length, b.length);
+  if (n === 0) return 0;
+  const ma = mean(a.slice(0, n));
+  const mb = mean(b.slice(0, n));
+  let num = 0, da = 0, db = 0;
+  for (let i = 0; i < n; i++) {
+    const x = a[i]! - ma, y = b[i]! - mb;
+    num += x * y; da += x * x; db += y * y;
+  }
+  return da === 0 || db === 0 ? 0 : num / Math.sqrt(da * db);
 }
 
 export const mean = (xs: number[]): number => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
@@ -638,6 +666,7 @@ export async function pairRepo(repo: string, entries: CorpusEntry[], label?: str
       top10Rg: top10(a.rank), top10Hay: top10(b.rank),
       ndcgRg: a.ndcg, ndcgHay: b.ndcg,
       rPrecRg: a.rPrec, rPrecHay: b.rPrec,
+      rPrecTruncated: a.rPrecTruncated || b.rPrecTruncated,
       pageComplete: a.pageComplete && b.pageComplete,
       rankRg: a.rank, rankHay: b.rank,
       filesRg: a.files, filesHay: b.files,
@@ -704,7 +733,7 @@ if (import.meta.main) {
     // Clustering must be preserved: two repos, one per group.
     const mk = (repo: string, label: string, query: string, rrHay: number, rrRg = 0) =>
       ({ repo, label, query, rrRg, rrHay, top10Rg: 0, top10Hay: 1, ndcgRg: 0, ndcgHay: rrHay,
-         rPrecRg: 0, rPrecHay: rrHay, pageComplete: true });
+         rPrecRg: 0, rPrecHay: rrHay, rPrecTruncated: false, pageComplete: true });
     const clusters = byCluster(
       [mk("/x/a", "a", "q", 1), mk("/x/a", "a", "r", 1), mk("/x/b", "b", "s", 1)],
       (p) => p.rrHay - p.rrRg,
@@ -739,6 +768,13 @@ if (import.meta.main) {
     const many = new Set(["a", "b", "c", "d"]);
     close(ndcgAt(["a", "b"], many, 2), 1, 1e-12, "IDCG is capped at the cutoff");
     close(ndcgAt(["a", "b", "c"], new Set<string>(), 10), 0, 1e-12, "no judgments, no score");
+
+    // Pearson, against cases with known answers: a correlation reported to justify NOT treating
+    // a metric as independent has to be right, or the disclosure is worse than silence.
+    close(pearson([1, 2, 3], [2, 4, 6]), 1, 1e-12, "perfectly correlated");
+    close(pearson([1, 2, 3], [6, 4, 2]), -1, 1e-12, "perfectly anti-correlated");
+    close(pearson([1, 1, 1], [1, 2, 3]), 0, 1e-12, "a constant correlates with nothing");
+    eq(pearson([], []), 0, "no observations, no correlation");
 
     // R-precision, against values computed by hand. The metric the field argues on is worth as
     // much checking as the ones this project already had wrong once.
@@ -969,6 +1005,14 @@ if (import.meta.main) {
       rPrecRg: mean(pairs.map((p) => p.rPrecRg)),
       rPrecHay: mean(pairs.map((p) => p.rPrecHay)),
       deltaRPrecision: effect(dRPrec),
+      // Published beside the effect, not left for a reader to assume independence: R-precision is
+      // near-collinear with the rank measures already reported, so it translates the result into
+      // the field's units rather than confirming it a fourth time.
+      rPrecCorrelationWithRr: pearson(pairs.map((p) => p.rPrecHay), pairs.map((p) => p.rrHay)),
+      rPrecCorrelationWithNdcg: pearson(pairs.map((p) => p.rPrecHay), pairs.map((p) => p.ndcgHay)),
+      // Queries whose answer set is larger than the page of distinct files collected, so
+      // R-precision was measured over fewer files than R. Counted, never absorbed (invariant 7).
+      rPrecTruncated: pairs.filter((p) => p.rPrecTruncated).length,
       // Descriptive only. Smucker et al. show the sign test detects poorly; it is not the test.
       better: pairs.filter((p) => dRR(p) > 0).length,
       worse: pairs.filter((p) => dRR(p) < 0).length,
@@ -999,8 +1043,10 @@ if (import.meta.main) {
     show("dNDCG10", report.deltaNdcg10);
     console.error(
       `  R-precision  rg ${report.rPrecRg.toFixed(4)}  ->  hay ${report.rPrecHay.toFixed(4)}` +
-      `   (wasted early reads ${((1 - report.rPrecRg) * 100).toFixed(1)}% -> ${((1 - report.rPrecHay) * 100).toFixed(1)}%)`,
+      `  (r=${report.rPrecCorrelationWithRr.toFixed(2)} with RR, so not independent evidence;` +
+      ` the LEVEL is not comparable to published wasted-read figures — see the comment on rPrecision)`,
     );
+    console.error(`  R-precision measured over a truncated page on ${report.rPrecTruncated} of ${report.queries} queries`);
     show("dRPrecision", report.deltaRPrecision);
     console.error(`  better ${report.better} / worse ${report.worse} / tied ${report.tied}`);
     console.error(`  nDCG first page truncated on ${report.ndcgTruncated} of ${report.queries} queries`);

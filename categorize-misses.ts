@@ -198,7 +198,7 @@ if (import.meta.main) {
     const base: Pair = {
       repo: "/x/a", label: "a", query: "q",
       rrRg: 0, rrHay: 0, top10Rg: 0, top10Hay: 0, ndcgRg: 0, ndcgHay: 0,
-      rPrecRg: 0, rPrecHay: 0, pageComplete: true,
+      rPrecRg: 0, rPrecHay: 0, rPrecTruncated: false, pageComplete: true,
       rankRg: null, rankHay: null, resultsRg: 50, resultsHay: 50,
       answers: ["src/a.ts"], hayTruncated: false,
     };
