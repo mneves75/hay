@@ -191,10 +191,12 @@ footer a{color:inherit}
 
 <section id="install">
   <p class="kicker">install</p>
-  <h2>From source.</h2>
-<pre tabindex="0">git clone https://github.com/mneves75/hay.git &amp;&amp; cd hay
-cargo install --path hay
-hay validateSession src/          # best answer first</pre>
+  <h2>One line.</h2>
+<pre tabindex="0">brew install mneves75/tap/hay     # macOS and Linux, prebuilt and attested
+hay validateSession src/          # best answer first
+
+# or from source:
+git clone https://github.com/mneves75/hay.git &amp;&amp; cd hay &amp;&amp; cargo install --path hay</pre>
   <p style="margin-top:1.2rem">Then read the <a href="MANUAL.html">manual</a> — every flag, the JSON
   contract, exit codes — or the <a href="benchmark.html">full benchmark report</a>, or how all of it
   works <a href="BENCHMARK_FEYNMAN.html">from zero</a>.</p>
