@@ -31,15 +31,16 @@
 
 import {
   chmodSync, createReadStream, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync,
-  readdirSync, readlinkSync, realpathSync, renameSync, rmSync, statSync,
+  readdirSync, renameSync, rmSync,
   symlinkSync, writeFileSync, type Stats,
 } from "node:fs";
 import { homedir, tmpdir } from "node:os";
-import { basename, dirname, join, posix, resolve } from "node:path";
+import { join, posix, resolve } from "node:path";
 import { create as createTar, Unpack, type ReadEntry } from "tar";
 
 import {
-  ResultScan, bootstrapCI, mean, mulberry32, randomizationP, rankOfAnswer, setHayFlags,
+  ResultScan, bootstrapCI, mean, mulberry32, namesTheSameFile, randomizationP, rankOfAnswer,
+  setHayFlags,
 } from "./measure-mrr.ts";
 
 const cacheHome = process.env["XDG_CACHE_HOME"] ?? join(homedir(), ".cache");
@@ -50,49 +51,6 @@ const SEED = 20260820;
 export const QDERIVE_VERSION = "qderive-v1";
 /** The one path a published run writes. An ablation must never land here. */
 export const PUBLISHED_EVIDENCE = "evidence/swe-explore.json";
-
-/**
- * Do two paths name the same file?
- *
- * String comparison is not enough and neither is `resolve`, which only normalises syntax (review
- * finding): the published evidence path could be reached through a symlinked directory, and on the
- * case-insensitive filesystems this runs on, `EVIDENCE/swe-explore.json` is the same file. Device
- * and inode settle it when both exist; otherwise fall back to a real-path comparison of the parent
- * plus a case-insensitive filename, which is the strongest answer available for a file that has
- * not been created yet.
- */
-export function namesTheSameFile(a: string, b: string): boolean {
-  try {
-    if (existsSync(a) && existsSync(b)) {
-      const [sa, sb] = [statSync(a), statSync(b)];
-      return sa.dev === sb.dev && sa.ino === sb.ino;
-    }
-  } catch {
-    // fall through to the path comparison
-  }
-  const canonical = (p: string): string => {
-    // Follow a symlinked final component by hand, DANGLING ONES INCLUDED (review finding).
-    // `existsSync` follows links, so a dangling `--out` symlink pointing at the not-yet-created
-    // published evidence file failed both existence checks above and then compared two different
-    // basenames — the guard allowed the ablation and the write followed the link onto the file it
-    // exists to protect. Bounded, because a symlink cycle is not a reason to hang.
-    let full = resolve(p);
-    for (let hops = 0; hops < 8; hops++) {
-      let link: string;
-      try {
-        if (!lstatSync(full).isSymbolicLink()) break;
-        link = readlinkSync(full);
-      } catch {
-        break;
-      }
-      full = resolve(dirname(full), link);
-    }
-    const dir = dirname(full);
-    const real = existsSync(dir) ? realpathSync(dir) : dir;
-    return join(real, basename(full)).toLowerCase();
-  };
-  return canonical(a) === canonical(b);
-}
 
 type Instance = {
   instance_id: string;

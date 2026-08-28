@@ -22,8 +22,8 @@
  *   bun measure-mrr.ts --selftest
  */
 
-import { existsSync } from "node:fs";
-import { basename } from "node:path";
+import { existsSync, readlinkSync, realpathSync, statSync, lstatSync } from "node:fs";
+import { basename, dirname, join, resolve } from "node:path";
 import { privateCorpusPath, writePrivateCorpus } from "./harvest-queries.ts";
 
 /** Beyond this many results an answer is unreachable by scrolling grep output; RR counts as 0. */
@@ -628,6 +628,50 @@ export function gateStats(pairs: Pair[]): GateStats {
     pass: medianRepoMrrHay >= 0.5 && medianRepoTop10Hay >= 0.8,
   };
 }
+
+/**
+ * Do two paths name the same file?
+ *
+ * String comparison is not enough and neither is `resolve`, which only normalises syntax (review
+ * finding): the published evidence path could be reached through a symlinked directory, and on the
+ * case-insensitive filesystems this runs on, `EVIDENCE/swe-explore.json` is the same file. Device
+ * and inode settle it when both exist; otherwise fall back to a real-path comparison of the parent
+ * plus a case-insensitive filename, which is the strongest answer available for a file that has
+ * not been created yet.
+ */
+export function namesTheSameFile(a: string, b: string): boolean {
+  try {
+    if (existsSync(a) && existsSync(b)) {
+      const [sa, sb] = [statSync(a), statSync(b)];
+      return sa.dev === sb.dev && sa.ino === sb.ino;
+    }
+  } catch {
+    // fall through to the path comparison
+  }
+  const canonical = (p: string): string => {
+    // Follow a symlinked final component by hand, DANGLING ONES INCLUDED (review finding).
+    // `existsSync` follows links, so a dangling `--out` symlink pointing at the not-yet-created
+    // published evidence file failed both existence checks above and then compared two different
+    // basenames — the guard allowed the ablation and the write followed the link onto the file it
+    // exists to protect. Bounded, because a symlink cycle is not a reason to hang.
+    let full = resolve(p);
+    for (let hops = 0; hops < 8; hops++) {
+      let link: string;
+      try {
+        if (!lstatSync(full).isSymbolicLink()) break;
+        link = readlinkSync(full);
+      } catch {
+        break;
+      }
+      full = resolve(dirname(full), link);
+    }
+    const dir = dirname(full);
+    const real = existsSync(dir) ? realpathSync(dir) : dir;
+    return join(real, basename(full)).toLowerCase();
+  };
+  return canonical(a) === canonical(b);
+}
+
 
 /** Use the same canonical boundary and symlink-aware writer as transcript harvesting. */
 export function isUnderCorpus(p: string, cwd = process.cwd()): boolean {

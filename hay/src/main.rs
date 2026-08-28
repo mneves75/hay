@@ -788,9 +788,13 @@ fn run_unranked<M: Matcher + Clone + Send>(
     // this. Reporting it as an unreadable path would turn a normal shell idiom into exit 2.
     let broken_pipe = AtomicBool::new(false);
     // ripgrep separates context blocks with `--` across files as well as within one. The walk is
-    // parallel, so which block is first is not fixed — but every block after the first still gets
-    // a separator, and the flag flips under the output lock so two workers cannot both be first.
-    let wrote_any = AtomicBool::new(false);
+    // parallel, so which block comes first is not fixed — what must hold is that a separator
+    // appears wherever the output changes file. Tracking "has anyone written yet" was not enough:
+    // a file bigger than the flush threshold writes twice, and if another file's block lands
+    // between them the first file RESUMED with no boundary (review finding). So each file takes a
+    // ticket and the last writer's ticket is compared under the output lock.
+    let next_ticket = AtomicUsize::new(1);
+    let last_writer = AtomicUsize::new(0);
 
     builder.build_parallel().run(|| {
         // One matcher per worker, exactly as the ranked walk does: cloning is what ripgrep's own
@@ -799,7 +803,7 @@ fn run_unranked<M: Matcher + Clone + Send>(
         // References, taken before the `move` closure below: moving the atomics into a per-worker
         // closure would give every thread its own counters.
         let (found, errors, broken_pipe, out) = (&found, &errors, &broken_pipe, &out);
-        let wrote_any = &wrote_any;
+        let (next_ticket, last_writer) = (&next_ticket, &last_writer);
         let mut searcher = SearcherBuilder::new()
             .line_number(true)
             .binary_detection(BinaryDetection::quit(b'\x00'))
@@ -829,9 +833,12 @@ fn run_unranked<M: Matcher + Clone + Send>(
             let mut sink = StreamSink {
                 buf: Vec::new(),
                 out,
-                wrote_any,
-                separate_blocks: context_wanted && (o.before > 0 || o.after > 0),
-                opened: false,
+                last_writer,
+                ticket: next_ticket.fetch_add(1, Ordering::Relaxed),
+                // Never under `--json`: `context_break` already suppresses the separator there,
+                // and a bare `--` between two files' blocks is a line no NDJSON consumer can
+                // parse (review finding).
+                separate_blocks: context_wanted && (o.before > 0 || o.after > 0) && !o.json,
                 o,
                 matcher: &matcher,
                 path: &display,
@@ -849,6 +856,13 @@ fn run_unranked<M: Matcher + Clone + Send>(
                 },
             };
             if let Err(e) = searcher.search_path(&matcher, entry.path(), &mut sink) {
+                // A flush inside the sink can hit a closed pipe — `| head` is how this normally
+                // ends — and that arrives here as a search error. Reporting it as an unreadable
+                // path turned an ordinary shell idiom into exit 2 with a diagnostic.
+                if e.kind() == io::ErrorKind::BrokenPipe {
+                    broken_pipe.store(true, Ordering::Relaxed);
+                    return ignore::WalkState::Quit;
+                }
                 eprintln!("hay: {}: {e}", entry.path().display());
                 errors.fetch_add(1, Ordering::Relaxed);
                 return ignore::WalkState::Continue;
@@ -910,11 +924,12 @@ fn run_unranked<M: Matcher + Clone + Send>(
 struct StreamSink<'a, M: Matcher> {
     buf: Vec<u8>,
     out: &'a Mutex<BufWriter<io::Stdout>>,
-    wrote_any: &'a AtomicBool,
-    /// Whether `--` belongs between this block and the previous one, i.e. whether context prints.
+    /// Ticket of the file whose output was written last, so a separator can be emitted whenever
+    /// the stream changes file — including when a file resumes after another interleaved.
+    last_writer: &'a AtomicUsize,
+    ticket: usize,
+    /// Whether `--` belongs between blocks at all: context is printing and output is not JSON.
     separate_blocks: bool,
-    /// Set once this file has flushed, so its separator is written only once.
-    opened: bool,
     o: &'a Opts,
     matcher: &'a M,
     path: &'a str,
@@ -949,14 +964,11 @@ impl<M: Matcher> StreamSink<'_, M> {
             .out
             .lock()
             .map_err(|_| io::Error::other("output lock poisoned"))?;
-        if self.separate_blocks {
-            // `swap` under the lock: two workers must not both conclude they are the first block.
-            let previous = self.wrote_any.swap(true, Ordering::Relaxed);
-            if previous && !self.opened {
-                writeln!(w, "--")?;
-            }
+        // Swapped under the lock, so two workers cannot both believe they follow the same block.
+        let previous = self.last_writer.swap(self.ticket, Ordering::Relaxed);
+        if self.separate_blocks && previous != 0 && previous != self.ticket {
+            writeln!(w, "--")?;
         }
-        self.opened = true;
         w.write_all(&self.buf)?;
         self.buf.clear();
         Ok(())

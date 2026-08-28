@@ -25,9 +25,9 @@
 
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 
-import { assertCompleteExit, bootstrapCI, mean, median, mulberry32, randomizationP, type Interval } from "./measure-mrr.ts";
+import { assertCompleteExit, bootstrapCI, mean, median, mulberry32, namesTheSameFile, randomizationP, type Interval } from "./measure-mrr.ts";
 
 /** Beyond this many result lines the answer is unreachable by scrolling; RR counts as 0. */
 const RANK_CAP = 1000;
@@ -1036,6 +1036,12 @@ if (import.meta.main) {
     } finally {
       rmSync(fixture, { recursive: true, force: true });
     }
+    // The ablation guard protects BOTH committed payloads, and by file identity rather than by
+    // spelling — a guard that rejects one way of naming a file is not a guard.
+    eq(namesTheSameFile("evidence/benchmark.json", "./evidence/benchmark.json"), true, "same file, another spelling");
+    eq(namesTheSameFile("evidence/benchmark.json", "evidence/docs-track.json"), false, "the two tracks are different files");
+    eq(namesTheSameFile("./evidence/../evidence/docs-track.json", "evidence/docs-track.json"), true, "normalised path is the same file");
+
     console.log("selftest ok");
     process.exit(0);
   }
@@ -1058,12 +1064,13 @@ if (import.meta.main) {
   const out = flag("--out", publishedEvidence)!;
   if (ablate.length > 0) {
     setHayAblation(ablate.map((f) => `--${f}`));
-    // BOTH committed evidence paths, not just this run's (review finding): `--docs-track --out
-    // evidence/benchmark.json` would have overwritten the other track's published payload with an
-    // ablation. Resolved rather than string-compared, because a check that rejects one spelling
-    // of a path is not a check.
+    // BOTH committed evidence paths, not just this run's: `--docs-track --out
+    // evidence/benchmark.json` would otherwise overwrite the other track's published payload with
+    // an ablation. Compared by file IDENTITY, not by resolved string — `resolve` normalises
+    // syntax and nothing else, so a symlink or a differently-cased path still named the protected
+    // file on the case-insensitive filesystem this runs on (review finding).
     for (const published of ["evidence/benchmark.json", "evidence/docs-track.json"]) {
-      if (resolve(out) === resolve(published)) {
+      if (namesTheSameFile(out, published)) {
         console.error(`--ablate needs its own --out: ${published} is a published run`);
         process.exit(2);
       }
