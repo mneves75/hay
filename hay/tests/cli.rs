@@ -146,12 +146,12 @@ fn the_unranked_modes_answer_instead_of_refusing() {
         stdout.contains("./docs/archive/plan-v3.md:2"),
         "count per file: {stdout}"
     );
-    // Path order, not rank order: docs/ sorts before src/ and stays there.
-    let first = stdout.lines().next().unwrap();
-    assert!(
-        first.starts_with("./docs/"),
-        "unranked output is path-ordered: {first}"
-    );
+    // Deliberately NOT an assertion about order. The unranked modes use ripgrep's parallel
+    // traversal, which is unordered — that is what makes them as fast as ripgrep, and asserting a
+    // fixed order here would encode a design this mode does not have. What must hold is the set.
+    let mut files: Vec<&str> = stdout.lines().collect();
+    files.sort_unstable();
+    assert_eq!(files, ["./docs/archive/plan-v3.md:2", "./src/auth.ts:1"]);
 
     // `-o` prints the matched substring; `-v` prints what did not match; `--stream` prints
     // everything ripgrep would, with no candidate cap and no ranking.
