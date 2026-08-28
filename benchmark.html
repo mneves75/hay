@@ -434,8 +434,8 @@ The fix is in every result below.</p>
 
 <section class="corpus" id="docs-track">
 <h2>Documentation track</h2>
-<p class="meta">Generated 2026-08-27 · hay hay 0.1.4 · rg ripgrep 15.2.0 (rev e89fff89ac)</p>
-<p class="meta">Corpus revisions: linux 45c13f3f9e3b · openclaw a82042f20415 · ripgrep 3fce3b5bb023 · alamofire 0455bfb65089 · hay 82ff61c171c2</p>
+<p class="meta">Generated 2026-08-28 · hay hay 0.2.0 · rg ripgrep 15.2.0</p>
+<p class="meta">Corpus revisions: linux 1b78070aaef6 · openclaw 0706f629c3b5 · ripgrep 3fce3b5bb023 · alamofire 0455bfb65089 · hay 5b0644c29116</p>
 <p>A public development set for documentation retrieval: identifier-like tokens from ATX headings
 that occur in exactly one markdown file’s headings and in at least three parity-visible files.
 Ranks use the same 1000-result-line cap as the code track; cap truncations are reported
@@ -443,38 +443,38 @@ as <code>hay / rg</code>, never absorbed into another metric.</p>
 <div class="scroll" tabindex="0"><table>
 <thead><tr><th scope="col">corpus</th><th scope="col" class="n">n</th><th scope="col" class="n">MRR hay</th><th scope="col" class="n">MRR rg --sort path</th><th scope="col">Δ MRR (95% CI)</th><th scope="col" class="n">bootstrap p</th><th scope="col" class="n">randomization p</th><th scope="col">both tests</th><th scope="col" class="n">cap truncations</th></tr></thead>
 <tbody><tr>
-  <th scope="row">linux</th><td class="n">30</td>
-  <td class="n">0.020</td><td class="n">0.034</td>
-  <td class="d down">-0.014 [-0.041, 0.006]</td>
-  <td class="n">0.213</td><td class="n">0.295</td>
-  <td>✓ agree — not detected</td><td class="n">15 / 14</td>
+  <th scope="row">linux</th><td class="n">60</td>
+  <td class="n">0.032</td><td class="n">0.043</td>
+  <td class="d down">-0.010 [-0.037, 0.008]</td>
+  <td class="n">0.412</td><td class="n">0.543</td>
+  <td>✓ agree — not detected</td><td class="n">22 / 28</td>
 </tr>
 <tr>
-  <th scope="row">openclaw</th><td class="n">30</td>
-  <td class="n">0.089</td><td class="n">0.073</td>
-  <td class="d up">+0.016 [-0.063, 0.120]</td>
-  <td class="n">0.791</td><td class="n">0.707</td>
-  <td>✓ agree — not detected</td><td class="n">12 / 5</td>
+  <th scope="row">openclaw</th><td class="n">60</td>
+  <td class="n">0.060</td><td class="n">0.132</td>
+  <td class="d down sig">-0.072 [-0.135, -0.009]</td>
+  <td class="n">0.024</td><td class="n">0.026</td>
+  <td>✓ agree — detected</td><td class="n">6 / 4</td>
 </tr>
 <tr>
-  <th scope="row">ripgrep</th><td class="n">30</td>
-  <td class="n">0.059</td><td class="n">0.152</td>
-  <td class="d down sig">-0.094 [-0.177, -0.026]</td>
-  <td class="n">0.003</td><td class="n">0.010</td>
-  <td>✓ agree — detected</td><td class="n">5 / 1</td>
+  <th scope="row">ripgrep</th><td class="n">60</td>
+  <td class="n">0.110</td><td class="n">0.197</td>
+  <td class="d down sig">-0.087 [-0.148, -0.033]</td>
+  <td class="n">&lt;0.001</td><td class="n">0.003</td>
+  <td>✓ agree — detected</td><td class="n">0 / 1</td>
 </tr>
 <tr>
-  <th scope="row">alamofire</th><td class="n">30</td>
-  <td class="n">0.062</td><td class="n">0.432</td>
-  <td class="d down sig">-0.370 [-0.500, -0.249]</td>
+  <th scope="row">alamofire</th><td class="n">60</td>
+  <td class="n">0.130</td><td class="n">0.324</td>
+  <td class="d down sig">-0.194 [-0.276, -0.118]</td>
   <td class="n">&lt;0.001</td><td class="n">&lt;0.001</td>
-  <td>✓ agree — detected</td><td class="n">2 / 0</td>
+  <td>✓ agree — detected</td><td class="n">0 / 0</td>
 </tr>
 <tr>
-  <th scope="row">hay</th><td class="n">30</td>
-  <td class="n">0.120</td><td class="n">0.169</td>
-  <td class="d down">-0.049 [-0.108, 0.007]</td>
-  <td class="n">0.082</td><td class="n">0.108</td>
+  <th scope="row">hay</th><td class="n">60</td>
+  <td class="n">0.229</td><td class="n">0.247</td>
+  <td class="d down">-0.017 [-0.080, 0.042]</td>
+  <td class="n">0.576</td><td class="n">0.592</td>
   <td>✓ agree — not detected</td><td class="n">0 / 0</td>
 </tr></tbody></table></div>
 <h3>Query-shape splits</h3>
@@ -486,12 +486,12 @@ as <code>hay / rg</code>, never absorbed into another metric.</p>
   <td class="n">0.000</td><td class="n">0.000</td><td class="d up">+0.000</td>
 </tr>
 <tr>
-  <th scope="row">linux</th><td><code>hyphenated</code></td><td class="n">1</td>
-  <td class="n">0.015</td><td class="n">0.021</td><td class="d down">-0.006</td>
+  <th scope="row">linux</th><td><code>hyphenated</code></td><td class="n">4</td>
+  <td class="n">0.039</td><td class="n">0.083</td><td class="d down">-0.044</td>
 </tr>
 <tr>
-  <th scope="row">linux</th><td><code>snakeCase</code></td><td class="n">3</td>
-  <td class="n">0.071</td><td class="n">0.223</td><td class="d down">-0.152</td>
+  <th scope="row">linux</th><td><code>snakeCase</code></td><td class="n">4</td>
+  <td class="n">0.161</td><td class="n">0.203</td><td class="d down">-0.042</td>
 </tr>
 <tr>
   <th scope="row">linux</th><td><code>upperCase</code></td><td class="n">0</td>
@@ -502,40 +502,40 @@ as <code>hay / rg</code>, never absorbed into another metric.</p>
   <td class="n">0.000</td><td class="n">0.000</td><td class="d up">+0.000</td>
 </tr>
 <tr>
-  <th scope="row">linux</th><td><code>pascalCase</code></td><td class="n">17</td>
-  <td class="n">0.021</td><td class="n">0.019</td><td class="d up">+0.002</td>
+  <th scope="row">linux</th><td><code>pascalCase</code></td><td class="n">29</td>
+  <td class="n">0.037</td><td class="n">0.049</td><td class="d down">-0.012</td>
 </tr>
 <tr>
-  <th scope="row">linux</th><td><code>plainWord</code></td><td class="n">9</td>
-  <td class="n">0.000</td><td class="n">0.000</td><td class="d down">-0.000</td>
+  <th scope="row">linux</th><td><code>plainWord</code></td><td class="n">23</td>
+  <td class="n">0.003</td><td class="n">0.000</td><td class="d up">+0.003</td>
 </tr>
 <tr>
   <th scope="row">openclaw</th><td><code>flagShaped</code></td><td class="n">0</td>
   <td class="n">0.000</td><td class="n">0.000</td><td class="d up">+0.000</td>
 </tr>
 <tr>
-  <th scope="row">openclaw</th><td><code>hyphenated</code></td><td class="n">4</td>
-  <td class="n">0.001</td><td class="n">0.008</td><td class="d down">-0.008</td>
+  <th scope="row">openclaw</th><td><code>hyphenated</code></td><td class="n">6</td>
+  <td class="n">0.006</td><td class="n">0.020</td><td class="d down">-0.014</td>
 </tr>
 <tr>
-  <th scope="row">openclaw</th><td><code>snakeCase</code></td><td class="n">0</td>
-  <td class="n">0.000</td><td class="n">0.000</td><td class="d up">+0.000</td>
+  <th scope="row">openclaw</th><td><code>snakeCase</code></td><td class="n">1</td>
+  <td class="n">0.022</td><td class="n">0.100</td><td class="d down">-0.078</td>
 </tr>
 <tr>
-  <th scope="row">openclaw</th><td><code>upperCase</code></td><td class="n">1</td>
-  <td class="n">0.000</td><td class="n">0.005</td><td class="d down">-0.005</td>
+  <th scope="row">openclaw</th><td><code>upperCase</code></td><td class="n">2</td>
+  <td class="n">0.288</td><td class="n">0.542</td><td class="d down">-0.253</td>
 </tr>
 <tr>
-  <th scope="row">openclaw</th><td><code>camelCase</code></td><td class="n">1</td>
-  <td class="n">0.002</td><td class="n">0.100</td><td class="d down">-0.098</td>
+  <th scope="row">openclaw</th><td><code>camelCase</code></td><td class="n">2</td>
+  <td class="n">0.057</td><td class="n">0.177</td><td class="d down">-0.120</td>
 </tr>
 <tr>
-  <th scope="row">openclaw</th><td><code>pascalCase</code></td><td class="n">12</td>
-  <td class="n">0.131</td><td class="n">0.089</td><td class="d up">+0.042</td>
+  <th scope="row">openclaw</th><td><code>pascalCase</code></td><td class="n">18</td>
+  <td class="n">0.037</td><td class="n">0.140</td><td class="d down">-0.103</td>
 </tr>
 <tr>
-  <th scope="row">openclaw</th><td><code>plainWord</code></td><td class="n">12</td>
-  <td class="n">0.092</td><td class="n">0.081</td><td class="d up">+0.010</td>
+  <th scope="row">openclaw</th><td><code>plainWord</code></td><td class="n">31</td>
+  <td class="n">0.070</td><td class="n">0.120</td><td class="d down">-0.050</td>
 </tr>
 <tr>
   <th scope="row">ripgrep</th><td><code>flagShaped</code></td><td class="n">0</td>
@@ -543,7 +543,7 @@ as <code>hay / rg</code>, never absorbed into another metric.</p>
 </tr>
 <tr>
   <th scope="row">ripgrep</th><td><code>hyphenated</code></td><td class="n">1</td>
-  <td class="n">0.125</td><td class="n">0.017</td><td class="d up">+0.108</td>
+  <td class="n">0.333</td><td class="n">0.017</td><td class="d up">+0.316</td>
 </tr>
 <tr>
   <th scope="row">ripgrep</th><td><code>snakeCase</code></td><td class="n">0</td>
@@ -551,19 +551,19 @@ as <code>hay / rg</code>, never absorbed into another metric.</p>
 </tr>
 <tr>
   <th scope="row">ripgrep</th><td><code>upperCase</code></td><td class="n">1</td>
-  <td class="n">0.100</td><td class="n">0.143</td><td class="d down">-0.043</td>
+  <td class="n">0.250</td><td class="n">0.143</td><td class="d up">+0.107</td>
 </tr>
 <tr>
   <th scope="row">ripgrep</th><td><code>camelCase</code></td><td class="n">0</td>
   <td class="n">0.000</td><td class="n">0.000</td><td class="d up">+0.000</td>
 </tr>
 <tr>
-  <th scope="row">ripgrep</th><td><code>pascalCase</code></td><td class="n">8</td>
-  <td class="n">0.092</td><td class="n">0.311</td><td class="d down">-0.219</td>
+  <th scope="row">ripgrep</th><td><code>pascalCase</code></td><td class="n">17</td>
+  <td class="n">0.139</td><td class="n">0.298</td><td class="d down">-0.158</td>
 </tr>
 <tr>
-  <th scope="row">ripgrep</th><td><code>plainWord</code></td><td class="n">20</td>
-  <td class="n">0.040</td><td class="n">0.096</td><td class="d down">-0.056</td>
+  <th scope="row">ripgrep</th><td><code>plainWord</code></td><td class="n">41</td>
+  <td class="n">0.089</td><td class="n">0.161</td><td class="d down">-0.072</td>
 </tr>
 <tr>
   <th scope="row">alamofire</th><td><code>flagShaped</code></td><td class="n">0</td>
@@ -578,28 +578,28 @@ as <code>hay / rg</code>, never absorbed into another metric.</p>
   <td class="n">0.000</td><td class="n">0.000</td><td class="d up">+0.000</td>
 </tr>
 <tr>
-  <th scope="row">alamofire</th><td><code>upperCase</code></td><td class="n">0</td>
-  <td class="n">0.000</td><td class="n">0.000</td><td class="d up">+0.000</td>
+  <th scope="row">alamofire</th><td><code>upperCase</code></td><td class="n">2</td>
+  <td class="n">0.187</td><td class="n">0.254</td><td class="d down">-0.067</td>
 </tr>
 <tr>
-  <th scope="row">alamofire</th><td><code>camelCase</code></td><td class="n">0</td>
-  <td class="n">0.000</td><td class="n">0.000</td><td class="d up">+0.000</td>
+  <th scope="row">alamofire</th><td><code>camelCase</code></td><td class="n">1</td>
+  <td class="n">0.500</td><td class="n">1.000</td><td class="d down">-0.500</td>
 </tr>
 <tr>
-  <th scope="row">alamofire</th><td><code>pascalCase</code></td><td class="n">27</td>
-  <td class="n">0.068</td><td class="n">0.476</td><td class="d down">-0.408</td>
+  <th scope="row">alamofire</th><td><code>pascalCase</code></td><td class="n">51</td>
+  <td class="n">0.135</td><td class="n">0.350</td><td class="d down">-0.215</td>
 </tr>
 <tr>
-  <th scope="row">alamofire</th><td><code>plainWord</code></td><td class="n">3</td>
-  <td class="n">0.005</td><td class="n">0.032</td><td class="d down">-0.027</td>
+  <th scope="row">alamofire</th><td><code>plainWord</code></td><td class="n">6</td>
+  <td class="n">0.012</td><td class="n">0.021</td><td class="d down">-0.010</td>
 </tr>
 <tr>
   <th scope="row">hay</th><td><code>flagShaped</code></td><td class="n">0</td>
   <td class="n">0.000</td><td class="n">0.000</td><td class="d up">+0.000</td>
 </tr>
 <tr>
-  <th scope="row">hay</th><td><code>hyphenated</code></td><td class="n">2</td>
-  <td class="n">0.208</td><td class="n">0.212</td><td class="d down">-0.004</td>
+  <th scope="row">hay</th><td><code>hyphenated</code></td><td class="n">0</td>
+  <td class="n">0.000</td><td class="n">0.000</td><td class="d up">+0.000</td>
 </tr>
 <tr>
   <th scope="row">hay</th><td><code>snakeCase</code></td><td class="n">0</td>
@@ -614,12 +614,12 @@ as <code>hay / rg</code>, never absorbed into another metric.</p>
   <td class="n">0.000</td><td class="n">0.000</td><td class="d up">+0.000</td>
 </tr>
 <tr>
-  <th scope="row">hay</th><td><code>pascalCase</code></td><td class="n">4</td>
-  <td class="n">0.181</td><td class="n">0.386</td><td class="d down">-0.205</td>
+  <th scope="row">hay</th><td><code>pascalCase</code></td><td class="n">11</td>
+  <td class="n">0.378</td><td class="n">0.485</td><td class="d down">-0.107</td>
 </tr>
 <tr>
-  <th scope="row">hay</th><td><code>plainWord</code></td><td class="n">24</td>
-  <td class="n">0.103</td><td class="n">0.129</td><td class="d down">-0.026</td>
+  <th scope="row">hay</th><td><code>plainWord</code></td><td class="n">49</td>
+  <td class="n">0.196</td><td class="n">0.193</td><td class="d up">+0.003</td>
 </tr></tbody></table></div>
 </section>
 

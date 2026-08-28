@@ -7140,15 +7140,15 @@
     {
       "corpus": "hay",
       "provenance": {
-        "revision": "e25075cbb833daffe00cc16d85de2ee234ad59b9",
-        "dirty": true
+        "revision": "5b0644c2911682cbceff01b6b0492784a7089e42",
+        "dirty": false
       },
       "lang": "rust",
-      "eligibleQueries": 341,
+      "eligibleQueries": 342,
       "queries": [
         {
-          "token": "checking",
-          "answer": "memory/2026-08-22.md",
+          "token": "librarian",
+          "answer": "FOR_YOU_KNOW.md",
           "occurrences": 5,
           "features": {
             "flagShaped": false,
@@ -7167,17 +7167,17 @@
               "truncated": false
             },
             "rg": {
-              "rank": 8,
-              "scanned": 8,
+              "rank": 7,
+              "scanned": 7,
               "timedOut": false,
               "truncated": false
             }
           }
         },
         {
-          "token": "count",
-          "answer": "FOR_YOU_KNOW.md",
-          "occurrences": 39,
+          "token": "source",
+          "answer": "site/video-src/README.md",
+          "occurrences": 36,
           "features": {
             "flagShaped": false,
             "hyphenated": false,
@@ -7189,22 +7189,50 @@
           },
           "tools": {
             "hay": {
-              "rank": 19,
-              "scanned": 19,
+              "rank": 34,
+              "scanned": 34,
               "timedOut": false,
               "truncated": false
             },
             "rg": {
-              "rank": 37,
-              "scanned": 37,
+              "rank": 193,
+              "scanned": 193,
               "timedOut": false,
               "truncated": false
             }
           }
         },
         {
-          "token": "harness",
-          "answer": "memory/2026-08-20.md",
+          "token": "Objective",
+          "answer": "docs/method/issues/12-release-integrity.md",
+          "occurrences": 6,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 5,
+              "scanned": 5,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 3,
+              "scanned": 3,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "problem",
+          "answer": "FOR_YOU_KNOW.md",
           "occurrences": 16,
           "features": {
             "flagShaped": false,
@@ -7217,204 +7245,8 @@
           },
           "tools": {
             "hay": {
-              "rank": 7,
-              "scanned": 7,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 31,
-              "scanned": 31,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "openclaw",
-          "answer": "BENCHMARK.md",
-          "occurrences": 18,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": false,
-            "plainWord": true
-          },
-          "tools": {
-            "hay": {
-              "rank": 7,
-              "scanned": 7,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 1,
-              "scanned": 1,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "already",
-          "answer": "docs/method/issues/01-prior-art-survey.md",
-          "occurrences": 27,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": false,
-            "plainWord": true
-          },
-          "tools": {
-            "hay": {
-              "rank": 18,
-              "scanned": 18,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 38,
-              "scanned": 38,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "model",
-          "answer": "DESIGN-hay.md",
-          "occurrences": 8,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": false,
-            "plainWord": true
-          },
-          "tools": {
-            "hay": {
-              "rank": 4,
-              "scanned": 4,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 2,
-              "scanned": 2,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "itself",
-          "answer": "memory/2026-08-20.md",
-          "occurrences": 26,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": false,
-            "plainWord": true
-          },
-          "tools": {
-            "hay": {
-              "rank": 25,
-              "scanned": 25,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 60,
-              "scanned": 60,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "More",
-          "answer": "README.md",
-          "occurrences": 4,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": true,
-            "plainWord": false
-          },
-          "tools": {
-            "hay": {
-              "rank": 3,
-              "scanned": 3,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 3,
-              "scanned": 3,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "whatever",
-          "answer": "README.md",
-          "occurrences": 11,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": false,
-            "plainWord": true
-          },
-          "tools": {
-            "hay": {
-              "rank": 8,
-              "scanned": 8,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 5,
-              "scanned": 5,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "Then",
-          "answer": "memory/2026-08-20.md",
-          "occurrences": 8,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": true,
-            "plainWord": false
-          },
-          "tools": {
-            "hay": {
-              "rank": 4,
-              "scanned": 4,
+              "rank": 11,
+              "scanned": 11,
               "timedOut": false,
               "truncated": false
             },
@@ -7427,37 +7259,9 @@
           }
         },
         {
-          "token": "Reading",
-          "answer": "BENCHMARK_FEYNMAN.md",
-          "occurrences": 4,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": true,
-            "plainWord": false
-          },
-          "tools": {
-            "hay": {
-              "rank": 2,
-              "scanned": 2,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 2,
-              "scanned": 2,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "ignores",
-          "answer": "BENCHMARK_FEYNMAN.md",
-          "occurrences": 6,
+          "token": "longer",
+          "answer": "memory/2026-08-22.md",
+          "occurrences": 15,
           "features": {
             "flagShaped": false,
             "hyphenated": false,
@@ -7466,62 +7270,6 @@
             "camelCase": false,
             "pascalCase": false,
             "plainWord": true
-          },
-          "tools": {
-            "hay": {
-              "rank": 3,
-              "scanned": 3,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 2,
-              "scanned": 2,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "can",
-          "answer": "BENCHMARK_FEYNMAN.md",
-          "occurrences": 51,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": false,
-            "plainWord": true
-          },
-          "tools": {
-            "hay": {
-              "rank": 20,
-              "scanned": 20,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 24,
-              "scanned": 24,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "Map",
-          "answer": "docs/method/map.md",
-          "occurrences": 11,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": true,
-            "plainWord": false
           },
           "tools": {
             "hay": {
@@ -7531,269 +7279,17 @@
               "truncated": false
             },
             "rg": {
-              "rank": 31,
-              "scanned": 31,
+              "rank": 22,
+              "scanned": 22,
               "timedOut": false,
               "truncated": false
             }
           }
         },
         {
-          "token": "next",
-          "answer": "memory/2026-08-23.md",
-          "occurrences": 31,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": false,
-            "plainWord": true
-          },
-          "tools": {
-            "hay": {
-              "rank": 30,
-              "scanned": 30,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 65,
-              "scanned": 65,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "false",
-          "answer": "memory/2026-08-19.md",
-          "occurrences": 32,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": false,
-            "plainWord": true
-          },
-          "tools": {
-            "hay": {
-              "rank": 14,
-              "scanned": 14,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": null,
-              "scanned": 1000,
-              "timedOut": false,
-              "truncated": true
-            }
-          }
-        },
-        {
-          "token": "Four",
-          "answer": "memory/2026-08-19.md",
-          "occurrences": 8,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": true,
-            "plainWord": false
-          },
-          "tools": {
-            "hay": {
-              "rank": 7,
-              "scanned": 7,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 8,
-              "scanned": 8,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "reset",
-          "answer": "memory/2026-08-22.md",
-          "occurrences": 7,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": false,
-            "plainWord": true
-          },
-          "tools": {
-            "hay": {
-              "rank": 5,
-              "scanned": 5,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 11,
-              "scanned": 11,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "flags",
-          "answer": "HOWTO.md",
-          "occurrences": 21,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": false,
-            "plainWord": true
-          },
-          "tools": {
-            "hay": {
-              "rank": 14,
-              "scanned": 14,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 14,
-              "scanned": 14,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "CLI",
-          "answer": "DESIGN-hay.md",
-          "occurrences": 14,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": true,
-            "camelCase": false,
-            "pascalCase": false,
-            "plainWord": false
-          },
-          "tools": {
-            "hay": {
-              "rank": 7,
-              "scanned": 7,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 4,
-              "scanned": 4,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "happened",
-          "answer": "memory/2026-08-20.md",
-          "occurrences": 11,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": false,
-            "plainWord": true
-          },
-          "tools": {
-            "hay": {
-              "rank": 10,
-              "scanned": 10,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 17,
-              "scanned": 17,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "Paired",
-          "answer": "memory/2026-08-22.md",
-          "occurrences": 4,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": true,
-            "plainWord": false
-          },
-          "tools": {
-            "hay": {
-              "rank": 4,
-              "scanned": 4,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 4,
-              "scanned": 4,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "mediocre",
-          "answer": "README.md",
-          "occurrences": 3,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": false,
-            "plainWord": true
-          },
-          "tools": {
-            "hay": {
-              "rank": 2,
-              "scanned": 2,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 2,
-              "scanned": 2,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "should",
-          "answer": "README.md",
-          "occurrences": 27,
+          "token": "signals",
+          "answer": "docs/method/issues/11-cycle-2-plan.md",
+          "occurrences": 22,
           "features": {
             "flagShaped": false,
             "hyphenated": false,
@@ -7819,9 +7315,9 @@
           }
         },
         {
-          "token": "quarters",
-          "answer": "README.md",
-          "occurrences": 3,
+          "token": "touches",
+          "answer": "SECURITY.md",
+          "occurrences": 5,
           "features": {
             "flagShaped": false,
             "hyphenated": false,
@@ -7833,8 +7329,8 @@
           },
           "tools": {
             "hay": {
-              "rank": 2,
-              "scanned": 2,
+              "rank": 4,
+              "scanned": 4,
               "timedOut": false,
               "truncated": false
             },
@@ -7847,36 +7343,8 @@
           }
         },
         {
-          "token": "wrote",
-          "answer": "memory/2026-08-23.md",
-          "occurrences": 11,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": false,
-            "plainWord": true
-          },
-          "tools": {
-            "hay": {
-              "rank": 10,
-              "scanned": 10,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 16,
-              "scanned": 16,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "claims",
-          "answer": "docs/method/issues/11-cycle-2-plan.md",
+          "token": "paragraph",
+          "answer": "HOWTO.md",
           "occurrences": 9,
           "features": {
             "flagShaped": false,
@@ -7889,331 +7357,23 @@
           },
           "tools": {
             "hay": {
+              "rank": 7,
+              "scanned": 7,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
               "rank": 9,
               "scanned": 9,
               "timedOut": false,
               "truncated": false
-            },
-            "rg": {
-              "rank": 5,
-              "scanned": 5,
-              "timedOut": false,
-              "truncated": false
             }
           }
         },
         {
-          "token": "negative",
-          "answer": "README.md",
-          "occurrences": 10,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": false,
-            "plainWord": true
-          },
-          "tools": {
-            "hay": {
-              "rank": 7,
-              "scanned": 7,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 7,
-              "scanned": 7,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "reproducible",
-          "answer": "docs/method/issues/02-modem-methodology.md",
-          "occurrences": 17,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": false,
-            "plainWord": true
-          },
-          "tools": {
-            "hay": {
-              "rank": 10,
-              "scanned": 10,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 19,
-              "scanned": 19,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "boost",
-          "answer": "docs/method/issues/11-cycle-2-plan.md",
-          "occurrences": 5,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": false,
-            "plainWord": true
-          },
-          "tools": {
-            "hay": {
-              "rank": 3,
-              "scanned": 3,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 7,
-              "scanned": 7,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "alarm",
-          "answer": "memory/2026-08-19.md",
-          "occurrences": 3,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": false,
-            "plainWord": true
-          },
-          "tools": {
-            "hay": {
-              "rank": 3,
-              "scanned": 3,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 3,
-              "scanned": 3,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "mid",
-          "answer": "docs/method/issues/08-validate-the-metric.md",
-          "occurrences": 16,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": false,
-            "plainWord": true
-          },
-          "tools": {
-            "hay": {
-              "rank": 12,
-              "scanned": 12,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 32,
-              "scanned": 32,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "Cross",
+          "token": "layout",
           "answer": "DESIGN-hay.md",
-          "occurrences": 4,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": true,
-            "plainWord": false
-          },
-          "tools": {
-            "hay": {
-              "rank": 1,
-              "scanned": 1,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 1,
-              "scanned": 1,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "validity",
-          "answer": "docs/method/issues/11-cycle-2-plan.md",
-          "occurrences": 9,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": false,
-            "plainWord": true
-          },
-          "tools": {
-            "hay": {
-              "rank": 6,
-              "scanned": 6,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 6,
-              "scanned": 6,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "refused",
-          "answer": "memory/2026-08-23.md",
-          "occurrences": 6,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": false,
-            "plainWord": true
-          },
-          "tools": {
-            "hay": {
-              "rank": 4,
-              "scanned": 4,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 7,
-              "scanned": 7,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "into",
-          "answer": "BENCHMARK_FEYNMAN.md",
-          "occurrences": 31,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": false,
-            "plainWord": true
-          },
-          "tools": {
-            "hay": {
-              "rank": 5,
-              "scanned": 5,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 7,
-              "scanned": 7,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "loss",
-          "answer": "docs/method/issues/11-cycle-2-plan.md",
-          "occurrences": 4,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": false,
-            "plainWord": true
-          },
-          "tools": {
-            "hay": {
-              "rank": 4,
-              "scanned": 4,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 2,
-              "scanned": 2,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "cited",
-          "answer": "memory/2026-08-20.md",
-          "occurrences": 5,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": false,
-            "plainWord": true
-          },
-          "tools": {
-            "hay": {
-              "rank": 1,
-              "scanned": 1,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 5,
-              "scanned": 5,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "example",
-          "answer": "site/video-src/README.md",
-          "occurrences": 10,
+          "occurrences": 12,
           "features": {
             "flagShaped": false,
             "hyphenated": false,
@@ -8231,129 +7391,17 @@
               "truncated": false
             },
             "rg": {
-              "rank": 13,
-              "scanned": 13,
+              "rank": 4,
+              "scanned": 4,
               "timedOut": false,
               "truncated": false
             }
           }
         },
         {
-          "token": "defects",
-          "answer": "memory/2026-08-27.md",
-          "occurrences": 13,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": false,
-            "plainWord": true
-          },
-          "tools": {
-            "hay": {
-              "rank": 13,
-              "scanned": 13,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 25,
-              "scanned": 25,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "list",
-          "answer": "BENCHMARK_FEYNMAN.md",
-          "occurrences": 29,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": false,
-            "plainWord": true
-          },
-          "tools": {
-            "hay": {
-              "rank": 14,
-              "scanned": 14,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 7,
-              "scanned": 7,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "explain",
-          "answer": "BENCHMARK_FEYNMAN.md",
-          "occurrences": 26,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": false,
-            "plainWord": true
-          },
-          "tools": {
-            "hay": {
-              "rank": 10,
-              "scanned": 10,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 12,
-              "scanned": 12,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "yet",
-          "answer": "docs/method/map.md",
-          "occurrences": 7,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": false,
-            "plainWord": true
-          },
-          "tools": {
-            "hay": {
-              "rank": 7,
-              "scanned": 7,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 6,
-              "scanned": 6,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "Objective",
-          "answer": "docs/method/issues/12-release-integrity.md",
-          "occurrences": 5,
+          "token": "Measured",
+          "answer": "README.md",
+          "occurrences": 12,
           "features": {
             "flagShaped": false,
             "hyphenated": false,
@@ -8365,14 +7413,14 @@
           },
           "tools": {
             "hay": {
-              "rank": 5,
-              "scanned": 5,
+              "rank": 7,
+              "scanned": 7,
               "timedOut": false,
               "truncated": false
             },
             "rg": {
-              "rank": 3,
-              "scanned": 3,
+              "rank": 7,
+              "scanned": 7,
               "timedOut": false,
               "truncated": false
             }
@@ -8407,9 +7455,9 @@
           }
         },
         {
-          "token": "done",
-          "answer": "docs/method/issues/11-cycle-2-plan.md",
-          "occurrences": 12,
+          "token": "cited",
+          "answer": "memory/2026-08-20.md",
+          "occurrences": 6,
           "features": {
             "flagShaped": false,
             "hyphenated": false,
@@ -8421,8 +7469,232 @@
           },
           "tools": {
             "hay": {
-              "rank": 8,
-              "scanned": 8,
+              "rank": 1,
+              "scanned": 1,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 6,
+              "scanned": 6,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "writing",
+          "answer": "DESIGN-hay.md",
+          "occurrences": 7,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 5,
+              "scanned": 5,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 3,
+              "scanned": 3,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "measures",
+          "answer": "memory/2026-08-23.md",
+          "occurrences": 17,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 17,
+              "scanned": 17,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 33,
+              "scanned": 33,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Reading",
+          "answer": "BENCHMARK_FEYNMAN.md",
+          "occurrences": 5,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 2,
+              "scanned": 2,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 2,
+              "scanned": 2,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "good",
+          "answer": "BENCHMARK_FEYNMAN.md",
+          "occurrences": 7,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 3,
+              "scanned": 3,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 4,
+              "scanned": 4,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "negative",
+          "answer": "README.md",
+          "occurrences": 11,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 7,
+              "scanned": 7,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 7,
+              "scanned": 7,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "plain",
+          "answer": "FOR_YOU_KNOW.md",
+          "occurrences": 37,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 22,
+              "scanned": 22,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 45,
+              "scanned": 45,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "reset",
+          "answer": "memory/2026-08-22.md",
+          "occurrences": 8,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 5,
+              "scanned": 5,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 12,
+              "scanned": 12,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "flags",
+          "answer": "HOWTO.md",
+          "occurrences": 22,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 14,
+              "scanned": 14,
               "timedOut": false,
               "truncated": false
             },
@@ -8435,9 +7707,9 @@
           }
         },
         {
-          "token": "Fixed",
-          "answer": "CHANGELOG.md",
-          "occurrences": 14,
+          "token": "Then",
+          "answer": "memory/2026-08-20.md",
+          "occurrences": 9,
           "features": {
             "flagShaped": false,
             "hyphenated": false,
@@ -8449,14 +7721,14 @@
           },
           "tools": {
             "hay": {
-              "rank": 10,
-              "scanned": 10,
+              "rank": 4,
+              "scanned": 4,
               "timedOut": false,
               "truncated": false
             },
             "rg": {
-              "rank": 1,
-              "scanned": 1,
+              "rank": 11,
+              "scanned": 11,
               "timedOut": false,
               "truncated": false
             }
@@ -8491,9 +7763,177 @@
           }
         },
         {
-          "token": "fixing",
+          "token": "partly",
+          "answer": "docs/method/issues/01-prior-art-survey.md",
+          "occurrences": 8,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 7,
+              "scanned": 7,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 7,
+              "scanned": 7,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "alarm",
+          "answer": "memory/2026-08-19.md",
+          "occurrences": 4,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 3,
+              "scanned": 3,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 4,
+              "scanned": 4,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "had",
           "answer": "BENCHMARK_FEYNMAN.md",
-          "occurrences": 7,
+          "occurrences": 26,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 2,
+              "scanned": 2,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 8,
+              "scanned": 8,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "follows",
+          "answer": "docs/method/issues/08-validate-the-metric.md",
+          "occurrences": 9,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 6,
+              "scanned": 6,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 6,
+              "scanned": 6,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "wrote",
+          "answer": "memory/2026-08-23.md",
+          "occurrences": 11,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 10,
+              "scanned": 10,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 16,
+              "scanned": 16,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Rust",
+          "answer": "FOR_YOU_KNOW.md",
+          "occurrences": 22,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 14,
+              "scanned": 14,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 20,
+              "scanned": 20,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "ignores",
+          "answer": "BENCHMARK_FEYNMAN.md",
+          "occurrences": 6,
           "features": {
             "flagShaped": false,
             "hyphenated": false,
@@ -8519,9 +7959,149 @@
           }
         },
         {
-          "token": "shuffle",
-          "answer": "BENCHMARK_FEYNMAN.md",
-          "occurrences": 6,
+          "token": "reproducible",
+          "answer": "docs/method/issues/02-modem-methodology.md",
+          "occurrences": 18,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 10,
+              "scanned": 10,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 19,
+              "scanned": 19,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "agent",
+          "answer": "HOWTO.md",
+          "occurrences": 39,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 3,
+              "scanned": 3,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 58,
+              "scanned": 58,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Four",
+          "answer": "memory/2026-08-19.md",
+          "occurrences": 9,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 7,
+              "scanned": 7,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 9,
+              "scanned": 9,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Fixed",
+          "answer": "CHANGELOG.md",
+          "occurrences": 15,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 10,
+              "scanned": 10,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 1,
+              "scanned": 1,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Cross",
+          "answer": "DESIGN-hay.md",
+          "occurrences": 5,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 1,
+              "scanned": 1,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 1,
+              "scanned": 1,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "validity",
+          "answer": "docs/method/issues/11-cycle-2-plan.md",
+          "occurrences": 10,
           "features": {
             "flagShaped": false,
             "hyphenated": false,
@@ -8539,17 +8119,73 @@
               "truncated": false
             },
             "rg": {
-              "rank": 3,
-              "scanned": 3,
+              "rank": 6,
+              "scanned": 6,
               "timedOut": false,
               "truncated": false
             }
           }
         },
         {
-          "token": "Use",
+          "token": "decided",
+          "answer": "DESIGN-hay.md",
+          "occurrences": 5,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 3,
+              "scanned": 3,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 5,
+              "scanned": 5,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "into",
+          "answer": "BENCHMARK_FEYNMAN.md",
+          "occurrences": 32,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 5,
+              "scanned": 5,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 7,
+              "scanned": 7,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "When",
           "answer": "HOWTO.md",
-          "occurrences": 16,
+          "occurrences": 7,
           "features": {
             "flagShaped": false,
             "hyphenated": false,
@@ -8561,22 +8197,414 @@
           },
           "tools": {
             "hay": {
-              "rank": 6,
-              "scanned": 6,
+              "rank": 4,
+              "scanned": 4,
               "timedOut": false,
               "truncated": false
             },
             "rg": {
-              "rank": 6,
-              "scanned": 6,
+              "rank": 9,
+              "scanned": 9,
               "timedOut": false,
               "truncated": false
             }
           }
         },
         {
-          "token": "filename",
+          "token": "checking",
+          "answer": "memory/2026-08-22.md",
+          "occurrences": 6,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 5,
+              "scanned": 5,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 9,
+              "scanned": 9,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "whatever",
+          "answer": "README.md",
+          "occurrences": 12,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 8,
+              "scanned": 8,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 5,
+              "scanned": 5,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "itself",
+          "answer": "memory/2026-08-20.md",
+          "occurrences": 27,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 25,
+              "scanned": 25,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 61,
+              "scanned": 61,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "site",
+          "answer": "memory/2026-08-22.md",
+          "occurrences": 31,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 7,
+              "scanned": 7,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 49,
+              "scanned": 49,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "explained",
+          "answer": "BENCHMARK_FEYNMAN.md",
+          "occurrences": 7,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 4,
+              "scanned": 4,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 4,
+              "scanned": 4,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "they",
+          "answer": "memory/2026-08-19.md",
+          "occurrences": 28,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 27,
+              "scanned": 27,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 71,
+              "scanned": 71,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "helps",
+          "answer": "HOWTO.md",
+          "occurrences": 3,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 2,
+              "scanned": 2,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 3,
+              "scanned": 3,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "did",
+          "answer": "docs/method/issues/02-modem-methodology.md",
+          "occurrences": 39,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 28,
+              "scanned": 28,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 77,
+              "scanned": 77,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "done",
           "answer": "docs/method/issues/11-cycle-2-plan.md",
+          "occurrences": 13,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 8,
+              "scanned": 8,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 14,
+              "scanned": 14,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "Follow",
+          "answer": "docs/method/issues/09-document-authority.md",
+          "occurrences": 3,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": true,
+            "plainWord": false
+          },
+          "tools": {
+            "hay": {
+              "rank": 2,
+              "scanned": 2,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 1,
+              "scanned": 1,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "correctly",
+          "answer": "memory/2026-08-22.md",
+          "occurrences": 3,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 3,
+              "scanned": 3,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 3,
+              "scanned": 3,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "fixing",
+          "answer": "BENCHMARK_FEYNMAN.md",
+          "occurrences": 8,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 3,
+              "scanned": 3,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 2,
+              "scanned": 2,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "load",
+          "answer": "memory/2026-08-22.md",
+          "occurrences": 29,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 16,
+              "scanned": 16,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 151,
+              "scanned": 151,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "ledger",
+          "answer": "docs/method/issues/11-cycle-2-plan.md",
+          "occurrences": 5,
+          "features": {
+            "flagShaped": false,
+            "hyphenated": false,
+            "snakeCase": false,
+            "upperCase": false,
+            "camelCase": false,
+            "pascalCase": false,
+            "plainWord": true
+          },
+          "tools": {
+            "hay": {
+              "rank": 4,
+              "scanned": 4,
+              "timedOut": false,
+              "truncated": false
+            },
+            "rg": {
+              "rank": 5,
+              "scanned": 5,
+              "timedOut": false,
+              "truncated": false
+            }
+          }
+        },
+        {
+          "token": "support",
+          "answer": "DESIGN-hay.md",
           "occurrences": 20,
           "features": {
             "flagShaped": false,
@@ -8595,17 +8623,17 @@
               "truncated": false
             },
             "rg": {
-              "rank": 26,
-              "scanned": 26,
+              "rank": 4,
+              "scanned": 4,
               "timedOut": false,
               "truncated": false
             }
           }
         },
         {
-          "token": "section",
+          "token": "explain",
           "answer": "BENCHMARK_FEYNMAN.md",
-          "occurrences": 13,
+          "occurrences": 27,
           "features": {
             "flagShaped": false,
             "hyphenated": false,
@@ -8617,23 +8645,23 @@
           },
           "tools": {
             "hay": {
-              "rank": 6,
-              "scanned": 6,
+              "rank": 10,
+              "scanned": 10,
               "timedOut": false,
               "truncated": false
             },
             "rg": {
-              "rank": 3,
-              "scanned": 3,
+              "rank": 12,
+              "scanned": 12,
               "timedOut": false,
               "truncated": false
             }
           }
         },
         {
-          "token": "traps",
-          "answer": "BENCHMARK_FEYNMAN.md",
-          "occurrences": 5,
+          "token": "constraint",
+          "answer": "DESIGN-hay.md",
+          "occurrences": 4,
           "features": {
             "flagShaped": false,
             "hyphenated": false,
@@ -8645,14 +8673,14 @@
           },
           "tools": {
             "hay": {
-              "rank": 5,
-              "scanned": 5,
+              "rank": 2,
+              "scanned": 2,
               "timedOut": false,
               "truncated": false
             },
             "rg": {
-              "rank": 3,
-              "scanned": 3,
+              "rank": 1,
+              "scanned": 1,
               "timedOut": false,
               "truncated": false
             }
@@ -8687,9 +8715,9 @@
           }
         },
         {
-          "token": "follows",
-          "answer": "docs/method/issues/08-validate-the-metric.md",
-          "occurrences": 8,
+          "token": "section",
+          "answer": "BENCHMARK_FEYNMAN.md",
+          "occurrences": 14,
           "features": {
             "flagShaped": false,
             "hyphenated": false,
@@ -8707,17 +8735,17 @@
               "truncated": false
             },
             "rg": {
-              "rank": 6,
-              "scanned": 6,
+              "rank": 3,
+              "scanned": 3,
               "timedOut": false,
               "truncated": false
             }
           }
         },
         {
-          "token": "condition",
-          "answer": "docs/method/issues/10-error-taxonomy.md",
-          "occurrences": 11,
+          "token": "reported",
+          "answer": "README.md",
+          "occurrences": 20,
           "features": {
             "flagShaped": false,
             "hyphenated": false,
@@ -8729,8 +8757,8 @@
           },
           "tools": {
             "hay": {
-              "rank": 6,
-              "scanned": 6,
+              "rank": 9,
+              "scanned": 9,
               "timedOut": false,
               "truncated": false
             },
@@ -8745,7 +8773,7 @@
         {
           "token": "dev",
           "answer": "docs/method/issues/02-modem-methodology.md",
-          "occurrences": 40,
+          "occurrences": 41,
           "features": {
             "flagShaped": false,
             "hyphenated": false,
@@ -8771,37 +8799,9 @@
           }
         },
         {
-          "token": "Context",
-          "answer": "docs/method/issues/02-modem-methodology.md",
-          "occurrences": 8,
-          "features": {
-            "flagShaped": false,
-            "hyphenated": false,
-            "snakeCase": false,
-            "upperCase": false,
-            "camelCase": false,
-            "pascalCase": true,
-            "plainWord": false
-          },
-          "tools": {
-            "hay": {
-              "rank": 6,
-              "scanned": 6,
-              "timedOut": false,
-              "truncated": false
-            },
-            "rg": {
-              "rank": 5,
-              "scanned": 5,
-              "timedOut": false,
-              "truncated": false
-            }
-          }
-        },
-        {
-          "token": "judged",
-          "answer": "docs/method/issues/08-validate-the-metric.md",
-          "occurrences": 9,
+          "token": "ways",
+          "answer": "BENCHMARK_FEYNMAN.md",
+          "occurrences": 18,
           "features": {
             "flagShaped": false,
             "hyphenated": false,
@@ -8813,14 +8813,14 @@
           },
           "tools": {
             "hay": {
-              "rank": 6,
-              "scanned": 6,
+              "rank": 7,
+              "scanned": 7,
               "timedOut": false,
               "truncated": false
             },
             "rg": {
-              "rank": 12,
-              "scanned": 12,
+              "rank": 6,
+              "scanned": 6,
               "timedOut": false,
               "truncated": false
             }
@@ -8829,24 +8829,24 @@
       ],
       "tools": {
         "hay": {
-          "mrr": 0.2124082267634898,
+          "mrr": 0.22928881476185392,
           "top10": 0.7666666666666667
         },
         "rg": {
-          "mrr": 0.24926554752934835,
-          "top10": 0.6166666666666667
+          "mrr": 0.2465984515123155,
+          "top10": 0.65
         }
       },
       "delta": {
         "mrr": {
-          "mean": -0.03685732076585842,
-          "lo": -0.0990766325406731,
-          "hi": 0.020003327050865247,
-          "p": 0.21557844215578442,
+          "mean": -0.017309636750461526,
+          "lo": -0.07981776038798863,
+          "hi": 0.041645857664293136,
+          "p": 0.5757424257574243,
           "n": 60,
           "clusters": 60
         },
-        "randomizationP": 0.23987601239876014
+        "randomizationP": 0.5920407959204079
       },
       "featureSplits": [
         {
@@ -8878,12 +8878,12 @@
         },
         {
           "feature": "upperCase",
-          "n": 1,
+          "n": 0,
           "mrr": {
-            "hay": 0.14285714285714285,
-            "rg": 0.25
+            "hay": 0,
+            "rg": 0
           },
-          "deltaMrr": -0.10714285714285715
+          "deltaMrr": 0
         },
         {
           "feature": "camelCase",
@@ -8896,26 +8896,26 @@
         },
         {
           "feature": "pascalCase",
-          "n": 12,
+          "n": 11,
           "mrr": {
-            "hay": 0.3517195767195767,
-            "rg": 0.4200492831541219
+            "hay": 0.37792207792207794,
+            "rg": 0.48539288993834456
           },
-          "deltaMrr": -0.06832970643454517
+          "deltaMrr": -0.10747081201626663
         },
         {
           "feature": "plainWord",
-          "n": 47,
+          "n": 49,
           "mrr": {
-            "hay": 0.17831918175143255,
-            "rg": 0.20564556284917956
+            "hay": 0.1959221638483343,
+            "rg": 0.1929915367636151
           },
-          "deltaMrr": -0.027326381097747016
+          "deltaMrr": 0.002930627084719195
         }
       ],
       "truncations": {
         "hay": 0,
-        "rg": 1
+        "rg": 0
       }
     }
   ]

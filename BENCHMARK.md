@@ -69,8 +69,8 @@ and the places this benchmark is wrong.
 
 ## Documentation track
 
-Generated 2026-08-27 · hay hay 0.1.4 · rg ripgrep 15.2.0 (rev e89fff89ac).
-Corpus revisions: linux `45c13f3f9e3b` · openclaw `a82042f20415` · ripgrep `3fce3b5bb023` · alamofire `0455bfb65089` · hay `82ff61c171c2`.
+Generated 2026-08-28 · hay hay 0.2.0 · rg ripgrep 15.2.0.
+Corpus revisions: linux `1b78070aaef6` · openclaw `0706f629c3b5` · ripgrep `3fce3b5bb023` · alamofire `0455bfb65089` · hay `5b0644c29116`.
 
 A public development set for documentation retrieval: identifier-like tokens from ATX
 headings that occur in exactly one markdown file's headings and in at least three
@@ -79,11 +79,11 @@ track; cap truncations are reported as `hay / rg`, never absorbed into another m
 
 | corpus | n | MRR hay | MRR rg --sort path | Δ MRR (95% CI) | bootstrap p | randomization p | both tests | cap truncations (hay / rg) |
 |---|---:|---:|---:|---|---:|---:|---|---:|
-| linux | 30 | 0.020 | 0.034 | -0.014 [-0.041, 0.006] | 0.213 | 0.295 | ✓ agree — not detected | 15 / 14 |
-| openclaw | 30 | 0.089 | 0.073 | +0.016 [-0.063, 0.120] | 0.791 | 0.707 | ✓ agree — not detected | 12 / 5 |
-| ripgrep | 30 | 0.059 | 0.152 | -0.094 [-0.177, -0.026] | 0.003 | 0.010 | ✓ agree — detected | 5 / 1 |
-| alamofire | 30 | 0.062 | 0.432 | -0.370 [-0.500, -0.249] | <0.001 | <0.001 | ✓ agree — detected | 2 / 0 |
-| hay | 30 | 0.120 | 0.169 | -0.049 [-0.108, 0.007] | 0.082 | 0.108 | ✓ agree — not detected | 0 / 0 |
+| linux | 60 | 0.032 | 0.043 | -0.010 [-0.037, 0.008] | 0.412 | 0.543 | ✓ agree — not detected | 22 / 28 |
+| openclaw | 60 | 0.060 | 0.132 | -0.072 [-0.135, -0.009] | 0.024 | 0.026 | ✓ agree — detected | 6 / 4 |
+| ripgrep | 60 | 0.110 | 0.197 | -0.087 [-0.148, -0.033] | <0.001 | 0.003 | ✓ agree — detected | 0 / 1 |
+| alamofire | 60 | 0.130 | 0.324 | -0.194 [-0.276, -0.118] | <0.001 | <0.001 | ✓ agree — detected | 0 / 0 |
+| hay | 60 | 0.229 | 0.247 | -0.017 [-0.080, 0.042] | 0.576 | 0.592 | ✓ agree — not detected | 0 / 0 |
 
 ### Query-shape splits
 
@@ -93,40 +93,40 @@ case → pascal case → plain word.
 | corpus | feature | n | MRR hay | MRR rg --sort path | Δ MRR |
 |---|---|---:|---:|---:|---:|
 | linux | `flagShaped` | 0 | 0.000 | 0.000 | +0.000 |
-| linux | `hyphenated` | 1 | 0.015 | 0.021 | -0.006 |
-| linux | `snakeCase` | 3 | 0.071 | 0.223 | -0.152 |
+| linux | `hyphenated` | 4 | 0.039 | 0.083 | -0.044 |
+| linux | `snakeCase` | 4 | 0.161 | 0.203 | -0.042 |
 | linux | `upperCase` | 0 | 0.000 | 0.000 | +0.000 |
 | linux | `camelCase` | 0 | 0.000 | 0.000 | +0.000 |
-| linux | `pascalCase` | 17 | 0.021 | 0.019 | +0.002 |
-| linux | `plainWord` | 9 | 0.000 | 0.000 | -0.000 |
+| linux | `pascalCase` | 29 | 0.037 | 0.049 | -0.012 |
+| linux | `plainWord` | 23 | 0.003 | 0.000 | +0.003 |
 | openclaw | `flagShaped` | 0 | 0.000 | 0.000 | +0.000 |
-| openclaw | `hyphenated` | 4 | 0.001 | 0.008 | -0.008 |
-| openclaw | `snakeCase` | 0 | 0.000 | 0.000 | +0.000 |
-| openclaw | `upperCase` | 1 | 0.000 | 0.005 | -0.005 |
-| openclaw | `camelCase` | 1 | 0.002 | 0.100 | -0.098 |
-| openclaw | `pascalCase` | 12 | 0.131 | 0.089 | +0.042 |
-| openclaw | `plainWord` | 12 | 0.092 | 0.081 | +0.010 |
+| openclaw | `hyphenated` | 6 | 0.006 | 0.020 | -0.014 |
+| openclaw | `snakeCase` | 1 | 0.022 | 0.100 | -0.078 |
+| openclaw | `upperCase` | 2 | 0.288 | 0.542 | -0.253 |
+| openclaw | `camelCase` | 2 | 0.057 | 0.177 | -0.120 |
+| openclaw | `pascalCase` | 18 | 0.037 | 0.140 | -0.103 |
+| openclaw | `plainWord` | 31 | 0.070 | 0.120 | -0.050 |
 | ripgrep | `flagShaped` | 0 | 0.000 | 0.000 | +0.000 |
-| ripgrep | `hyphenated` | 1 | 0.125 | 0.017 | +0.108 |
+| ripgrep | `hyphenated` | 1 | 0.333 | 0.017 | +0.316 |
 | ripgrep | `snakeCase` | 0 | 0.000 | 0.000 | +0.000 |
-| ripgrep | `upperCase` | 1 | 0.100 | 0.143 | -0.043 |
+| ripgrep | `upperCase` | 1 | 0.250 | 0.143 | +0.107 |
 | ripgrep | `camelCase` | 0 | 0.000 | 0.000 | +0.000 |
-| ripgrep | `pascalCase` | 8 | 0.092 | 0.311 | -0.219 |
-| ripgrep | `plainWord` | 20 | 0.040 | 0.096 | -0.056 |
+| ripgrep | `pascalCase` | 17 | 0.139 | 0.298 | -0.158 |
+| ripgrep | `plainWord` | 41 | 0.089 | 0.161 | -0.072 |
 | alamofire | `flagShaped` | 0 | 0.000 | 0.000 | +0.000 |
 | alamofire | `hyphenated` | 0 | 0.000 | 0.000 | +0.000 |
 | alamofire | `snakeCase` | 0 | 0.000 | 0.000 | +0.000 |
-| alamofire | `upperCase` | 0 | 0.000 | 0.000 | +0.000 |
-| alamofire | `camelCase` | 0 | 0.000 | 0.000 | +0.000 |
-| alamofire | `pascalCase` | 27 | 0.068 | 0.476 | -0.408 |
-| alamofire | `plainWord` | 3 | 0.005 | 0.032 | -0.027 |
+| alamofire | `upperCase` | 2 | 0.187 | 0.254 | -0.067 |
+| alamofire | `camelCase` | 1 | 0.500 | 1.000 | -0.500 |
+| alamofire | `pascalCase` | 51 | 0.135 | 0.350 | -0.215 |
+| alamofire | `plainWord` | 6 | 0.012 | 0.021 | -0.010 |
 | hay | `flagShaped` | 0 | 0.000 | 0.000 | +0.000 |
-| hay | `hyphenated` | 2 | 0.208 | 0.212 | -0.004 |
+| hay | `hyphenated` | 0 | 0.000 | 0.000 | +0.000 |
 | hay | `snakeCase` | 0 | 0.000 | 0.000 | +0.000 |
 | hay | `upperCase` | 0 | 0.000 | 0.000 | +0.000 |
 | hay | `camelCase` | 0 | 0.000 | 0.000 | +0.000 |
-| hay | `pascalCase` | 4 | 0.181 | 0.386 | -0.205 |
-| hay | `plainWord` | 24 | 0.103 | 0.129 | -0.026 |
+| hay | `pascalCase` | 11 | 0.378 | 0.485 | -0.107 |
+| hay | `plainWord` | 49 | 0.196 | 0.193 | +0.003 |
 
 ## linux
 

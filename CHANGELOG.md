@@ -69,9 +69,10 @@ unreachable — the remaining gap is ranking quality, not measurement.
   ripgrep's kernel baseline moves 0.508 → 0.541 once the tree matches its revision.
 - Documentation track, re-measured: `hay` is detectably worse than `rg --sort path` on Alamofire
   (−0.194 [−0.276, −0.118]), ripgrep (−0.087 [−0.148, −0.033]) and now openclaw
-  (−0.072 [−0.135, −0.009], newly detected, on a newer corpus revision). Alamofire's deficit
-  roughly halved (−0.370 → −0.194). The warning against using a definition ranker for prose
-  search stands.
+  (−0.072 [−0.135, −0.009], newly detected). Alamofire's deficit roughly halved
+  (−0.370 → −0.194). The before/after is loose — this track now samples 60 queries per corpus
+  rather than 30, and two corpus revisions moved — but the warning against using a definition
+  ranker for prose search stands.
 
 ### Measurement kit
 

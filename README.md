@@ -253,11 +253,11 @@ descriptive snapshots, without intervals or p-values.
 track, `hay` is detectably worse than `ripgrep --sort path` on Alamofire
 (−0.194 [−0.276, −0.118], randomization p<0.001), ripgrep's repository
 (−0.087 [−0.148, −0.033], p=0.003) and now openclaw too (−0.072 [−0.135, −0.009], p=0.026,
-where 0.1.4 showed no detected difference — on a newer corpus revision, so the change is not
-attributable to the ranker alone). Linux (−0.010 [−0.037, 0.008]) and this repository
-(−0.037 [−0.099, 0.020]) show no detected difference. The Alamofire deficit roughly halved
-(−0.370 → −0.194), which is the interleaving helping where the path prior hurts, and the
-direction of the whole track is unchanged: this is the strongest public warning against treating
+where 0.1.4 showed no detected difference). Linux (−0.010 [−0.037, 0.008]) and this repository
+(−0.017 [−0.080, 0.042]) show no detected difference. The Alamofire deficit roughly halved
+(−0.370 → −0.194), which is the interleaving helping where the path prior hurts. Read the
+before/after loosely: this track now samples 60 queries per corpus rather than 30, and two corpus
+revisions moved. The direction of the whole track is unchanged: this is the strongest public warning against treating
 a definition ranker as a universal search improvement. If your searches are mostly prose,
 `rg --sort path` is the better tool and this README will keep saying so.
 
