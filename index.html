@@ -88,7 +88,7 @@ footer a{color:inherit}
 <div class="wrap">
 
 <header class="hero">
-  <p class="eyebrow">grep-hygiene · hay · v0.2.0</p>
+  <p class="eyebrow">grep-hygiene · hay · v0.3.0</p>
   <h1>A ranked grep for coding agents.</h1>
   <p class="lede"><code>hay</code> returns <strong>exactly ripgrep's matches</strong> — never more,
   never fewer — reordered so the line that declares what you asked about comes first, and so the
@@ -149,7 +149,7 @@ footer a{color:inherit}
   <p class="kicker">the numbers, animated</p>
   <h2>MRR by corpus — scroll to grow.</h2>
   <p class="sub">Mean reciprocal rank of the declaring file against deterministic <code>rg --sort path</code>.
-  This definition-finding track is hay&rsquo;s home turf; the separate docs track has no detected wins and three regressions.
+  This definition-finding track is hay&rsquo;s home turf; the separate docs track has no detected wins and four regressions.
   Full intervals, exclusions, and tests are in the <a href="benchmark.html">complete report</a>.</p>
   <div class="chart" id="chart">
     <div class="crow"><div class="cname">linux kernel</div><div class="cbars">
@@ -174,7 +174,9 @@ footer a{color:inherit}
   <div class="cards">
     <div class="card"><span class="tag">drop-in shape</span><h3>rg-compatible I/O</h3>
       <p><code>path:line:text</code>, globs, file types, context windows, JSON Lines — combined short
-      flags included, via lexopt.</p></div>
+      flags included, via lexopt. As of 0.3.0 <em>every</em> valid ripgrep invocation has an answer:
+      <code>-c</code>, <code>-v</code>, <code>-o</code> and <code>--stream</code> run unranked, in
+      ripgrep's own traversal, with no candidate cap.</p></div>
     <div class="card"><span class="tag">the product</span><h3>Definition-first ranking</h3>
       <p>Four signals and a file-interleaved layout, each with an ablation switch
       (<code>--no-definition</code>, <code>--no-path</code>, <code>--no-word</code>,
