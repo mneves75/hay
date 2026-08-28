@@ -100,9 +100,15 @@ prints every result hay ranked, not every tree match. `--stream` has no cap: it 
 rank, so nothing has to be retained, and a broad pattern is answered exhaustively.
 
 `-c`, `--count-matches`, `-v`, `-o` and `--stream` are UNRANKED modes. There is nothing to
-order, so they stream in path order and behave as the corresponding ripgrep invocation. That
-is deliberate: every valid `rg` command should have an answer here, so `hay` can replace `rg`
-outright rather than being the tool you reach for once you already know the question ranks.
+order, so they use ripgrep's own parallel traversal and behave as the corresponding ripgrep
+invocation, including its per-file `-m` and its NON-deterministic order. Every ranked mode is
+deterministic. That is deliberate: every valid `rg` command should have an answer here, so
+`hay` can replace `rg` outright rather than being the tool you reach for once you already know
+the question ranks.
+
+One divergence remains in those modes: `-m 0` means no limit everywhere in hay, where
+ripgrep treats it as print nothing. hay's meaning is the documented one above and the
+measurement kit depends on it, so it does not change.
 ";
 
 #[derive(Default, Debug)]

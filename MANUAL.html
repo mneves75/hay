@@ -288,6 +288,9 @@ hay -v config .            # the lines that did not match</code></pre><button cl
 ripgrep's. A sorted walk was measured at 8.0 s to the first line of a Linux-kernel search against
 ripgrep's 1.1 s; the parallel walk brings that to 2.3 s. Every mode that ranks is deterministic.
 <code>--explain</code> is refused here — there is no ranking to explain.</p>
+<p>One divergence survives: <code>-m 0</code> means <em>no limit</em> everywhere in hay, where
+ripgrep treats it as <em>print nothing</em>. hay's meaning is the documented one and the
+measurement kit depends on it, so it stays — stated here rather than discovered.</p>
 </div>
 
 <h3>Turning signals off</h3>

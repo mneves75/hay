@@ -20,7 +20,7 @@ and the places this benchmark is wrong.
 
 ## Method
 
-- **Generated** — 2026-08-27T23:51:30.846Z.
+- **Generated** — 2026-08-28T15:40:24.464Z.
 - **Task** — definition finding: given a symbol declared exactly once, rank of the declaring file.
 - **Ground truth** — ast-grep (a parser), independent of every heuristic under test. A symbol declared in more than one place is discarded:
   there is no single right answer, so scoring against an arbitrary one would be noise.
@@ -58,7 +58,7 @@ and the places this benchmark is wrong.
 
 | tool | version |
 |---|---|
-| `hay` | hay 0.2.0 |
+| `hay` | hay 0.3.0 |
 | `rg` | ripgrep 15.2.0 |
 | `ugrep` | ugrep 7.8.4 aarch64-apple-darwin25.6.0 +neon/AArch64; -P:pcre2jit; -z:zlib,bzip2,lzma,lz4,zstd,brotli,7z,tar/pax/cpio/zip |
 | `ag` | ag version 2.2.0 |
@@ -69,8 +69,8 @@ and the places this benchmark is wrong.
 
 ## Documentation track
 
-Generated 2026-08-28 · hay hay 0.2.0 · rg ripgrep 15.2.0.
-Corpus revisions: linux `1b78070aaef6` · openclaw `0706f629c3b5` · ripgrep `3fce3b5bb023` · alamofire `0455bfb65089` · hay `5b0644c29116`.
+Generated 2026-08-28 · hay hay 0.3.0 · rg ripgrep 15.2.0.
+Corpus revisions: linux `1b78070aaef6` · openclaw `0706f629c3b5` · ripgrep `3fce3b5bb023` · alamofire `0455bfb65089` · hay `87d3988c8119`.
 
 A public development set for documentation retrieval: identifier-like tokens from ATX
 headings that occur in exactly one markdown file's headings and in at least three
@@ -79,11 +79,11 @@ track; cap truncations are reported as `hay / rg`, never absorbed into another m
 
 | corpus | n | MRR hay | MRR rg --sort path | Δ MRR (95% CI) | bootstrap p | randomization p | both tests | cap truncations (hay / rg) |
 |---|---:|---:|---:|---|---:|---:|---|---:|
-| linux | 60 | 0.032 | 0.043 | -0.010 [-0.037, 0.008] | 0.412 | 0.543 | ✓ agree — not detected | 22 / 28 |
+| linux | 60 | 0.032 | 0.043 | -0.010 [-0.037, 0.009] | 0.436 | 0.568 | ✓ agree — not detected | 22 / 28 |
 | openclaw | 60 | 0.060 | 0.132 | -0.072 [-0.135, -0.009] | 0.024 | 0.026 | ✓ agree — detected | 6 / 4 |
 | ripgrep | 60 | 0.110 | 0.197 | -0.087 [-0.148, -0.033] | <0.001 | 0.003 | ✓ agree — detected | 0 / 1 |
 | alamofire | 60 | 0.130 | 0.324 | -0.194 [-0.276, -0.118] | <0.001 | <0.001 | ✓ agree — detected | 0 / 0 |
-| hay | 60 | 0.229 | 0.247 | -0.017 [-0.080, 0.042] | 0.576 | 0.592 | ✓ agree — not detected | 0 / 0 |
+| hay | 60 | 0.228 | 0.313 | -0.085 [-0.164, -0.010] | 0.024 | 0.033 | ✓ agree — detected | 0 / 0 |
 
 ### Query-shape splits
 
@@ -93,7 +93,7 @@ case → pascal case → plain word.
 | corpus | feature | n | MRR hay | MRR rg --sort path | Δ MRR |
 |---|---|---:|---:|---:|---:|
 | linux | `flagShaped` | 0 | 0.000 | 0.000 | +0.000 |
-| linux | `hyphenated` | 4 | 0.039 | 0.083 | -0.044 |
+| linux | `hyphenated` | 4 | 0.039 | 0.078 | -0.039 |
 | linux | `snakeCase` | 4 | 0.161 | 0.203 | -0.042 |
 | linux | `upperCase` | 0 | 0.000 | 0.000 | +0.000 |
 | linux | `camelCase` | 0 | 0.000 | 0.000 | +0.000 |
@@ -121,12 +121,12 @@ case → pascal case → plain word.
 | alamofire | `pascalCase` | 51 | 0.135 | 0.350 | -0.215 |
 | alamofire | `plainWord` | 6 | 0.012 | 0.021 | -0.010 |
 | hay | `flagShaped` | 0 | 0.000 | 0.000 | +0.000 |
-| hay | `hyphenated` | 0 | 0.000 | 0.000 | +0.000 |
+| hay | `hyphenated` | 1 | 1.000 | 1.000 | +0.000 |
 | hay | `snakeCase` | 0 | 0.000 | 0.000 | +0.000 |
-| hay | `upperCase` | 0 | 0.000 | 0.000 | +0.000 |
+| hay | `upperCase` | 1 | 0.143 | 0.250 | -0.107 |
 | hay | `camelCase` | 0 | 0.000 | 0.000 | +0.000 |
-| hay | `pascalCase` | 11 | 0.378 | 0.485 | -0.107 |
-| hay | `plainWord` | 49 | 0.196 | 0.193 | +0.003 |
+| hay | `pascalCase` | 12 | 0.249 | 0.406 | -0.157 |
+| hay | `plainWord` | 46 | 0.208 | 0.275 | -0.067 |
 
 ## linux
 
@@ -136,11 +136,11 @@ C · 95,911 files on disk · 95,910 visible after gitignore · 96,013 tracked by
 | tool | MRR | answer in top 10 | median rank | never found | Δ MRR vs rg --sort path (95% CI) | randomization p |
 |---|---:|---:|---:|---:|---|---:|
 | hay (this project) | 0.933 | 100% | 1 | 0% | **+0.392 [0.247, 0.544]** | <0.001 |
-| ast-grep (structural snapshot) | 0.688 | 90% | 1 | 0% | snapshot only | — |
+| ast-grep (structural snapshot) | 0.629 | 90% | 1.5 | 0% | snapshot only | — |
 | ugrep --sort=name | 0.606 | 90% | 1.5 | 0% | +0.065 [0.000, 0.163] | 0.496 |
 | codespelunker (ranked) | 0.604 | 93% | 2 | 0% | snapshot only | — |
 | BSD grep | 0.601 | 87% | 2 | 0% | snapshot only | — |
-| the_silver_searcher | 0.562 | 83% | 2 | 3% | snapshot only | — |
+| the_silver_searcher | 0.559 | 83% | 2 | 3% | snapshot only | — |
 | ripgrep --sort path (deterministic baseline) | 0.541 | 83% | 2.5 | 0% | baseline | baseline |
 | git grep | 0.541 | 83% | 2.5 | 0% | +0.000 [0.000, 0.000] | 1.000 |
 
@@ -152,11 +152,11 @@ contract, so its point estimates are shown but no confidence interval or p-value
 
 | query | hay | rg --sort path | ugrep --sort=name | ag | grep | git grep | cs | ast-grep |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| `su_remove` | 2.50 s | 8.21 s | 1.53 s | 2.63 s | 15.32 s | 2.48 s | 10.16 s | 7.42 s |
-| `use_intel_pmu` | 2.45 s | 9.23 s | 61 ms | 2.63 s | 14.22 s | 2.57 s | 9.75 s | 7.64 s |
-| `mgag200_init_pci_options` | 3.05 s | 8.06 s | 1.80 s | 2.77 s | 14.73 s | 2.50 s | 9.09 s | 7.35 s |
+| `su_remove` | 2.66 s | 8.87 s | 1.52 s | 2.78 s | timeout | 2.79 s | 10.30 s | 8.96 s |
+| `use_intel_pmu` | 2.45 s | 8.72 s | 65 ms | 2.67 s | 19.47 s | 2.55 s | 11.32 s | 7.71 s |
+| `mgag200_init_pci_options` | 2.70 s | 9.40 s | 1.90 s | 2.62 s | 15.96 s | 2.53 s | 9.94 s | 7.80 s |
 
-| peak memory | 15 MB | 8 MB | 8 MB | 181 MB | 3 MB | 253 MB | 204 MB | 640 MB |
+| peak memory | 17 MB | 8 MB | 8 MB | 182 MB | 3 MB | 250 MB | 145 MB | 711 MB |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 
 ## openclaw
@@ -171,7 +171,7 @@ TS · 34,366 files on disk · 33,882 visible after gitignore · 34,391 tracked b
 | git grep | 0.819 | 97% | 1 | 0% | +0.000 [0.000, 0.000] | 1.000 |
 | codespelunker (ranked) | 0.816 | 97% | 1 | 0% | snapshot only | — |
 | ugrep --sort=name | 0.797 | 97% | 1 | 0% | -0.022 [-0.080, 0.013] | 1.000 |
-| ast-grep (structural snapshot) | 0.783 | 83% | 1 | 0% | snapshot only | — |
+| ast-grep (structural snapshot) | 0.776 | 87% | 1 | 0% | snapshot only | — |
 | the_silver_searcher | 0.730 | 87% | 1 | 0% | snapshot only | — |
 | BSD grep | 0.730 | 87% | 1 | 0% | snapshot only | — |
 
@@ -183,11 +183,11 @@ contract, so its point estimates are shown but no confidence interval or p-value
 
 | query | hay | rg --sort path | ugrep --sort=name | ag | grep | git grep | cs | ast-grep |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| `collectScopes` | 864 ms | 2.75 s | 1.02 s | 854 ms | 5.15 s | 917 ms | 2.05 s | 1.87 s |
-| `handleComposerKeydown` | 827 ms | 2.75 s | 235 ms | 924 ms | 3.97 s | 816 ms | 2.00 s | 1.96 s |
-| `githubResponse` | 742 ms | 1.82 s | 848 ms | 820 ms | 4.34 s | 830 ms | 2.20 s | 1.97 s |
+| `collectScopes` | 906 ms | 2.95 s | 1.06 s | 881 ms | 5.56 s | 883 ms | 2.75 s | 2.49 s |
+| `handleComposerKeydown` | 844 ms | 2.79 s | 334 ms | 937 ms | 4.97 s | 884 ms | 2.70 s | 3.08 s |
+| `githubResponse` | 1.10 s | 2.97 s | 1.06 s | 932 ms | 5.16 s | 889 ms | 2.63 s | 1.99 s |
 
-| peak memory | 15 MB | 8 MB | 9 MB | 17 MB | 3 MB | 53 MB | 33 MB | 48 MB |
+| peak memory | 16 MB | 8 MB | 9 MB | 17 MB | 3 MB | 54 MB | 34 MB | 46 MB |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 
 ## ripgrep
@@ -198,9 +198,9 @@ RUST · 236 files on disk · 225 visible after gitignore · 237 tracked by git �
 | tool | MRR | answer in top 10 | median rank | never found | Δ MRR vs rg --sort path (95% CI) | randomization p |
 |---|---:|---:|---:|---:|---|---:|
 | hay (this project) | 0.877 | 100% | 1 | 0% | **+0.458 [0.304, 0.613]** | <0.001 |
-| ast-grep (structural snapshot) | 0.717 | 87% | 1 | 0% | snapshot only | — |
+| ast-grep (structural snapshot) | 0.695 | 91% | 1 | 0% | snapshot only | — |
 | codespelunker (ranked) | 0.642 | 91% | 2 | 0% | snapshot only | — |
-| the_silver_searcher | 0.467 | 70% | 4 | 0% | snapshot only | — |
+| the_silver_searcher | 0.489 | 70% | 4 | 0% | snapshot only | — |
 | ugrep --sort=name | 0.421 | 70% | 5 | 0% | +0.002 [0.000, 0.007] | 1.000 |
 | ripgrep --sort path (deterministic baseline) | 0.419 | 70% | 5 | 0% | baseline | baseline |
 | git grep | 0.419 | 70% | 5 | 0% | -0.000 [-0.000, 0.000] | 1.000 |
@@ -214,11 +214,11 @@ contract, so its point estimates are shown but no confidence interval or p-value
 
 | query | hay | rg --sort path | ugrep --sort=name | ag | grep | git grep | cs | ast-grep |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| `basic` | 11 ms | 16 ms | 6 ms | 20 ms | 32 ms | 11 ms | 29 ms | 29 ms |
-| `enforce_literal_len` | 12 ms | 13 ms | 8 ms | 19 ms | 43 ms | 11 ms | 28 ms | 29 ms |
-| `quiet` | 10 ms | 13 ms | 6 ms | 20 ms | 28 ms | 11 ms | 33 ms | 33 ms |
+| `basic` | 11 ms | 18 ms | 8 ms | 24 ms | 33 ms | 12 ms | 37 ms | 31 ms |
+| `enforce_literal_len` | 11 ms | 19 ms | 9 ms | 20 ms | 41 ms | 12 ms | 36 ms | 36 ms |
+| `quiet` | 14 ms | 28 ms | 8 ms | 23 ms | 28 ms | 12 ms | 41 ms | 43 ms |
 
-| peak memory | 6 MB | 5 MB | 5 MB | 7 MB | 2 MB | 10 MB | 22 MB | 31 MB |
+| peak memory | 7 MB | 5 MB | 5 MB | 7 MB | 2 MB | 10 MB | 22 MB | 29 MB |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 
 ## alamofire
@@ -229,13 +229,13 @@ SWIFT · 568 files on disk · 555 visible after gitignore · 568 tracked by git 
 | tool | MRR | answer in top 10 | median rank | never found | Δ MRR vs rg --sort path (95% CI) | randomization p |
 |---|---:|---:|---:|---:|---|---:|
 | hay (this project) | 0.776 | 100% | 1 | 0% | **+0.343 [0.235, 0.459]** | <0.001 |
-| ast-grep (structural snapshot) | 0.452 | 76% | 3 | 7% | snapshot only | — |
 | ripgrep --sort path (deterministic baseline) | 0.433 | 59% | 3 | 0% | baseline | baseline |
 | ugrep --sort=name | 0.433 | 59% | 3 | 0% | +0.000 [0.000, 0.000] | 1.000 |
 | git grep | 0.433 | 59% | 3 | 0% | +0.000 [0.000, 0.000] | 1.000 |
 | codespelunker (ranked) | 0.430 | 86% | 3 | 0% | snapshot only | — |
+| ast-grep (structural snapshot) | 0.409 | 79% | 3 | 7% | snapshot only | — |
+| the_silver_searcher | 0.326 | 41% | 12 | 10% | snapshot only | — |
 | BSD grep | 0.294 | 38% | 19 | 3% | snapshot only | — |
-| the_silver_searcher | 0.293 | 38% | 13 | 10% | snapshot only | — |
 
 Bold = **both** tests agree the difference is real: the interval excludes zero *and* the
 randomization test puts it under 0.05. `snapshot only` means the tool has no stable-order
@@ -245,9 +245,9 @@ contract, so its point estimates are shown but no confidence interval or p-value
 
 | query | hay | rg --sort path | ugrep --sort=name | ag | grep | git grep | cs | ast-grep |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| `requestDidCancel` | 16 ms | 33 ms | 7 ms | 35 ms | 144 ms | 16 ms | 62 ms | 30 ms |
-| `reset` | 15 ms | 28 ms | 7 ms | 34 ms | 137 ms | 14 ms | 59 ms | 28 ms |
-| `value` | 18 ms | 34 ms | 6 ms | 55 ms | 115 ms | 15 ms | 148 ms | 29 ms |
+| `requestDidCancel` | 16 ms | 31 ms | 7 ms | 34 ms | 139 ms | 15 ms | 63 ms | 30 ms |
+| `reset` | 16 ms | 39 ms | 7 ms | 36 ms | 135 ms | 15 ms | 64 ms | 27 ms |
+| `value` | 17 ms | 36 ms | 8 ms | 60 ms | 106 ms | 15 ms | 153 ms | 31 ms |
 
 | peak memory | 11 MB | 6 MB | 4 MB | 7 MB | 3 MB | 13 MB | 44 MB | 26 MB |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
@@ -257,19 +257,19 @@ contract, so its point estimates are shown but no confidence interval or p-value
 > **Too few queries to conclude anything (1).** Reported for completeness; the
 > numbers below are not evidence and no difference is marked as detected.
 
-Corpus revision `e25075cbb833` · clean.
-RUST · 40,105 files on disk · 82 visible after gitignore · 93 tracked by git · 57 symbols declared exactly once · **1 query**
+Corpus revision `87d3988c8119` · clean.
+RUST · 47,295 files on disk · 91 visible after gitignore · 102 tracked by git · 59 symbols declared exactly once · **1 query**
 
 | tool | MRR | answer in top 10 | median rank | never found | Δ MRR vs rg --sort path (95% CI) | randomization p |
 |---|---:|---:|---:|---:|---|---:|
 | ast-grep (structural snapshot) | 1.000 | 100% | 1 | 0% | snapshot only | — |
-| hay (this project) | 0.250 | 100% | 4 | 0% | +0.238 [0.238, 0.238] | 1.000 |
-| codespelunker (ranked) | 0.250 | 100% | 4 | 0% | snapshot only | — |
-| the_silver_searcher | 0.026 | 0% | 39 | 0% | snapshot only | — |
-| ripgrep --sort path (deterministic baseline) | 0.012 | 0% | 86 | 0% | baseline | baseline |
-| git grep | 0.011 | 0% | 92 | 0% | -0.001 [-0.001, -0.001] | 1.000 |
-| ugrep --sort=name | 0.009 | 0% | 112 | 0% | -0.003 [-0.003, -0.003] | 1.000 |
-| BSD grep | 0.005 | 0% | 211 | 0% | snapshot only | — |
+| hay (this project) | 0.250 | 100% | 4 | 0% | +0.241 [0.241, 0.241] | 1.000 |
+| codespelunker (ranked) | 0.167 | 100% | 6 | 0% | snapshot only | — |
+| the_silver_searcher | 0.029 | 0% | 35 | 0% | snapshot only | — |
+| ripgrep --sort path (deterministic baseline) | 0.009 | 0% | 111 | 0% | baseline | baseline |
+| git grep | 0.009 | 0% | 117 | 0% | -0.000 [-0.000, -0.000] | 1.000 |
+| ugrep --sort=name | 0.007 | 0% | 139 | 0% | -0.002 [-0.002, -0.002] | 1.000 |
+| BSD grep | 0.004 | 0% | 237 | 0% | snapshot only | — |
 
 Bold = **both** tests agree the difference is real: the interval excludes zero *and* the
 randomization test puts it under 0.05. `snapshot only` means the tool has no stable-order
@@ -279,9 +279,9 @@ contract, so its point estimates are shown but no confidence interval or p-value
 
 | query | hay | rg --sort path | ugrep --sort=name | ag | grep | git grep | cs | ast-grep |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| `write` | 10 ms | 13 ms | 7 ms | 17 ms | 28.04 s | 11 ms | 15 ms | 14 ms |
+| `write` | 10 ms | 14 ms | 14 ms | 20 ms | 30.40 s | 12 ms | 17 ms | 19 ms |
 
-| peak memory | 6 MB | 5 MB | 4 MB | 7 MB | 26 MB | 10 MB | 23 MB | 11 MB |
+| peak memory | 6 MB | 5 MB | 5 MB | 7 MB | 29 MB | 10 MB | 27 MB | 12 MB |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 
 ## What each tool is
