@@ -21,7 +21,7 @@ use std::sync::mpsc;
 use cap_std::{ambient_authority, fs::Dir};
 use grep_matcher::Matcher;
 use grep_regex::RegexMatcherBuilder;
-use grep_searcher::{BinaryDetection, Searcher, SearcherBuilder, Sink, SinkMatch};
+use grep_searcher::{BinaryDetection, Searcher, SearcherBuilder, Sink, SinkContext, SinkMatch};
 use ignore::WalkBuilder;
 use ignore::types::TypesBuilder;
 
@@ -69,6 +69,11 @@ OPTIONS:
         --json            emit ripgrep-shaped JSON Lines (match/context messages)
         --hidden          search hidden files and directories
         --no-ignore       do not respect .gitignore
+    -c, --count           count matching lines per file (unranked, path order)
+        --count-matches   count matches per file (unranked, path order)
+    -v, --invert-match    print the lines that did NOT match (unranked)
+    -o, --only-matching   print each matched substring (unranked)
+        --stream          skip ranking: stream in path order like rg, with no candidate cap
     -m, --max-count <N>   stop after N ranked results (default 50; 0 = no limit)
         --explain         show the score for each result
         --no-<signal>     disable a ranking signal: definition, path, word, tf
@@ -89,7 +94,13 @@ and `context` messages (`begin`/`end`/`summary` are file-scoped and output is no
 
 A search matching more than 20000 lines ranks only the 20000 strongest-by-prescore
 candidates, says so on stderr, and exits 2 because the result is incomplete. `-m 0`
-prints every result hay ranked, not every tree match. Use `rg` for broad exhaustive searches.
+prints every result hay ranked, not every tree match. `--stream` has no cap: it does not
+rank, so nothing has to be retained, and a broad pattern is answered exhaustively.
+
+`-c`, `--count-matches`, `-v`, `-o` and `--stream` are UNRANKED modes. There is nothing to
+order, so they stream in path order and behave as the corresponding ripgrep invocation. That
+is deliberate: every valid `rg` command should have an answer here, so `hay` can replace `rg`
+outright rather than being the tool you reach for once you already know the question ranks.
 ";
 
 #[derive(Default, Debug)]
@@ -114,27 +125,31 @@ struct Opts {
     /// Interleave results by file so the first page shows distinct files. Default on; the flag
     /// exists so its contribution can be ablated like every other ranking decision.
     diversify: bool,
+    /// Skip ranking entirely and stream in path order, exactly as ripgrep does.
+    stream: bool,
+    /// Whether `-m` was actually typed. The ranked page has a default of 50 because an agent reads
+    /// a page; an unranked mode is ripgrep's job and ripgrep has no default cap, so silently
+    /// stopping at 50 there would make `hay --stream` return fewer matches than `rg` — the one
+    /// thing this tool promises never to do.
+    max_count_set: bool,
+    /// `-c`: matching lines per file. `--count-matches`: matches per file.
+    count_lines: bool,
+    count_matches: bool,
+    /// `-v`: print the lines that did NOT match.
+    invert: bool,
+    /// `-o`: print each matched substring rather than its line.
+    only_matching: bool,
     weights: Weights,
 }
 
-/// Flags ripgrep has that `hay` deliberately does not, with the reason. Landing in the generic
-/// unknown-option arm would tell an agent the flag does not exist, when the truth is that ranking
-/// and the flag are incompatible; measured against 3,174 real transcripts these three account for
-/// 4,688 invocations, so the difference is worth saying out loud.
-fn declined(flag: &str) -> Option<&'static str> {
-    match flag {
-        "v" | "invert-match" => Some(
-            "-v inverts the match, which leaves nothing to rank: every non-matching line would \
-             score identically. Use `rg -v`.",
-        ),
-        "c" | "count" | "count-matches" => {
-            Some("hay ranks lines, it does not count them. Use `rg -c`.")
-        }
-        "o" | "only-matching" => Some(
-            "-o prints the matched substring, not the line, so there is no line to rank. \
-             Use `rg -o`.",
-        ),
-        _ => None,
+impl Opts {
+    /// Modes with nothing to rank, which therefore run ripgrep's way: streaming, path-ordered,
+    /// uncapped. Refusing them (as hay did until 0.3.0) meant an agent could not alias `rg` to
+    /// `hay` unconditionally — the flag was valid, the tool said no, and the agent had to know
+    /// which of two binaries to reach for. A tool that answers every valid invocation, ranking
+    /// the ones where rank means something, is the only shape that removes that decision.
+    fn unranked(&self) -> bool {
+        self.stream || self.count_lines || self.count_matches || self.invert || self.only_matching
     }
 }
 
@@ -208,7 +223,10 @@ fn parse_args(argv: Vec<String>) -> Result<Opts, String> {
                 o.before = n;
                 o.after = n;
             }
-            Short('m') | Long("max-count") => o.max_count = num!("-m"),
+            Short('m') | Long("max-count") => {
+                o.max_count = num!("-m");
+                o.max_count_set = true;
+            }
             // Ablation switches. Each one zeroes exactly one signal so its contribution can be
             // measured rather than assumed.
             Long("no-definition") => o.weights.definition = 0.0,
@@ -216,16 +234,15 @@ fn parse_args(argv: Vec<String>) -> Result<Opts, String> {
             Long("no-word") => o.weights.word = 0.0,
             Long("no-tf") => o.weights.term_frequency = 0.0,
             Long("no-diversify") => o.diversify = false,
+            Long("stream") => o.stream = true,
+            Short('c') | Long("count") => o.count_lines = true,
+            Long("count-matches") => o.count_matches = true,
+            Short('v') | Long("invert-match") => o.invert = true,
+            Short('o') | Long("only-matching") => o.only_matching = true,
             Value(v) => positional.push(
                 v.into_string()
                     .map_err(|_| "arguments must be valid UTF-8".to_string())?,
             ),
-            Short(c) if declined(&c.to_string()).is_some() => {
-                return Err(format!("-{c}: {}", declined(&c.to_string()).unwrap()));
-            }
-            Long(name) if declined(name).is_some() => {
-                return Err(format!("--{name}: {}", declined(name).unwrap()));
-            }
             other => return Err(format!("unknown option {other:?}\n\n{HELP}")),
         }
     }
@@ -250,6 +267,16 @@ fn parse_args(argv: Vec<String>) -> Result<Opts, String> {
     }
     if o.explain && o.json {
         return Err("--explain and --json are different output formats; pick one".into());
+    }
+    // Nothing is scored in an unranked mode, so there is no breakdown to print. Saying that is
+    // better than printing zeros that look like a ranking decision.
+    if o.explain && o.unranked() {
+        return Err(
+            "--explain describes a ranking; -c, -v, -o and --stream do not rank. Drop one.".into(),
+        );
+    }
+    if o.count_lines && o.count_matches {
+        return Err("-c counts lines and --count-matches counts matches; pick one".into());
     }
     Ok(o)
 }
@@ -491,6 +518,10 @@ fn run(o: &Opts) -> Result<SearchOutcome, String> {
     }
     builder.overrides(ob.build().map_err(|e| format!("bad glob set: {e}"))?);
 
+    if o.unranked() {
+        return run_unranked(o, &matcher, &mut builder);
+    }
+
     // A bounded channel, not `mpsc::channel`: with an unbounded one the parallel walker
     // out-produces the single ranking consumer and the queue itself becomes the memory leak,
     // which defeats the point of capping the heap. The consumer therefore runs on its own thread
@@ -714,6 +745,274 @@ fn diversified_order(paths: &[&str]) -> Vec<usize> {
     // By pass, then by the incoming rank: a total order, so the output stays deterministic.
     keyed.sort_unstable();
     keyed.into_iter().map(|(_, i)| i).collect()
+}
+
+/// Ripgrep's behaviour, inside hay's binary: stream matches as they are found, no ranking, no
+/// candidate cap, nothing buffered beyond the file being searched.
+///
+/// `DESIGN-hay.md` pre-registered this as `--stream` before any Rust existed, and the README's
+/// decision table had been sending readers to `rg` for the two things it provides: a first hit
+/// without walking the whole tree, and an exhaustive answer to a pattern matching more than
+/// 20,000 lines (nothing is retained to rank, so nothing has to be dropped).
+///
+/// **This is the one mode whose output order is not deterministic**, and that is the point of it:
+/// it is ripgrep's parallel traversal, so it inherits ripgrep's speed and ripgrep's ordering.
+/// Sorting the walk instead was measured at 8.0 s to the first line of a kernel search against
+/// ripgrep's 1.1 s — a "drop-in" six times slower than the thing it replaces is not one. Every
+/// mode that ranks is still deterministic; this one says so in `--help` instead.
+fn run_unranked<M: Matcher + Clone + Send>(
+    o: &Opts,
+    matcher: &M,
+    builder: &mut WalkBuilder,
+) -> Result<SearchOutcome, String> {
+    use std::sync::Mutex;
+    use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+
+    let counting = o.count_lines || o.count_matches;
+    let context_wanted = !o.files_only && !counting && !o.only_matching;
+    let out = Mutex::new(BufWriter::new(io::stdout()));
+    let found = AtomicBool::new(false);
+    let errors = AtomicUsize::new(0);
+    // Broken pipe is how `| head` ends, and it is a success: ripgrep stops quietly and so does
+    // this. Reporting it as an unreadable path would turn a normal shell idiom into exit 2.
+    let broken_pipe = AtomicBool::new(false);
+
+    builder.build_parallel().run(|| {
+        // One matcher per worker, exactly as the ranked walk does: cloning is what ripgrep's own
+        // crates expect, and the regex engine's scratch space is not shareable across threads.
+        let matcher = matcher.clone();
+        // References, taken before the `move` closure below: moving the atomics into a per-worker
+        // closure would give every thread its own counters.
+        let (found, errors, broken_pipe, out) = (&found, &errors, &broken_pipe, &out);
+        let mut searcher = SearcherBuilder::new()
+            .line_number(true)
+            .binary_detection(BinaryDetection::quit(b'\x00'))
+            .invert_match(o.invert)
+            .before_context(if context_wanted { o.before } else { 0 })
+            .after_context(if context_wanted { o.after } else { 0 })
+            .build();
+        Box::new(move |entry| {
+            if broken_pipe.load(Ordering::Relaxed) {
+                return ignore::WalkState::Quit;
+            }
+            let entry = match entry {
+                Ok(e) => e,
+                Err(e) => {
+                    eprintln!("hay: {e}");
+                    errors.fetch_add(1, Ordering::Relaxed);
+                    return ignore::WalkState::Continue;
+                }
+            };
+            if !entry.file_type().is_some_and(|t| t.is_file()) {
+                return ignore::WalkState::Continue;
+            }
+            let display = entry.path().to_string_lossy().into_owned();
+            // Searched into a per-file buffer and written under one lock: workers must not
+            // interleave halfway through a file's context block, which would hand a consumer a
+            // `--` separated group whose lines came from two different files.
+            let mut buf: Vec<u8> = Vec::new();
+            let mut sink = StreamSink {
+                w: &mut buf,
+                o,
+                matcher: &matcher,
+                path: &display,
+                fs_path: entry.path().to_path_buf(),
+                lines: 0,
+                matches: 0,
+                printed: 0,
+                // ripgrep's `-m` is a per-file cap. hay's documented divergence — `-m` bounding
+                // total results — belongs to the ranked page an agent reads; an unranked mode is
+                // ripgrep's job and takes ripgrep's meaning.
+                limit: if o.max_count_set && o.max_count > 0 {
+                    o.max_count
+                } else {
+                    usize::MAX
+                },
+            };
+            if let Err(e) = searcher.search_path(&matcher, entry.path(), &mut sink) {
+                eprintln!("hay: {}: {e}", entry.path().display());
+                errors.fetch_add(1, Ordering::Relaxed);
+                return ignore::WalkState::Continue;
+            }
+            let (lines, matches) = (sink.lines, sink.matches);
+            if lines == 0 {
+                return ignore::WalkState::Continue;
+            }
+            found.store(true, Ordering::Relaxed);
+            if counting {
+                let n = if o.count_matches { matches } else { lines };
+                buf.clear();
+                let _ = writeln!(&mut buf, "{display}:{n}");
+            }
+            if buf.is_empty() {
+                return ignore::WalkState::Continue;
+            }
+            let mut w = match out.lock() {
+                Ok(w) => w,
+                Err(_) => return ignore::WalkState::Quit,
+            };
+            match w.write_all(&buf) {
+                Ok(()) => ignore::WalkState::Continue,
+                Err(e) if e.kind() == io::ErrorKind::BrokenPipe => {
+                    broken_pipe.store(true, Ordering::Relaxed);
+                    ignore::WalkState::Quit
+                }
+                Err(e) => {
+                    eprintln!("hay: {e}");
+                    errors.fetch_add(1, Ordering::Relaxed);
+                    ignore::WalkState::Quit
+                }
+            }
+        })
+    });
+
+    let piped_away = broken_pipe.load(Ordering::Relaxed);
+    match out.lock().map(|mut w| w.flush()) {
+        Ok(Err(e)) if e.kind() == io::ErrorKind::BrokenPipe => {}
+        Ok(Err(e)) => return Err(e.to_string()),
+        Ok(Ok(())) | Err(_) => {}
+    }
+    let error_count = errors.load(Ordering::Relaxed);
+    if error_count > 0 && !piped_away {
+        return Err(format!(
+            "{error_count} path(s) could not be read; results are incomplete"
+        ));
+    }
+    Ok(if found.load(Ordering::Relaxed) {
+        SearchOutcome::Found
+    } else {
+        SearchOutcome::NotFound
+    })
+}
+
+/// Per-file sink for the unranked path. Counts are per file because `-c` reports per file, and
+/// `printed` is per file because ripgrep's `-m` is a per-file cap.
+struct StreamSink<'a, W: Write, M: Matcher> {
+    w: &'a mut W,
+    o: &'a Opts,
+    matcher: &'a M,
+    path: &'a str,
+    fs_path: PathBuf,
+    lines: u64,
+    matches: u64,
+    printed: usize,
+    limit: usize,
+}
+
+impl<W: Write, M: Matcher> StreamSink<'_, W, M> {
+    /// A ranked-path `Hit`, so both paths print through `emit_match` and cannot drift apart on
+    /// JSON shape, line-number handling or the `:`/`-` separator convention.
+    fn hit(&self, line_no: u64, offset: u64, bytes: &[u8]) -> Hit {
+        let terminated = bytes.ends_with(b"\n");
+        let body = bytes.strip_suffix(b"\n").unwrap_or(bytes);
+        let span = self
+            .matcher
+            .find(body)
+            .ok()
+            .flatten()
+            .map(|m| (m.start(), m.end()))
+            .unwrap_or((0, body.len()));
+        let text = String::from_utf8_lossy(body);
+        let raw = matches!(text, std::borrow::Cow::Owned(_)).then(|| body.to_vec());
+        Hit {
+            path: self.path.to_string(),
+            fs_path: self.fs_path.clone(),
+            line_no,
+            offset,
+            text: text.into_owned(),
+            raw,
+            terminated,
+            span,
+        }
+    }
+}
+
+/// Unranked output carries no score. Printing zeros would read as a ranking decision, so the
+/// breakdown is all zeros and `--explain` is refused in these modes at parse time.
+const NO_SCORE: ScoreBreakdown = ScoreBreakdown {
+    definition: 0.0,
+    path: 0.0,
+    word: 0.0,
+    tf: 0.0,
+    total: 0.0,
+};
+
+impl<W: Write, M: Matcher> Sink for StreamSink<'_, W, M> {
+    type Error = io::Error;
+
+    fn matched(&mut self, _searcher: &Searcher, m: &SinkMatch<'_>) -> Result<bool, io::Error> {
+        self.lines += 1;
+        let line_no = m.line_number().unwrap_or(0);
+        let bytes = m.bytes();
+
+        if self.o.count_lines || self.o.count_matches {
+            if self.o.count_matches {
+                let body = bytes.strip_suffix(b"\n").unwrap_or(bytes);
+                let mut n = 0u64;
+                self.matcher
+                    .find_iter(body, |_| {
+                        n += 1;
+                        true
+                    })
+                    .map_err(|_| io::Error::other("matcher failed while counting"))?;
+                self.matches += n;
+            }
+            return Ok(true);
+        }
+
+        if self.o.files_only {
+            writeln!(self.w, "{}", self.path)?;
+            self.printed += 1;
+            return Ok(false); // one line per file is the whole answer
+        }
+
+        if self.o.only_matching {
+            let body = bytes.strip_suffix(b"\n").unwrap_or(bytes);
+            let mut spans = Vec::new();
+            self.matcher
+                .find_iter(body, |m| {
+                    spans.push((m.start(), m.end()));
+                    true
+                })
+                .map_err(|_| io::Error::other("matcher failed while emitting -o"))?;
+            for (start, end) in spans {
+                if self.printed >= self.limit {
+                    return Ok(false);
+                }
+                let hit = self.hit(line_no, m.absolute_byte_offset(), &body[start..end]);
+                emit_match(self.w, NO_SCORE, &hit, self.matcher, self.o)?;
+                self.printed += 1;
+            }
+            return Ok(self.printed < self.limit);
+        }
+
+        let hit = self.hit(line_no, m.absolute_byte_offset(), bytes);
+        emit_match(self.w, NO_SCORE, &hit, self.matcher, self.o)?;
+        self.printed += 1;
+        Ok(self.printed < self.limit)
+    }
+
+    fn context(&mut self, _searcher: &Searcher, c: &SinkContext<'_>) -> Result<bool, io::Error> {
+        let line = ContextLine {
+            offset: c.absolute_byte_offset(),
+            bytes: c.bytes().to_vec(),
+        };
+        emit_context(
+            self.w,
+            self.path,
+            c.line_number().unwrap_or(0),
+            &line,
+            self.o,
+        )?;
+        Ok(true)
+    }
+
+    fn context_break(&mut self, _searcher: &Searcher) -> Result<bool, io::Error> {
+        if !self.o.json {
+            writeln!(self.w, "--")?;
+        }
+        Ok(true)
+    }
 }
 
 fn emit_files(
@@ -1218,17 +1517,38 @@ mod tests {
     }
 
     #[test]
-    fn flags_hay_declines_say_why_and_name_the_alternative() {
-        // Generic "unknown option" would claim the flag does not exist. It does; ranking and the
-        // flag are incompatible, which is a different and more useful thing to tell an agent.
-        for argv in [vec!["-v", "x"], vec!["-c", "x"], vec!["-o", "x"]] {
-            let e = parse_args(argv.iter().map(|s| s.to_string()).collect()).unwrap_err();
-            assert!(e.contains("rg "), "should name the alternative: {e}");
-            assert!(
-                !e.contains("unknown option"),
-                "should not read as nonexistent: {e}"
-            );
+    fn the_flags_hay_used_to_refuse_now_run_unranked() {
+        // Until 0.3.0 these exited 2 with "use `rg`". They are valid ripgrep invocations, and a
+        // tool you can only reach for once you know the question ranks is not a replacement for
+        // the tool you would otherwise type. They now parse, and they select the unranked path.
+        for argv in [
+            vec!["-v", "x"],
+            vec!["-c", "x"],
+            vec!["--count-matches", "x"],
+            vec!["-o", "x"],
+            vec!["--stream", "x"],
+        ] {
+            let o = parse_args(argv.iter().map(|s| s.to_string()).collect())
+                .unwrap_or_else(|e| panic!("{argv:?} should parse: {e}"));
+            assert!(o.unranked(), "{argv:?} must select the unranked path");
         }
+        // Ranked by default, which is the whole product.
+        assert!(!opts(&["auth"]).unranked());
+        // Two counting modes at once is a question with two answers; so is explaining a
+        // ranking that did not happen.
+        assert!(parse_args(vec!["-c".into(), "--count-matches".into(), "x".into()]).is_err());
+        assert!(parse_args(vec!["--explain".into(), "--stream".into(), "x".into()]).is_err());
+    }
+
+    #[test]
+    fn max_count_defaults_to_ripgreps_in_unranked_modes() {
+        // The ranked page stops at 50 because an agent reads a page. ripgrep has no default cap,
+        // so an unranked mode that quietly stopped at 50 would return FEWER matches than `rg` —
+        // the one thing this tool promises never to do. An explicit `-m` still applies.
+        let streamed = opts(&["--stream", "x"]);
+        assert_eq!(streamed.max_count, 50, "the field keeps its default");
+        assert!(!streamed.max_count_set, "but nothing asked for it");
+        assert!(opts(&["--stream", "-m", "5", "x"]).max_count_set);
     }
 
     fn hit(path: &str, line_no: u64, text: &str) -> Hit {

@@ -126,14 +126,67 @@ fn the_argument_forms_agents_actually_type_are_accepted() {
 }
 
 #[test]
-fn declined_flags_explain_themselves_instead_of_looking_nonexistent() {
-    for flag in ["-v", "-c", "-o"] {
-        hay()
-            .args([flag, "x"])
-            .assert()
-            .code(2)
-            .stderr(predicate::str::contains("rg ").and(predicate::str::contains("unknown").not()));
-    }
+fn the_unranked_modes_answer_instead_of_refusing() {
+    // Until 0.3.0 `-c`, `-v` and `-o` exited 2 telling the caller to go and use ripgrep. They are
+    // valid ripgrep invocations; a search tool that answers only the questions it can rank is a
+    // tool you have to decide about before you use it. They now run unranked, in path order, and
+    // `differential-test.sh` holds them to ripgrep's exact output.
+    let d = fixture("unranked");
+    let count = hay()
+        .args(["-c", "-F", "validateSession", "."])
+        .current_dir(d.path())
+        .assert()
+        .success();
+    let stdout = normalize(&String::from_utf8(count.get_output().stdout.clone()).unwrap());
+    assert!(
+        stdout.contains("./src/auth.ts:1"),
+        "count per file: {stdout}"
+    );
+    assert!(
+        stdout.contains("./docs/archive/plan-v3.md:2"),
+        "count per file: {stdout}"
+    );
+    // Path order, not rank order: docs/ sorts before src/ and stays there.
+    let first = stdout.lines().next().unwrap();
+    assert!(
+        first.starts_with("./docs/"),
+        "unranked output is path-ordered: {first}"
+    );
+
+    // `-o` prints the matched substring; `-v` prints what did not match; `--stream` prints
+    // everything ripgrep would, with no candidate cap and no ranking.
+    hay()
+        .args(["-o", "-F", "validateSession", "."])
+        .current_dir(d.path())
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("validateSession"));
+    hay()
+        .args(["-v", "-F", "validateSession", "src/auth.ts"])
+        .current_dir(d.path())
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("import x from 'y'"));
+    hay()
+        .args(["--stream", "-F", "validateSession", "."])
+        .current_dir(d.path())
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("src/auth.ts"));
+
+    // Still exit 1 for "found nothing", never 2.
+    hay()
+        .args(["--stream", "-F", "nothing_matches_this", "."])
+        .current_dir(d.path())
+        .assert()
+        .code(1);
+    // And `--explain` has nothing to explain here, which is said rather than faked with zeros.
+    hay()
+        .args(["--explain", "--stream", "-F", "validateSession", "."])
+        .current_dir(d.path())
+        .assert()
+        .code(2)
+        .stderr(predicate::str::contains("do not rank"));
 }
 
 #[test]
