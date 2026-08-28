@@ -224,12 +224,23 @@ and that is exactly what `hay` is built for, so a win there is weaker evidence t
 behavioural result above, whose ground truth was not designed around the tool. Both are reported
 because neither is sufficient alone.
 
-**The clean-revision 0.1.4 run detects the win on all four usable code corpora, by both tests.**
-`hay` ranks first on every corpus: Linux 0.907, openclaw 0.911, ripgrep 0.800, Alamofire 0.691.
-Against deterministic `ripgrep --sort path`, the paired MRR effects are Linux +0.366 [0.223,
-0.515] (randomization p<0.001), openclaw +0.092 [0.031, 0.169] (p=0.017), ripgrep
-+0.381 [0.228, 0.541] (p<0.001), and Alamofire +0.258 [0.152, 0.377] (p<0.001).
-The report records the exact clean commit for each corpus.
+**The clean-revision v0.2.0 run detects the win on all four usable code corpora, by both tests.**
+`hay` ranks first on every corpus: Linux 0.933, openclaw 0.928, ripgrep 0.877, Alamofire 0.776
+(0.1.4: 0.907, 0.911, 0.800, 0.691, on the same pinned query samples). Against deterministic
+`ripgrep --sort path`, the paired MRR effects are Linux +0.392 [0.247, 0.544] (randomization
+p<0.001), openclaw +0.109 [0.035, 0.200] (p=0.017), ripgrep +0.458 [0.304, 0.613] (p<0.001), and
+Alamofire +0.343 [0.235, 0.459] (p<0.001). The report records the exact clean commit for each
+corpus.
+
+*Where those corpora live now matters, which is instrument error 14.* The Linux kernel contains
+paths that differ only in case — `xt_MARK.h` beside `xt_mark.h` — so it **cannot be checked out
+on a case-insensitive filesystem**, and macOS is one. The 0.1.4 run nonetheless recorded
+`dirty: false` for it, because `git status` answers from a stat cache rather than by comparing
+content, and a fresh clone's cache says every entry is current. Thirteen files did not match the
+commit the report named. The corpora now live on a case-sensitive volume, the provenance check
+refuses the run rather than the reader having to notice, and the kernel's ripgrep baseline moved
+0.508 → 0.541 once the tree actually matched its revision. **"Clean" from a tool is a claim about
+a cache until you make it compare bytes.**
 
 The history still matters: on the pre-public 0.5.0 development run the two tests disagreed on
 openclaw (bootstrap interval excluding zero, randomization p=0.058), so the report demoted the
@@ -239,12 +250,16 @@ decision rule stayed fixed: both tests must agree. Unordered tools remain visibl
 descriptive snapshots, without intervals or p-values.
 
 **Do not generalize the code result to documentation.** On the separate public documentation
-track, `hay` is detectably worse than `ripgrep --sort path` on ripgrep's repository
-(−0.094 [−0.177, −0.026], randomization p=0.010) and Alamofire
-(−0.370 [−0.500, −0.249], p<0.001). Linux (−0.014 [−0.041, 0.006]), openclaw
-(+0.016 [−0.063, 0.120]), and this repository (−0.049 [−0.108, 0.007]) show no detected
-difference. That is the strongest public warning against treating a definition ranker as a
-universal search improvement.
+track, `hay` is detectably worse than `ripgrep --sort path` on Alamofire
+(−0.194 [−0.276, −0.118], randomization p<0.001), ripgrep's repository
+(−0.087 [−0.148, −0.033], p=0.003) and now openclaw too (−0.072 [−0.135, −0.009], p=0.026,
+where 0.1.4 showed no detected difference — on a newer corpus revision, so the change is not
+attributable to the ranker alone). Linux (−0.010 [−0.037, 0.008]) and this repository
+(−0.037 [−0.099, 0.020]) show no detected difference. The Alamofire deficit roughly halved
+(−0.370 → −0.194), which is the interleaving helping where the path prior hurts, and the
+direction of the whole track is unchanged: this is the strongest public warning against treating
+a definition ranker as a universal search improvement. If your searches are mostly prose,
+`rg --sort path` is the better tool and this README will keep saying so.
 
 Building it found the largest defect in the project so far. `hay`'s definition signal was **inert
 on C** — a kernel function definition contains no declaration keyword, so on the Linux kernel
@@ -280,7 +295,10 @@ is *larger* than on the private corpus, which is worth exactly one sentence of c
 gold files come from trajectories that solved the issue, a friendlier notion of relevance than
 "whatever file one developer's agent opened next". Exclusions are counted in the payload: 215
 `pro`-split instances lack public issue text; the fixed manifest contains 97 instances, and the
-current run lost one, to a repository archive over the size budget.
+current run lost one, to a repository archive over the size budget. The payload also counts the
+206 symlink members dropped from the extracted trees across those 96 repositories — ripgrep does
+not follow symlinks, so the measured trees are unaffected, but the omission is stated rather than
+assumed harmless.
 
 *It nearly lost twenty-two.* The archive reader rejected any repository tarball containing a
 symbolic link — the right instinct, wrong action: 21 of the 97 instances (django, sympy and
@@ -419,7 +437,15 @@ from data no one here collected — it removes the "one developer chose everythi
     individually, still never written to disk. Every safety limit is a potential silent sampler,
     and this repo's own invariant 7 — count the truncations — is the thing that recorded it.
 
-Numbers 8, 9, 11, 12 and 13 were caught before publication. The other eight were not. The correction
+14. **A corpus that could not exist was reported as clean.** The Linux kernel has case-colliding
+    paths, so a macOS checkout of it is altered by the filesystem itself — yet the benchmark
+    recorded `dirty: false` for four releases, because `git status` answers from a stat cache and
+    a fresh clone's cache says every entry is current. Thirteen files differed from the commit the
+    report named, and ripgrep's kernel baseline was 0.508 instead of 0.541. Found because the
+    provenance gate finally fired on a re-run — a gate that only fires once the cache goes stale
+    is a gate you get to keep believing for a while.
+
+Numbers 8, 9, 11, 12, 13 and 14 were caught before publication. The other eight were not. The correction
 history is kept deliberately: it is more useful to anyone picking this up than the final table is.
 
 ## Prior art, which should have been read first

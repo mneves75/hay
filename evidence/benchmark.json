@@ -1,16 +1,16 @@
 {
   "generatedBy": "benchmark.ts",
-  "generatedAt": "2026-08-26T23:27:43.571Z",
+  "generatedAt": "2026-08-27T23:51:30.846Z",
   "task": "definition finding: given a symbol declared exactly once, rank of the declaring file",
   "groundTruth": "ast-grep (a parser), independent of every heuristic under test",
   "rankCap": 1000,
   "machine": {
-    "loadavg": "19:18  2 users, load averages: 6.65 7.99 8.18",
+    "loadavg": "19:59  up 2 days,  7:26, 2 users, load averages: 9.60 8.95 9.76",
     "cpus": 18
   },
   "versions": {
-    "hay": "hay 0.1.4",
-    "rg": "ripgrep 15.2.0 (rev e89fff89ac)",
+    "hay": "hay 0.2.0",
+    "rg": "ripgrep 15.2.0",
     "ugrep": "ugrep 7.8.4 aarch64-apple-darwin25.6.0 +neon/AArch64; -P:pcre2jit; -z:zlib,bzip2,lzma,lz4,zstd,brotli,7z,tar/pax/cpio/zip",
     "ag": "ag version 2.2.0",
     "grep": "grep (BSD grep, GNU compatible) 2.6.0-FreeBSD",
@@ -23,15 +23,15 @@
       "corpus": "linux",
       "lang": "c",
       "files": {
-        "onDisk": 95819,
-        "rgVisible": 95818,
-        "gitTracked": 95921
+        "onDisk": 95911,
+        "rgVisible": 95910,
+        "gitTracked": 96013
       },
       "provenance": {
-        "revision": "45c13f3f9e3bb15fd89ff2864c6f627a3b4b4229",
+        "revision": "1b78070aaef63512688aebfbc82365ef9d6660f1",
         "dirty": false
       },
-      "symbolsUniquelyDeclared": 560573,
+      "symbolsUniquelyDeclared": 560787,
       "queries": 30,
       "symbols": [
         "su_remove",
@@ -72,15 +72,15 @@
           "available": true,
           "deterministic": true,
           "queries": 30,
-          "mrr": 0.9066666666666666,
+          "mrr": 0.9333333333333333,
           "top10": 1,
           "medianRank": 1,
           "unreachable": 0,
           "timeouts": 0,
           "vsRipgrep": {
-            "mean": 0.3658215082378368,
-            "lo": 0.22254273504273506,
-            "hi": 0.5148114289924636,
+            "mean": 0.39248817490450344,
+            "lo": 0.24749173615806477,
+            "hi": 0.5442963082668967,
             "p": 0.00019998000199980003,
             "n": 30,
             "clusters": 30
@@ -126,7 +126,7 @@
           "available": true,
           "deterministic": false,
           "queries": 30,
-          "mrr": 0.5673452380952381,
+          "mrr": 0.5617896825396825,
           "top10": 0.8333333333333334,
           "medianRank": 2,
           "unreachable": 0.03333333333333333,
@@ -183,9 +183,9 @@
           "available": true,
           "deterministic": false,
           "queries": 30,
-          "mrr": 0.636432783785725,
+          "mrr": 0.6875259952465834,
           "top10": 0.9,
-          "medianRank": 1.5,
+          "medianRank": 1,
           "unreachable": 0,
           "timeouts": 0
         }
@@ -195,51 +195,51 @@
           "query": "su_remove",
           "results": {
             "hay": {
-              "medianMs": 2553.272707999684,
-              "minMs": 2534.6494589997455,
-              "peakRssMb": null,
+              "medianMs": 2500.01241700002,
+              "minMs": 2434.1206670000684,
+              "peakRssMb": 14.125,
               "timedOut": false
             },
             "rg": {
-              "medianMs": 9803.975957999937,
-              "minMs": 9137.339416999836,
-              "peakRssMb": null,
+              "medianMs": 8210.855832999805,
+              "minMs": 7669.417666000081,
+              "peakRssMb": 7.78125,
               "timedOut": false
             },
             "ugrep": {
-              "medianMs": 1804.2554999999702,
-              "minMs": 1797.653333000373,
-              "peakRssMb": null,
+              "medianMs": 1531.3050420000218,
+              "minMs": 1489.0606670000125,
+              "peakRssMb": 8.125,
               "timedOut": false
             },
             "ag": {
-              "medianMs": 2850.933999999892,
-              "minMs": 2765.1581669999287,
-              "peakRssMb": null,
+              "medianMs": 2633.6697910001967,
+              "minMs": 2576.222708999878,
+              "peakRssMb": 177.78125,
               "timedOut": false
             },
             "grep": {
-              "medianMs": 19131.996416000184,
-              "minMs": 18923.270916999783,
-              "peakRssMb": null,
+              "medianMs": 15320.225749999983,
+              "minMs": 14737.15575000015,
+              "peakRssMb": 3.171875,
               "timedOut": false
             },
             "git-grep": {
-              "medianMs": 2557.445624999702,
-              "minMs": 2487.611124999821,
-              "peakRssMb": null,
+              "medianMs": 2480.7203329999465,
+              "minMs": 2477.4448750000447,
+              "peakRssMb": 249.75,
               "timedOut": false
             },
             "cs": {
-              "medianMs": 11749.165583999828,
-              "minMs": 11433.449667000212,
-              "peakRssMb": null,
+              "medianMs": 10161.750500000082,
+              "minMs": 9435.599082999863,
+              "peakRssMb": 143.15625,
               "timedOut": false
             },
             "ast-grep": {
-              "medianMs": 10277.945625000168,
-              "minMs": 8797.778375000227,
-              "peakRssMb": null,
+              "medianMs": 7419.294875000138,
+              "minMs": 6865.468292000005,
+              "peakRssMb": 625.828125,
               "timedOut": false
             }
           }
@@ -248,51 +248,51 @@
           "query": "use_intel_pmu",
           "results": {
             "hay": {
-              "medianMs": 3148.546209000051,
-              "minMs": 2504.0765419998206,
-              "peakRssMb": null,
+              "medianMs": 2447.107791000046,
+              "minMs": 2413.058333000168,
+              "peakRssMb": 14.4375,
               "timedOut": false
             },
             "rg": {
-              "medianMs": 10011.40783300018,
-              "minMs": 9405.88662499981,
-              "peakRssMb": null,
+              "medianMs": 9230.5017080002,
+              "minMs": 8090.798124999972,
+              "peakRssMb": 7.796875,
               "timedOut": false
             },
             "ugrep": {
-              "medianMs": 87.67145800031722,
-              "minMs": 78.59675000002608,
-              "peakRssMb": null,
+              "medianMs": 60.95366599992849,
+              "minMs": 57.58954199985601,
+              "peakRssMb": 5.234375,
               "timedOut": false
             },
             "ag": {
-              "medianMs": 2765.894791000057,
-              "minMs": 2738.0067920000292,
-              "peakRssMb": null,
+              "medianMs": 2629.0673330000136,
+              "minMs": 2531.4732499998063,
+              "peakRssMb": 176.859375,
               "timedOut": false
             },
             "grep": {
-              "medianMs": 19908.471957999747,
-              "minMs": 18535.899958000053,
-              "peakRssMb": null,
+              "medianMs": 14224.781834000023,
+              "minMs": 13701.530291999923,
+              "peakRssMb": 3.171875,
               "timedOut": false
             },
             "git-grep": {
-              "medianMs": 3438.309083000291,
-              "minMs": 3338.6554160001688,
-              "peakRssMb": null,
+              "medianMs": 2569.8738750000484,
+              "minMs": 2471.3057089999784,
+              "peakRssMb": 252.53125,
               "timedOut": false
             },
             "cs": {
-              "medianMs": 11246.155832999852,
-              "minMs": 11057.197999999858,
-              "peakRssMb": null,
+              "medianMs": 9750.07916600001,
+              "minMs": 9722.242624999955,
+              "peakRssMb": 204.140625,
               "timedOut": false
             },
             "ast-grep": {
-              "medianMs": 11317.831083999947,
-              "minMs": 10828.886082999874,
-              "peakRssMb": null,
+              "medianMs": 7642.428541999776,
+              "minMs": 7365.287500000093,
+              "peakRssMb": 640.234375,
               "timedOut": false
             }
           }
@@ -301,51 +301,51 @@
           "query": "mgag200_init_pci_options",
           "results": {
             "hay": {
-              "medianMs": 2615.778291999828,
-              "minMs": 2426.18995800009,
-              "peakRssMb": null,
+              "medianMs": 3046.4789999998175,
+              "minMs": 2680.3020829996094,
+              "peakRssMb": 14.9375,
               "timedOut": false
             },
             "rg": {
-              "medianMs": 9787.926708000246,
-              "minMs": 9774.567582999822,
-              "peakRssMb": null,
+              "medianMs": 8061.990333999973,
+              "minMs": 7714.004875000101,
+              "peakRssMb": 7.828125,
               "timedOut": false
             },
             "ugrep": {
-              "medianMs": 2523.4980830000713,
-              "minMs": 1991.0783339999616,
-              "peakRssMb": null,
+              "medianMs": 1803.6505829999223,
+              "minMs": 1739.3047079998069,
+              "peakRssMb": 8.203125,
               "timedOut": false
             },
             "ag": {
-              "medianMs": 2736.179249999579,
-              "minMs": 2695.385290999897,
-              "peakRssMb": null,
+              "medianMs": 2769.8704160000198,
+              "minMs": 2630.638416999951,
+              "peakRssMb": 181.265625,
               "timedOut": false
             },
             "grep": {
-              "medianMs": 28018.552292000037,
-              "minMs": 18129.376416000072,
-              "peakRssMb": null,
+              "medianMs": 14732.35258299997,
+              "minMs": 14718.336000000127,
+              "peakRssMb": 3.328125,
               "timedOut": false
             },
             "git-grep": {
-              "medianMs": 2721.276999999769,
-              "minMs": 2609.8456669999287,
-              "peakRssMb": null,
+              "medianMs": 2499.8692080001347,
+              "minMs": 2497.273333000019,
+              "peakRssMb": 252.21875,
               "timedOut": false
             },
             "cs": {
-              "medianMs": 13082.43437499972,
-              "minMs": 10787.028916000389,
-              "peakRssMb": null,
+              "medianMs": 9090.556582999881,
+              "minMs": 8923.756166000385,
+              "peakRssMb": 152.9375,
               "timedOut": false
             },
             "ast-grep": {
-              "medianMs": 16022.016582999844,
-              "minMs": 12085.416416999884,
-              "peakRssMb": null,
+              "medianMs": 7346.508082999848,
+              "minMs": 6970.12437500013,
+              "peakRssMb": 635.640625,
               "timedOut": false
             }
           }
@@ -356,15 +356,15 @@
       "corpus": "openclaw",
       "lang": "ts",
       "files": {
-        "onDisk": 33857,
-        "rgVisible": 33376,
-        "gitTracked": 33882
+        "onDisk": 34366,
+        "rgVisible": 33882,
+        "gitTracked": 34391
       },
       "provenance": {
-        "revision": "a82042f204151680c14f89eb137a6056dfd3e0d2",
+        "revision": "0706f629c3b550f285d70767f9b869fa7ae5bb4c",
         "dirty": false
       },
-      "symbolsUniquelyDeclared": 21196,
+      "symbolsUniquelyDeclared": 21385,
       "queries": 30,
       "symbols": [
         "collectScopes",
@@ -405,15 +405,15 @@
           "available": true,
           "deterministic": true,
           "queries": 30,
-          "mrr": 0.9111111111111111,
+          "mrr": 0.9277777777777777,
           "top10": 1,
           "medianRank": 1,
           "unreachable": 0,
           "timeouts": 0,
           "vsRipgrep": {
-            "mean": 0.09224747474747476,
-            "lo": 0.03111111111111111,
-            "hi": 0.16861111111111113,
+            "mean": 0.10891414141414142,
+            "lo": 0.03474747474747475,
+            "hi": 0.20027777777777775,
             "p": 0.0005999400059994001,
             "n": 30,
             "clusters": 30
@@ -504,7 +504,7 @@
           "available": true,
           "deterministic": false,
           "queries": 30,
-          "mrr": 0.8161111111111111,
+          "mrr": 0.8158496732026144,
           "top10": 0.9666666666666667,
           "medianRank": 1,
           "unreachable": 0,
@@ -516,7 +516,7 @@
           "available": true,
           "deterministic": false,
           "queries": 30,
-          "mrr": 0.768808485835649,
+          "mrr": 0.7833867741740451,
           "top10": 0.8333333333333334,
           "medianRank": 1,
           "unreachable": 0,
@@ -528,51 +528,51 @@
           "query": "collectScopes",
           "results": {
             "hay": {
-              "medianMs": 2635.6419580001384,
-              "minMs": 1354.0819999999367,
-              "peakRssMb": null,
+              "medianMs": 863.7960419999436,
+              "minMs": 808.5933750001714,
+              "peakRssMb": 14.953125,
               "timedOut": false
             },
             "rg": {
-              "medianMs": 3191.9132079998963,
-              "minMs": 2424.937208000105,
-              "peakRssMb": null,
+              "medianMs": 2749.402791999746,
+              "minMs": 2633.449708000291,
+              "peakRssMb": 7.578125,
               "timedOut": false
             },
             "ugrep": {
-              "medianMs": 1639.3560419999994,
-              "minMs": 1200.596042000223,
-              "peakRssMb": null,
+              "medianMs": 1018.0255420003086,
+              "minMs": 1015.2848330000415,
+              "peakRssMb": 8.640625,
               "timedOut": false
             },
             "ag": {
-              "medianMs": 950.9112500003539,
-              "minMs": 934.4148329999298,
-              "peakRssMb": null,
+              "medianMs": 854.4497500001453,
+              "minMs": 844.018959000241,
+              "peakRssMb": 16.484375,
               "timedOut": false
             },
             "grep": {
-              "medianMs": 6807.447666000109,
-              "minMs": 6779.108082999941,
-              "peakRssMb": null,
+              "medianMs": 5152.001292000059,
+              "minMs": 4988.649083999917,
+              "peakRssMb": 3.15625,
               "timedOut": false
             },
             "git-grep": {
-              "medianMs": 879.0962499999441,
-              "minMs": 821.462833000347,
-              "peakRssMb": null,
+              "medianMs": 916.9333749995567,
+              "minMs": 906.7595420000143,
+              "peakRssMb": 48.453125,
               "timedOut": false
             },
             "cs": {
-              "medianMs": 2815.647541000042,
-              "minMs": 2703.378250000067,
-              "peakRssMb": null,
+              "medianMs": 2047.469541999977,
+              "minMs": 1993.1925829998218,
+              "peakRssMb": 33,
               "timedOut": false
             },
             "ast-grep": {
-              "medianMs": 3415.650541999843,
-              "minMs": 2653.202917000279,
-              "peakRssMb": null,
+              "medianMs": 1869.8055420001037,
+              "minMs": 1730.2653339998797,
+              "peakRssMb": 48.234375,
               "timedOut": false
             }
           }
@@ -581,51 +581,51 @@
           "query": "handleComposerKeydown",
           "results": {
             "hay": {
-              "medianMs": 875.7417089999653,
-              "minMs": 835.8406250001863,
-              "peakRssMb": null,
+              "medianMs": 827.4426669999957,
+              "minMs": 762.4754170002416,
+              "peakRssMb": 14.625,
               "timedOut": false
             },
             "rg": {
-              "medianMs": 3276.2356659998186,
-              "minMs": 3209.2741249999963,
-              "peakRssMb": null,
+              "medianMs": 2754.138000000268,
+              "minMs": 2528.8027500002645,
+              "peakRssMb": 7.625,
               "timedOut": false
             },
             "ugrep": {
-              "medianMs": 220.8717080000788,
-              "minMs": 218.0137499999255,
-              "peakRssMb": null,
+              "medianMs": 235.47637500008568,
+              "minMs": 165.57833299972117,
+              "peakRssMb": 6.8125,
               "timedOut": false
             },
             "ag": {
-              "medianMs": 930.5565420002677,
-              "minMs": 906.6303749997169,
-              "peakRssMb": null,
+              "medianMs": 923.626958000008,
+              "minMs": 828.2036669999361,
+              "peakRssMb": 16.890625,
               "timedOut": false
             },
             "grep": {
-              "medianMs": 5644.714207999874,
-              "minMs": 5375.342750000302,
-              "peakRssMb": null,
+              "medianMs": 3969.7793330000713,
+              "minMs": 3948.334583999589,
+              "peakRssMb": 3.15625,
               "timedOut": false
             },
             "git-grep": {
-              "medianMs": 864.1720000002533,
-              "minMs": 855.0385829997249,
-              "peakRssMb": null,
+              "medianMs": 816.3486250001006,
+              "minMs": 767.4737499998882,
+              "peakRssMb": 46.140625,
               "timedOut": false
             },
             "cs": {
-              "medianMs": 3961.4045409997925,
-              "minMs": 2844.8963329996914,
-              "peakRssMb": null,
+              "medianMs": 2003.6814580000937,
+              "minMs": 1981.1855830000713,
+              "peakRssMb": 32.65625,
               "timedOut": false
             },
             "ast-grep": {
-              "medianMs": 3045.841541000176,
-              "minMs": 2848.161499999929,
-              "peakRssMb": null,
+              "medianMs": 1963.3418749999255,
+              "minMs": 1916.5456669996493,
+              "peakRssMb": 41.65625,
               "timedOut": false
             }
           }
@@ -634,51 +634,51 @@
           "query": "githubResponse",
           "results": {
             "hay": {
-              "medianMs": 957.4830000000075,
-              "minMs": 898.7879169997759,
-              "peakRssMb": null,
+              "medianMs": 741.6726669999771,
+              "minMs": 683.8317920002155,
+              "peakRssMb": 13.90625,
               "timedOut": false
             },
             "rg": {
-              "medianMs": 3815.846374999732,
-              "minMs": 3169.3458750001155,
-              "peakRssMb": null,
+              "medianMs": 1819.1676659998484,
+              "minMs": 1737.3536249999888,
+              "peakRssMb": 7.609375,
               "timedOut": false
             },
             "ugrep": {
-              "medianMs": 1330.2099170000292,
-              "minMs": 1230.6397500000894,
-              "peakRssMb": null,
+              "medianMs": 847.7147920001298,
+              "minMs": 800.4832919999026,
+              "peakRssMb": 8.59375,
               "timedOut": false
             },
             "ag": {
-              "medianMs": 1050.763917000033,
-              "minMs": 1015.2506249998696,
-              "peakRssMb": null,
+              "medianMs": 820.0890419995412,
+              "minMs": 819.9244999997318,
+              "peakRssMb": 16.859375,
               "timedOut": false
             },
             "grep": {
-              "medianMs": 6468.372250000015,
-              "minMs": 5780.699791999999,
-              "peakRssMb": null,
+              "medianMs": 4338.047542000189,
+              "minMs": 4262.732041999698,
+              "peakRssMb": 3.171875,
               "timedOut": false
             },
             "git-grep": {
-              "medianMs": 908.4111669999547,
-              "minMs": 894.5936250002123,
-              "peakRssMb": null,
+              "medianMs": 830.4015419995412,
+              "minMs": 756.774667000398,
+              "peakRssMb": 52.953125,
               "timedOut": false
             },
             "cs": {
-              "medianMs": 3530.7396669997834,
-              "minMs": 3203.5467920000665,
-              "peakRssMb": null,
+              "medianMs": 2196.1764159998856,
+              "minMs": 1976.3319170000032,
+              "peakRssMb": 32.15625,
               "timedOut": false
             },
             "ast-grep": {
-              "medianMs": 2723.346334000118,
-              "minMs": 2718.9177079997025,
-              "peakRssMb": null,
+              "medianMs": 1968.3267500000075,
+              "minMs": 1816.337249999866,
+              "peakRssMb": 42.734375,
               "timedOut": false
             }
           }
@@ -731,15 +731,15 @@
           "available": true,
           "deterministic": true,
           "queries": 23,
-          "mrr": 0.7999999999999999,
+          "mrr": 0.8768115942028986,
           "top10": 1,
           "medianRank": 1,
           "unreachable": 0,
           "timeouts": 0,
           "vsRipgrep": {
-            "mean": 0.3814259941645944,
-            "lo": 0.22843296780200276,
-            "hi": 0.5412159346941957,
+            "mean": 0.4582375883674929,
+            "lo": 0.3040144887970975,
+            "hi": 0.6134644737905608,
             "p": 0.00019998000199980003,
             "n": 23,
             "clusters": 23
@@ -785,7 +785,7 @@
           "available": true,
           "deterministic": false,
           "queries": 23,
-          "mrr": 0.46021786829576744,
+          "mrr": 0.46735812517735725,
           "top10": 0.6956521739130435,
           "medianRank": 4,
           "unreachable": 0,
@@ -842,7 +842,7 @@
           "available": true,
           "deterministic": false,
           "queries": 23,
-          "mrr": 0.6864754876821092,
+          "mrr": 0.7165113871635611,
           "top10": 0.8695652173913043,
           "medianRank": 1,
           "unreachable": 0,
@@ -854,51 +854,51 @@
           "query": "basic",
           "results": {
             "hay": {
-              "medianMs": 13.066833999939263,
-              "minMs": 12.989041999913752,
-              "peakRssMb": null,
+              "medianMs": 11.40375000005588,
+              "minMs": 10.340375000145286,
+              "peakRssMb": 6.3125,
               "timedOut": false
             },
             "rg": {
-              "medianMs": 18.29570799972862,
-              "minMs": 17.487500000279397,
-              "peakRssMb": null,
+              "medianMs": 15.973208000417799,
+              "minMs": 13.727833000011742,
+              "peakRssMb": 5.40625,
               "timedOut": false
             },
             "ugrep": {
-              "medianMs": 7.986457999795675,
-              "minMs": 7.642749999649823,
-              "peakRssMb": null,
+              "medianMs": 5.892334000207484,
+              "minMs": 5.275624999776483,
+              "peakRssMb": 4.25,
               "timedOut": false
             },
             "ag": {
-              "medianMs": 26.888791000004858,
-              "minMs": 25.567999999970198,
-              "peakRssMb": null,
+              "medianMs": 20.007916999980807,
+              "minMs": 18.799208999611437,
+              "peakRssMb": 7.171875,
               "timedOut": false
             },
             "grep": {
-              "medianMs": 31.80075000040233,
-              "minMs": 31.606790999881923,
-              "peakRssMb": null,
+              "medianMs": 32.158916000276804,
+              "minMs": 31.661624999716878,
+              "peakRssMb": 1.828125,
               "timedOut": false
             },
             "git-grep": {
-              "medianMs": 18.11120800022036,
-              "minMs": 17.397374999709427,
-              "peakRssMb": null,
+              "medianMs": 11.203749999869615,
+              "minMs": 11.09679100010544,
+              "peakRssMb": 9.984375,
               "timedOut": false
             },
             "cs": {
-              "medianMs": 40.92033400014043,
-              "minMs": 39.23337500030175,
-              "peakRssMb": null,
+              "medianMs": 28.955583000089973,
+              "minMs": 28.537374999839813,
+              "peakRssMb": 21.9375,
               "timedOut": false
             },
             "ast-grep": {
-              "medianMs": 31.62112500006333,
-              "minMs": 31.40108300000429,
-              "peakRssMb": null,
+              "medianMs": 29.115375000052154,
+              "minMs": 27.696124999783933,
+              "peakRssMb": 25.1875,
               "timedOut": false
             }
           }
@@ -907,51 +907,51 @@
           "query": "enforce_literal_len",
           "results": {
             "hay": {
-              "medianMs": 13.75579100009054,
-              "minMs": 12.421167000196874,
-              "peakRssMb": null,
+              "medianMs": 12.075666999910027,
+              "minMs": 10.955374999903142,
+              "peakRssMb": 6.34375,
               "timedOut": false
             },
             "rg": {
-              "medianMs": 22.3390410002321,
-              "minMs": 20.813916000071913,
-              "peakRssMb": null,
+              "medianMs": 13.213624999858439,
+              "minMs": 12.654333000071347,
+              "peakRssMb": 5.421875,
               "timedOut": false
             },
             "ugrep": {
-              "medianMs": 12.057666999753565,
-              "minMs": 11.141167000401765,
-              "peakRssMb": null,
+              "medianMs": 7.66066600009799,
+              "minMs": 7.407416000030935,
+              "peakRssMb": 4.5,
               "timedOut": false
             },
             "ag": {
-              "medianMs": 29.504583000205457,
-              "minMs": 27.784750000108033,
-              "peakRssMb": null,
+              "medianMs": 18.794625000096858,
+              "minMs": 17.818458000198007,
+              "peakRssMb": 7.171875,
               "timedOut": false
             },
             "grep": {
-              "medianMs": 43.27474999986589,
-              "minMs": 42.99866599962115,
-              "peakRssMb": null,
+              "medianMs": 42.74245899962261,
+              "minMs": 42.416208000387996,
+              "peakRssMb": 1.84375,
               "timedOut": false
             },
             "git-grep": {
-              "medianMs": 16.411290999967605,
-              "minMs": 16.12749999994412,
-              "peakRssMb": null,
+              "medianMs": 11.02633300004527,
+              "minMs": 11.026041999924928,
+              "peakRssMb": 10.046875,
               "timedOut": false
             },
             "cs": {
-              "medianMs": 40.65449999971315,
-              "minMs": 39.66491700010374,
-              "peakRssMb": null,
+              "medianMs": 28.361833000089973,
+              "minMs": 28.00112499995157,
+              "peakRssMb": 21.59375,
               "timedOut": false
             },
             "ast-grep": {
-              "medianMs": 31.125541999936104,
-              "minMs": 30.611083999741822,
-              "peakRssMb": null,
+              "medianMs": 28.616417000070214,
+              "minMs": 27.453707999549806,
+              "peakRssMb": 25.546875,
               "timedOut": false
             }
           }
@@ -960,51 +960,51 @@
           "query": "quiet",
           "results": {
             "hay": {
-              "medianMs": 12.960624999832362,
-              "minMs": 12.411125000100583,
-              "peakRssMb": null,
+              "medianMs": 9.978792000096291,
+              "minMs": 9.882457999978215,
+              "peakRssMb": 6.375,
               "timedOut": false
             },
             "rg": {
-              "medianMs": 22.212541999761015,
-              "minMs": 20.072042000014335,
-              "peakRssMb": null,
+              "medianMs": 13.217625000048429,
+              "minMs": 13.188040999695659,
+              "peakRssMb": 5.453125,
               "timedOut": false
             },
             "ugrep": {
-              "medianMs": 8.66158299986273,
-              "minMs": 8.193750000093132,
-              "peakRssMb": null,
+              "medianMs": 5.790709000080824,
+              "minMs": 5.610707999672741,
+              "peakRssMb": 4.3125,
               "timedOut": false
             },
             "ag": {
-              "medianMs": 26.957458999939263,
-              "minMs": 26.925249999854714,
-              "peakRssMb": null,
+              "medianMs": 19.915041000116616,
+              "minMs": 19.017750000115484,
+              "peakRssMb": 7.171875,
               "timedOut": false
             },
             "grep": {
-              "medianMs": 26.72124999994412,
-              "minMs": 26.601334000006318,
-              "peakRssMb": null,
+              "medianMs": 27.547042000107467,
+              "minMs": 24.97379200020805,
+              "peakRssMb": 1.828125,
               "timedOut": false
             },
             "git-grep": {
-              "medianMs": 16.27237500017509,
-              "minMs": 16.08999999985099,
-              "peakRssMb": null,
+              "medianMs": 11.358374999836087,
+              "minMs": 11.139083000365645,
+              "peakRssMb": 10.28125,
               "timedOut": false
             },
             "cs": {
-              "medianMs": 45.28920800006017,
-              "minMs": 43.081499999854714,
-              "peakRssMb": null,
+              "medianMs": 33.25929199997336,
+              "minMs": 32.83666699985042,
+              "peakRssMb": 21.453125,
               "timedOut": false
             },
             "ast-grep": {
-              "medianMs": 36.32691599987447,
-              "minMs": 32.77641599997878,
-              "peakRssMb": null,
+              "medianMs": 33.2462920001708,
+              "minMs": 32.55850000027567,
+              "peakRssMb": 30.984375,
               "timedOut": false
             }
           }
@@ -1063,15 +1063,15 @@
           "available": true,
           "deterministic": true,
           "queries": 29,
-          "mrr": 0.6911740558292282,
-          "top10": 0.9310344827586207,
+          "mrr": 0.7761904761904761,
+          "top10": 1,
           "medianRank": 1,
           "unreachable": 0,
           "timeouts": 0,
           "vsRipgrep": {
-            "mean": 0.25770338568657036,
-            "lo": 0.15175264890926152,
-            "hi": 0.37712791040377247,
+            "mean": 0.34271980604781827,
+            "lo": 0.23470126828934146,
+            "hi": 0.45940078339816687,
             "p": 0.00019998000199980003,
             "n": 29,
             "clusters": 29
@@ -1117,9 +1117,9 @@
           "available": true,
           "deterministic": false,
           "queries": 29,
-          "mrr": 0.3259907262473768,
-          "top10": 0.41379310344827586,
-          "medianRank": 12,
+          "mrr": 0.2927885765510904,
+          "top10": 0.3793103448275862,
+          "medianRank": 13,
           "unreachable": 0.10344827586206896,
           "timeouts": 0
         },
@@ -1174,9 +1174,9 @@
           "available": true,
           "deterministic": false,
           "queries": 29,
-          "mrr": 0.38649556060376505,
-          "top10": 0.6896551724137931,
-          "medianRank": 4,
+          "mrr": 0.45226929234063595,
+          "top10": 0.7586206896551724,
+          "medianRank": 3,
           "unreachable": 0.06896551724137931,
           "timeouts": 0
         }
@@ -1186,51 +1186,51 @@
           "query": "requestDidCancel",
           "results": {
             "hay": {
-              "medianMs": 21.594041999895126,
-              "minMs": 19.97179100010544,
-              "peakRssMb": null,
+              "medianMs": 15.530582999810576,
+              "minMs": 15.40708400029689,
+              "peakRssMb": 9.609375,
               "timedOut": false
             },
             "rg": {
-              "medianMs": 76.73212500009686,
-              "minMs": 75.00849999999627,
-              "peakRssMb": null,
+              "medianMs": 33.12254100013524,
+              "minMs": 30.281917000189424,
+              "peakRssMb": 5.53125,
               "timedOut": false
             },
             "ugrep": {
-              "medianMs": 12.751666000112891,
-              "minMs": 11.81774999992922,
-              "peakRssMb": null,
+              "medianMs": 6.517917000222951,
+              "minMs": 6.4604170001111925,
+              "peakRssMb": 4.484375,
               "timedOut": false
             },
             "ag": {
-              "medianMs": 59.90020899986848,
-              "minMs": 54.88704100018367,
-              "peakRssMb": null,
+              "medianMs": 34.584583999589086,
+              "minMs": 34.041124999988824,
+              "peakRssMb": 7.15625,
               "timedOut": false
             },
             "grep": {
-              "medianMs": 178.45333399996161,
-              "minMs": 176.83058300008997,
-              "peakRssMb": null,
+              "medianMs": 143.79662499995902,
+              "minMs": 135.4008329999633,
+              "peakRssMb": 2.59375,
               "timedOut": false
             },
             "git-grep": {
-              "medianMs": 24.041415999643505,
-              "minMs": 22.867749999742955,
-              "peakRssMb": null,
+              "medianMs": 16.024292000103742,
+              "minMs": 15.904083999805152,
+              "peakRssMb": 12.984375,
               "timedOut": false
             },
             "cs": {
-              "medianMs": 299.2571250000037,
-              "minMs": 91.45066699991003,
-              "peakRssMb": null,
+              "medianMs": 62.35820799972862,
+              "minMs": 59.994665999896824,
+              "peakRssMb": 29.078125,
               "timedOut": false
             },
             "ast-grep": {
-              "medianMs": 57.974750000052154,
-              "minMs": 49.728624999988824,
-              "peakRssMb": null,
+              "medianMs": 29.703915999736637,
+              "minMs": 26.959207999985665,
+              "peakRssMb": 25.375,
               "timedOut": false
             }
           }
@@ -1239,51 +1239,51 @@
           "query": "reset",
           "results": {
             "hay": {
-              "medianMs": 39.60412500007078,
-              "minMs": 28.21354200039059,
-              "peakRssMb": null,
+              "medianMs": 15.008291999809444,
+              "minMs": 14.246917000040412,
+              "peakRssMb": 8.1875,
               "timedOut": false
             },
             "rg": {
-              "medianMs": 39.05066700000316,
-              "minMs": 38.60929200006649,
-              "peakRssMb": null,
+              "medianMs": 28.02641599997878,
+              "minMs": 27.123833999969065,
+              "peakRssMb": 5.59375,
               "timedOut": false
             },
             "ugrep": {
-              "medianMs": 8.90533300023526,
-              "minMs": 8.487500000279397,
-              "peakRssMb": null,
+              "medianMs": 6.644332999829203,
+              "minMs": 6.401374999899417,
+              "peakRssMb": 4.46875,
               "timedOut": false
             },
             "ag": {
-              "medianMs": 43.19450000021607,
-              "minMs": 41.81262500025332,
-              "peakRssMb": null,
+              "medianMs": 33.90670799976215,
+              "minMs": 33.45554200001061,
+              "peakRssMb": 7.171875,
               "timedOut": false
             },
             "grep": {
-              "medianMs": 142.46187500003725,
-              "minMs": 139.26800000015646,
-              "peakRssMb": null,
+              "medianMs": 136.59558399999514,
+              "minMs": 121.69258299982175,
+              "peakRssMb": 2.578125,
               "timedOut": false
             },
             "git-grep": {
-              "medianMs": 20.316208000294864,
-              "minMs": 20.224624999798834,
-              "peakRssMb": null,
+              "medianMs": 14.46433399990201,
+              "minMs": 14.368875000160187,
+              "peakRssMb": 12.734375,
               "timedOut": false
             },
             "cs": {
-              "medianMs": 84.71895799972117,
-              "minMs": 84.17137499991804,
-              "peakRssMb": null,
+              "medianMs": 59.08062499994412,
+              "minMs": 57.931291999761015,
+              "peakRssMb": 27.609375,
               "timedOut": false
             },
             "ast-grep": {
-              "medianMs": 30.416457999963313,
-              "minMs": 29.809291999787092,
-              "peakRssMb": null,
+              "medianMs": 27.544624999631196,
+              "minMs": 27.182416999712586,
+              "peakRssMb": 24.203125,
               "timedOut": false
             }
           }
@@ -1292,51 +1292,51 @@
           "query": "value",
           "results": {
             "hay": {
-              "medianMs": 20.49362500011921,
-              "minMs": 19.789375000167638,
-              "peakRssMb": null,
+              "medianMs": 17.652209000196308,
+              "minMs": 17.469833999872208,
+              "peakRssMb": 10.703125,
               "timedOut": false
             },
             "rg": {
-              "medianMs": 48.06925000017509,
-              "minMs": 46.659041999839246,
-              "peakRssMb": null,
+              "medianMs": 33.975875000003725,
+              "minMs": 33.82454200042412,
+              "peakRssMb": 5.609375,
               "timedOut": false
             },
             "ugrep": {
-              "medianMs": 8.154208000283688,
-              "minMs": 8.143291000276804,
-              "peakRssMb": null,
+              "medianMs": 6.108916999772191,
+              "minMs": 6.00774999987334,
+              "peakRssMb": 4.46875,
               "timedOut": false
             },
             "ag": {
-              "medianMs": 66.13770900014788,
-              "minMs": 63.44816600019112,
-              "peakRssMb": null,
+              "medianMs": 55.121707999613136,
+              "minMs": 54.5404170001857,
+              "peakRssMb": 7.15625,
               "timedOut": false
             },
             "grep": {
-              "medianMs": 124.04670900013298,
-              "minMs": 112.2310830000788,
-              "peakRssMb": null,
+              "medianMs": 115.22391699999571,
+              "minMs": 107.29866699967533,
+              "peakRssMb": 2.578125,
               "timedOut": false
             },
             "git-grep": {
-              "medianMs": 21.290000000037253,
-              "minMs": 19.74783300003037,
-              "peakRssMb": null,
+              "medianMs": 14.539917000103742,
+              "minMs": 14.332165999803692,
+              "peakRssMb": 13.34375,
               "timedOut": false
             },
             "cs": {
-              "medianMs": 177.17529199970886,
-              "minMs": 173.48079199995846,
-              "peakRssMb": null,
+              "medianMs": 148.02608400024474,
+              "minMs": 142.49533399986103,
+              "peakRssMb": 43.921875,
               "timedOut": false
             },
             "ast-grep": {
-              "medianMs": 31.013584000058472,
-              "minMs": 30.60591599997133,
-              "peakRssMb": null,
+              "medianMs": 29.4126670002006,
+              "minMs": 28.830500000156462,
+              "peakRssMb": 25.5625,
               "timedOut": false
             }
           }
@@ -1347,15 +1347,15 @@
       "corpus": "hay",
       "lang": "rust",
       "files": {
-        "onDisk": 540,
-        "rgVisible": 80,
-        "gitTracked": 91
+        "onDisk": 40105,
+        "rgVisible": 82,
+        "gitTracked": 93
       },
       "provenance": {
-        "revision": "32b319badb00a59d6bba47b9a9652085a704f9eb",
+        "revision": "e25075cbb833daffe00cc16d85de2ee234ad59b9",
         "dirty": false
       },
-      "symbolsUniquelyDeclared": 51,
+      "symbolsUniquelyDeclared": 57,
       "queries": 1,
       "symbols": [
         "write"
@@ -1367,15 +1367,15 @@
           "available": true,
           "deterministic": true,
           "queries": 1,
-          "mrr": 0.2,
+          "mrr": 0.25,
           "top10": 1,
-          "medianRank": 5,
+          "medianRank": 4,
           "unreachable": 0,
           "timeouts": 0,
           "vsRipgrep": {
-            "mean": 0.18765432098765433,
-            "lo": 0.18765432098765433,
-            "hi": 0.18765432098765433,
+            "mean": 0.23837209302325582,
+            "lo": 0.23837209302325582,
+            "hi": 0.23837209302325582,
             "p": 0.00019998000199980003,
             "n": 1,
             "clusters": 1
@@ -1388,9 +1388,9 @@
           "available": true,
           "deterministic": true,
           "queries": 1,
-          "mrr": 0.012345679012345678,
+          "mrr": 0.011627906976744186,
           "top10": 0,
-          "medianRank": 81,
+          "medianRank": 86,
           "unreachable": 0,
           "timeouts": 0
         },
@@ -1400,15 +1400,15 @@
           "available": true,
           "deterministic": true,
           "queries": 1,
-          "mrr": 0.009615384615384616,
+          "mrr": 0.008928571428571428,
           "top10": 0,
-          "medianRank": 104,
+          "medianRank": 112,
           "unreachable": 0,
           "timeouts": 0,
           "vsRipgrep": {
-            "mean": -0.0027302943969610624,
-            "lo": -0.0027302943969610624,
-            "hi": -0.0027302943969610624,
+            "mean": -0.002699335548172758,
+            "lo": -0.002699335548172758,
+            "hi": -0.002699335548172758,
             "p": 0.00019998000199980003,
             "n": 1,
             "clusters": 1
@@ -1421,9 +1421,9 @@
           "available": true,
           "deterministic": false,
           "queries": 1,
-          "mrr": 0.02857142857142857,
+          "mrr": 0.02564102564102564,
           "top10": 0,
-          "medianRank": 35,
+          "medianRank": 39,
           "unreachable": 0,
           "timeouts": 0
         },
@@ -1433,9 +1433,9 @@
           "available": true,
           "deterministic": false,
           "queries": 1,
-          "mrr": 0.021739130434782608,
+          "mrr": 0.004739336492890996,
           "top10": 0,
-          "medianRank": 46,
+          "medianRank": 211,
           "unreachable": 0,
           "timeouts": 0
         },
@@ -1445,15 +1445,15 @@
           "available": true,
           "deterministic": true,
           "queries": 1,
-          "mrr": 0.011494252873563218,
+          "mrr": 0.010869565217391304,
           "top10": 0,
-          "medianRank": 87,
+          "medianRank": 92,
           "unreachable": 0,
           "timeouts": 0,
           "vsRipgrep": {
-            "mean": -0.0008514261387824601,
-            "lo": -0.0008514261387824601,
-            "hi": -0.0008514261387824601,
+            "mean": -0.0007583417593528818,
+            "lo": -0.0007583417593528818,
+            "hi": -0.0007583417593528818,
             "p": 0.00019998000199980003,
             "n": 1,
             "clusters": 1
@@ -1490,51 +1490,51 @@
           "query": "write",
           "results": {
             "hay": {
-              "medianMs": 10.838541999924928,
-              "minMs": 10.261082999873906,
-              "peakRssMb": null,
+              "medianMs": 9.80724999960512,
+              "minMs": 8.726958000101149,
+              "peakRssMb": 6.265625,
               "timedOut": false
             },
             "rg": {
-              "medianMs": 15.147375000175089,
-              "minMs": 13.295582999940962,
-              "peakRssMb": null,
+              "medianMs": 12.693707999773324,
+              "minMs": 12.214000000152737,
+              "peakRssMb": 5.265625,
               "timedOut": false
             },
             "ugrep": {
-              "medianMs": 9.457291999831796,
-              "minMs": 8.801208999939263,
-              "peakRssMb": null,
+              "medianMs": 7.334375000093132,
+              "minMs": 7.032209000084549,
+              "peakRssMb": 4.34375,
               "timedOut": false
             },
             "ag": {
-              "medianMs": 26.10866599995643,
-              "minMs": 25.719334000255913,
-              "peakRssMb": null,
+              "medianMs": 16.961416999809444,
+              "minMs": 16.583416999783367,
+              "peakRssMb": 7.171875,
               "timedOut": false
             },
             "grep": {
-              "medianMs": 471.8105829996057,
-              "minMs": 443.5422499999404,
-              "peakRssMb": null,
+              "medianMs": 28044.796291999985,
+              "minMs": 25389.894042000175,
+              "peakRssMb": 26.03125,
               "timedOut": false
             },
             "git-grep": {
-              "medianMs": 17.878125000279397,
-              "minMs": 17.08141600014642,
-              "peakRssMb": null,
+              "medianMs": 10.50537500018254,
+              "minMs": 10.12479199981317,
+              "peakRssMb": 9.71875,
               "timedOut": false
             },
             "cs": {
-              "medianMs": 22.59070899989456,
-              "minMs": 22.458542000036687,
-              "peakRssMb": null,
+              "medianMs": 15.2900419998914,
+              "minMs": 15.040250000078231,
+              "peakRssMb": 23.015625,
               "timedOut": false
             },
             "ast-grep": {
-              "medianMs": 17.39391600014642,
-              "minMs": 17.305374999996275,
-              "peakRssMb": null,
+              "medianMs": 14.120124999899417,
+              "minMs": 13.691208000294864,
+              "peakRssMb": 11.125,
               "timedOut": false
             }
           }

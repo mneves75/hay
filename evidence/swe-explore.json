@@ -21,6 +21,8 @@
     "noDerivableQueries": 0,
     "noVisibleGold": 0
   },
+  "archiveLinkMembersDropped": 206,
+  "checkoutsWithUnrecordedDrops": 0,
   "mrrRg": 0.24197286812508353,
   "mrrHay": 0.5504866323709429,
   "top10Rg": 0.40625,

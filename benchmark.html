@@ -174,7 +174,7 @@ table.rr th{font-family:"IBM Plex Mono",monospace;font-size:.72rem;text-transfor
     <div class="stat"><b>4</b><span>repositories, each parsed for ground truth</span></div>
     <div class="stat"><b>112</b><span>sampled queries, identical for every tool</span></div>
     <div class="stat"><b>8</b><span>search tools, one referee</span></div>
-    <div class="stat"><b>+0.38</b><span>hay’s best MRR margin over ripgrep (95% CI whiskers below)</span></div>
+    <div class="stat"><b>+0.46</b><span>hay’s best MRR margin over ripgrep (95% CI whiskers below)</span></div>
   </div>
 </header>
 
@@ -203,44 +203,46 @@ cases the tables refuse to call detected. The vertical line is ripgrep itself.</
 <svg viewBox="0 0 760 248" width="100%" role="img" aria-labelledby="deltatitle deltadesc" class="chart">
 <title id="deltatitle">How much each stable-order tool beats ripgrep --sort path, per repository</title>
 <desc id="deltadesc">Horizontal dot plot. Each mark is a stable-order tool's mean improvement in mean reciprocal rank over deterministic ripgrep --sort path, with a whisker showing the 95% bootstrap interval. The vertical line at zero is ripgrep itself.</desc>
-<line x1="168.74501301487868" y1="26" x2="168.74501301487868" y2="202" class="grid"/>
-<text x="168.74501301487868" y="218" text-anchor="middle" class="tick">0.0</text>
-<line x1="262.4700780892721" y1="26" x2="262.4700780892721" y2="202" class="grid"/>
-<text x="262.4700780892721" y="218" text-anchor="middle" class="tick">+0.1</text>
-<line x1="356.1951431636654" y1="26" x2="356.1951431636654" y2="202" class="grid"/>
-<text x="356.1951431636654" y="218" text-anchor="middle" class="tick">+0.2</text>
-<line x1="449.9202082380588" y1="26" x2="449.9202082380588" y2="202" class="grid"/>
-<text x="449.9202082380588" y="218" text-anchor="middle" class="tick">+0.3</text>
-<line x1="543.6452733124522" y1="26" x2="543.6452733124522" y2="202" class="grid"/>
-<text x="543.6452733124522" y="218" text-anchor="middle" class="tick">+0.4</text>
-<line x1="637.3703383868456" y1="26" x2="637.3703383868456" y2="202" class="grid"/>
-<text x="637.3703383868456" y="218" text-anchor="middle" class="tick">+0.5</text>
-<line x1="168.74501301487868" y1="26" x2="168.74501301487868" y2="202" class="zero"/>
-<text x="168.74501301487868" y="18" text-anchor="middle" class="tick strong">ripgrep</text>
+<line x1="166.60708758780083" y1="26" x2="166.60708758780083" y2="202" class="grid"/>
+<text x="166.60708758780083" y="218" text-anchor="middle" class="tick">0.0</text>
+<line x1="249.64252552680495" y1="26" x2="249.64252552680495" y2="202" class="grid"/>
+<text x="249.64252552680495" y="218" text-anchor="middle" class="tick">+0.1</text>
+<line x1="332.67796346580906" y1="26" x2="332.67796346580906" y2="202" class="grid"/>
+<text x="332.67796346580906" y="218" text-anchor="middle" class="tick">+0.2</text>
+<line x1="415.7134014048131" y1="26" x2="415.7134014048131" y2="202" class="grid"/>
+<text x="415.7134014048131" y="218" text-anchor="middle" class="tick">+0.3</text>
+<line x1="498.7488393438173" y1="26" x2="498.7488393438173" y2="202" class="grid"/>
+<text x="498.7488393438173" y="218" text-anchor="middle" class="tick">+0.4</text>
+<line x1="581.7842772828213" y1="26" x2="581.7842772828213" y2="202" class="grid"/>
+<text x="581.7842772828213" y="218" text-anchor="middle" class="tick">+0.5</text>
+<line x1="664.8197152218254" y1="26" x2="664.8197152218254" y2="202" class="grid"/>
+<text x="664.8197152218254" y="218" text-anchor="middle" class="tick">+0.6</text>
+<line x1="166.60708758780083" y1="26" x2="166.60708758780083" y2="202" class="zero"/>
+<text x="166.60708758780083" y="18" text-anchor="middle" class="tick strong">ripgrep</text>
 <text x="0" y="38" class="cat">linux</text>
-<line x1="377.32333625201693" y1="34" x2="651.2523598484797" y2="34" class="whisker"/>
-<line x1="377.32333625201693" y1="30" x2="377.32333625201693" y2="38" class="whisker"/>
-<line x1="651.2523598484797" y1="30" x2="651.2523598484797" y2="38" class="whisker"/>
-<circle cx="511.61145966691856" cy="34" r="4.5" fill="var(--accent)" stroke="var(--accent)" stroke-width="1.5"/>
-<text x="686" y="37.5" class="val">+0.37</text>
+<line x1="372.1129345694944" y1="34" x2="618.5659108430502" y2="34" class="whisker"/>
+<line x1="372.1129345694944" y1="30" x2="372.1129345694944" y2="38" class="whisker"/>
+<line x1="618.5659108430502" y1="30" x2="618.5659108430502" y2="38" class="whisker"/>
+<circle cx="492.51136247855965" cy="34" r="4.5" fill="var(--accent)" stroke="var(--accent)" stroke-width="1.5"/>
+<text x="686" y="37.5" class="val">+0.39</text>
 <text x="0" y="80" class="cat">openclaw</text>
-<line x1="197.9039221491344" y1="76" x2="326.7758866264253" y2="76" class="whisker"/>
-<line x1="197.9039221491344" y1="72" x2="197.9039221491344" y2="80" class="whisker"/>
-<line x1="326.7758866264253" y1="72" x2="326.7758866264253" y2="80" class="whisker"/>
-<circle cx="255.204018751434" cy="76" r="4.5" fill="var(--accent)" stroke="var(--accent)" stroke-width="1.5"/>
-<text x="686" y="79.5" class="val">+0.09</text>
+<line x1="195.45980541711134" y1="76" x2="332.908617460084" y2="76" class="whisker"/>
+<line x1="195.45980541711134" y1="72" x2="195.45980541711134" y2="80" class="whisker"/>
+<line x1="332.908617460084" y1="72" x2="332.908617460084" y2="80" class="whisker"/>
+<circle cx="257.0444218885394" cy="76" r="4.5" fill="var(--accent)" stroke="var(--accent)" stroke-width="1.5"/>
+<text x="686" y="79.5" class="val">+0.11</text>
 <text x="0" y="122" class="cat">ripgrep</text>
-<line x1="382.8439607386738" y1="118" x2="676" y2="118" class="whisker"/>
-<line x1="382.8439607386738" y1="114" x2="382.8439607386738" y2="122" class="whisker"/>
+<line x1="419.04684975849534" y1="118" x2="676" y2="118" class="whisker"/>
+<line x1="419.04684975849534" y1="114" x2="419.04684975849534" y2="122" class="whisker"/>
 <line x1="676" y1="114" x2="676" y2="122" class="whisker"/>
-<circle cx="526.2367742562967" cy="118" r="4.5" fill="var(--accent)" stroke="var(--accent)" stroke-width="1.5"/>
-<text x="686" y="121.5" class="val">+0.38</text>
+<circle cx="547.1066758898794" cy="118" r="4.5" fill="var(--accent)" stroke="var(--accent)" stroke-width="1.5"/>
+<text x="686" y="121.5" class="val">+0.46</text>
 <text x="0" y="164" class="cat">alamofire</text>
-<line x1="310.97528195719974" y1="160" x2="522.2083924545144" y2="160" class="whisker"/>
-<line x1="310.97528195719974" y1="156" x2="310.97528195719974" y2="164" class="whisker"/>
-<line x1="522.2083924545144" y1="156" x2="522.2083924545144" y2="164" class="whisker"/>
-<circle cx="410.27767894853173" cy="160" r="4.5" fill="var(--accent)" stroke="var(--accent)" stroke-width="1.5"/>
-<text x="686" y="163.5" class="val">+0.26</text><circle cx="150" cy="228" r="4.5" fill="var(--panel)" stroke="var(--accent)" stroke-width="1.5"/><text x="162" y="232" class="legend">hay</text>
+<line x1="361.49231356025246" y1="160" x2="548.0725399776843" y2="160" class="whisker"/>
+<line x1="361.49231356025246" y1="156" x2="361.49231356025246" y2="164" class="whisker"/>
+<line x1="548.0725399776843" y1="156" x2="548.0725399776843" y2="164" class="whisker"/>
+<circle cx="451.1859794433122" cy="160" r="4.5" fill="var(--accent)" stroke="var(--accent)" stroke-width="1.5"/>
+<text x="686" y="163.5" class="val">+0.34</text><circle cx="150" cy="228" r="4.5" fill="var(--panel)" stroke="var(--accent)" stroke-width="1.5"/><text x="162" y="232" class="legend">hay</text>
 <text x="540" y="232" class="legend">filled = both statistical tests agree</text></svg>
 <figcaption><strong>Read it as:</strong> further right = answers higher up the list than ripgrep.
 hay (circles) is favoured by construction here — the ground truth <em>is</em> a declaration ranking,
@@ -281,10 +283,10 @@ tools remain visible as descriptive snapshots in the tables and first-page chart
 <rect x="150" y="195" width="498.52173913043475" height="10" rx="2" fill="var(--bar)" opacity="0.75"/>
 <text x="654.5217391304348" y="203.5" class="val">91%</text>
 <text x="0" y="241" class="cat">alamofire</text>
-<rect x="150" y="231" width="508.34482758620686" height="10" rx="2" fill="var(--accent)" opacity="1"/>
-<text x="664.3448275862069" y="239.5" class="val">93%</text>
-<rect x="150" y="247" width="376.55172413793105" height="10" rx="2" fill="var(--bar)" opacity="0.75"/>
-<text x="532.551724137931" y="255.5" class="val">69%</text>
+<rect x="150" y="231" width="546" height="10" rx="2" fill="var(--accent)" opacity="1"/>
+<text x="702" y="239.5" class="val">100%</text>
+<rect x="150" y="247" width="414.2068965517242" height="10" rx="2" fill="var(--bar)" opacity="0.75"/>
+<text x="570.2068965517242" y="255.5" class="val">76%</text>
 <rect x="150" y="263" width="470.6896551724137" height="10" rx="2" fill="var(--bar)" opacity="0.75"/>
 <text x="626.6896551724137" y="271.5" class="val">86%</text></svg>
 </figure>
@@ -311,31 +313,31 @@ scale. Ranking costs work; the question is how much answer quality buys:</p>
 <text x="0" y="42" class="cat">ugrep</text>
 <rect x="130" y="31" width="216" height="14" rx="3" fill="var(--accent)" opacity="0.85"/>
 <path d="M 123 38 l 7 -4 v 8 z" fill="var(--ink-faint)"/>
-<text x="680" y="42" class="val">0.19×</text>
+<text x="680" y="42" class="val">0.20×</text>
 <text x="0" y="72" class="cat">git-grep</text>
-<rect x="203.06889992786267" y="61" width="142.93110007213733" height="14" rx="3" fill="var(--accent)" opacity="0.85"/>
+<rect x="220.46329410787234" y="61" width="125.53670589212766" height="14" rx="3" fill="var(--accent)" opacity="0.85"/>
 
-<text x="680" y="72" class="val">0.40×</text>
+<text x="680" y="72" class="val">0.45×</text>
 <text x="0" y="102" class="cat">hay</text>
-<rect x="213.79649290944917" y="91" width="132.20350709055083" height="14" rx="3" fill="var(--accent)" opacity="0.85"/>
+<rect x="222.74898543517725" y="91" width="123.25101456482275" height="14" rx="3" fill="var(--accent)" opacity="0.85"/>
 
-<text x="680" y="102" class="val">0.43×</text>
+<text x="680" y="102" class="val">0.45×</text>
 <text x="0" y="132" class="cat">ag</text>
-<rect x="261.2622523701457" y="121" width="84.73774762985431" height="14" rx="3" fill="var(--accent)" opacity="0.85"/>
+<rect x="283.4903755138019" y="121" width="62.509624486198106" height="14" rx="3" fill="var(--accent)" opacity="0.85"/>
 
-<text x="680" y="132" class="val">0.58×</text>
+<text x="680" y="132" class="val">0.67×</text>
 <text x="0" y="162" class="cat">ast-grep</text>
-<rect x="346" y="151" width="9.381859220127126" height="14" rx="3" fill="var(--bar)" opacity="0.85"/>
+<rect x="346" y="151" width="12.941014481251386" height="14" rx="3" fill="var(--bar)" opacity="0.85"/>
 
-<text x="680" y="162" class="val">1.06×</text>
+<text x="680" y="162" class="val">1.09×</text>
 <text x="0" y="192" class="cat">cs</text>
-<rect x="346" y="181" width="79.59791771753214" height="14" rx="3" fill="var(--bar)" opacity="0.85"/>
+<rect x="346" y="181" width="66.15551252556082" height="14" rx="3" fill="var(--bar)" opacity="0.85"/>
 
-<text x="680" y="192" class="val">1.67×</text>
+<text x="680" y="192" class="val">1.53×</text>
 <text x="0" y="222" class="cat">grep</text>
-<rect x="346" y="211" width="113.24854852355742" height="14" rx="3" fill="var(--bar)" opacity="0.85"/>
+<rect x="346" y="211" width="135.07627518628044" height="14" rx="3" fill="var(--bar)" opacity="0.85"/>
 
-<text x="680" y="222" class="val">2.07×</text>
+<text x="680" y="222" class="val">2.38×</text>
 <text x="0" y="280" class="legend">geometric mean over 12 complete paired queries · tools with timeouts omitted · lower is faster</text></svg>
 </figure>
 
@@ -624,7 +626,7 @@ as <code>hay / rg</code>, never absorbed into another metric.</p>
 <section class="corpus">
 <h3>linux</h3>
 
-<p class="meta">revision 45c13f3f9e3b · clean · C · 95,819 files · 95,818 after gitignore · 95,921 tracked · 560,573 symbols declared once · <strong>30 queries</strong></p>
+<p class="meta">revision 1b78070aaef6 · clean · C · 95,911 files · 95,910 after gitignore · 96,013 tracked · 560,787 symbols declared once · <strong>30 queries</strong></p>
 <div class="scroll" tabindex="0"><table>
 <thead><tr>
   <th scope="col">tool</th><th scope="col" class="n">MRR</th><th scope="col" class="n">top 10</th>
@@ -634,18 +636,18 @@ as <code>hay / rg</code>, never absorbed into another metric.</p>
 </tr></thead>
 <tbody><tr class="subject">
   <th scope="row">hay (this project)</th>
-  <td class="n">0.907<span class="bar" aria-hidden="true"><span style="width:90.7%"></span></span></td>
+  <td class="n">0.933<span class="bar" aria-hidden="true"><span style="width:93.3%"></span></span></td>
   <td class="n">100%</td>
   <td class="n">1</td>
   <td class="n">0%</td>
-  <td class="d up sig">+0.366 [0.223, 0.515]</td>
+  <td class="d up sig">+0.392 [0.247, 0.544]</td>
   <td class="n">&lt;0.001</td>
 </tr>
 <tr>
   <th scope="row">ast-grep (structural snapshot)</th>
-  <td class="n">0.636<span class="bar" aria-hidden="true"><span style="width:63.6%"></span></span></td>
+  <td class="n">0.688<span class="bar" aria-hidden="true"><span style="width:68.8%"></span></span></td>
   <td class="n">90%</td>
-  <td class="n">1.5</td>
+  <td class="n">1</td>
   <td class="n">0%</td>
   <td class="d snapshot">snapshot only</td>
   <td class="n">—</td>
@@ -679,7 +681,7 @@ as <code>hay / rg</code>, never absorbed into another metric.</p>
 </tr>
 <tr>
   <th scope="row">the_silver_searcher</th>
-  <td class="n">0.567<span class="bar" aria-hidden="true"><span style="width:56.7%"></span></span></td>
+  <td class="n">0.562<span class="bar" aria-hidden="true"><span style="width:56.2%"></span></span></td>
   <td class="n">83%</td>
   <td class="n">2</td>
   <td class="n">3%</td>
@@ -708,13 +710,13 @@ as <code>hay / rg</code>, never absorbed into another metric.</p>
 <h4>Time to complete a full search</h4>
 <div class="scroll" tabindex="0"><table class="perf">
 <thead><tr><th scope="col">query</th><th scope="col">hay</th><th scope="col">rg --sort path</th><th scope="col">ugrep --sort=name</th><th scope="col">ag</th><th scope="col">grep</th><th scope="col">git grep</th><th scope="col">cs</th><th scope="col">ast-grep</th></tr></thead>
-<tbody><tr><th scope="row"><code>su_remove</code></th><td class="n">2.55 s</td><td class="n">9.80 s</td><td class="n">1.80 s</td><td class="n">2.85 s</td><td class="n">19.13 s</td><td class="n">2.56 s</td><td class="n">11.75 s</td><td class="n">10.28 s</td></tr><tr><th scope="row"><code>use_intel_pmu</code></th><td class="n">3.15 s</td><td class="n">10.01 s</td><td class="n">88 ms</td><td class="n">2.77 s</td><td class="n">19.91 s</td><td class="n">3.44 s</td><td class="n">11.25 s</td><td class="n">11.32 s</td></tr><tr><th scope="row"><code>mgag200_init_pci_options</code></th><td class="n">2.62 s</td><td class="n">9.79 s</td><td class="n">2.52 s</td><td class="n">2.74 s</td><td class="n">28.02 s</td><td class="n">2.72 s</td><td class="n">13.08 s</td><td class="n">16.02 s</td></tr>
-<tr class="rss"><th scope="row">peak memory</th><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td></tr></tbody></table></div>
+<tbody><tr><th scope="row"><code>su_remove</code></th><td class="n">2.50 s</td><td class="n">8.21 s</td><td class="n">1.53 s</td><td class="n">2.63 s</td><td class="n">15.32 s</td><td class="n">2.48 s</td><td class="n">10.16 s</td><td class="n">7.42 s</td></tr><tr><th scope="row"><code>use_intel_pmu</code></th><td class="n">2.45 s</td><td class="n">9.23 s</td><td class="n">61 ms</td><td class="n">2.63 s</td><td class="n">14.22 s</td><td class="n">2.57 s</td><td class="n">9.75 s</td><td class="n">7.64 s</td></tr><tr><th scope="row"><code>mgag200_init_pci_options</code></th><td class="n">3.05 s</td><td class="n">8.06 s</td><td class="n">1.80 s</td><td class="n">2.77 s</td><td class="n">14.73 s</td><td class="n">2.50 s</td><td class="n">9.09 s</td><td class="n">7.35 s</td></tr>
+<tr class="rss"><th scope="row">peak memory</th><td class="n">15 MB</td><td class="n">8 MB</td><td class="n">8 MB</td><td class="n">181 MB</td><td class="n">3 MB</td><td class="n">253 MB</td><td class="n">204 MB</td><td class="n">640 MB</td></tr></tbody></table></div>
 </section>
 <section class="corpus">
 <h3>openclaw</h3>
 
-<p class="meta">revision a82042f20415 · clean · TS · 33,857 files · 33,376 after gitignore · 33,882 tracked · 21,196 symbols declared once · <strong>30 queries</strong></p>
+<p class="meta">revision 0706f629c3b5 · clean · TS · 34,366 files · 33,882 after gitignore · 34,391 tracked · 21,385 symbols declared once · <strong>30 queries</strong></p>
 <div class="scroll" tabindex="0"><table>
 <thead><tr>
   <th scope="col">tool</th><th scope="col" class="n">MRR</th><th scope="col" class="n">top 10</th>
@@ -724,11 +726,11 @@ as <code>hay / rg</code>, never absorbed into another metric.</p>
 </tr></thead>
 <tbody><tr class="subject">
   <th scope="row">hay (this project)</th>
-  <td class="n">0.911<span class="bar" aria-hidden="true"><span style="width:91.1%"></span></span></td>
+  <td class="n">0.928<span class="bar" aria-hidden="true"><span style="width:92.8%"></span></span></td>
   <td class="n">100%</td>
   <td class="n">1</td>
   <td class="n">0%</td>
-  <td class="d up sig">+0.092 [0.031, 0.169]</td>
+  <td class="d up sig">+0.109 [0.035, 0.200]</td>
   <td class="n">0.017</td>
 </tr>
 <tr>
@@ -769,7 +771,7 @@ as <code>hay / rg</code>, never absorbed into another metric.</p>
 </tr>
 <tr>
   <th scope="row">ast-grep (structural snapshot)</th>
-  <td class="n">0.769<span class="bar" aria-hidden="true"><span style="width:76.9%"></span></span></td>
+  <td class="n">0.783<span class="bar" aria-hidden="true"><span style="width:78.3%"></span></span></td>
   <td class="n">83%</td>
   <td class="n">1</td>
   <td class="n">0%</td>
@@ -798,8 +800,8 @@ as <code>hay / rg</code>, never absorbed into another metric.</p>
 <h4>Time to complete a full search</h4>
 <div class="scroll" tabindex="0"><table class="perf">
 <thead><tr><th scope="col">query</th><th scope="col">hay</th><th scope="col">rg --sort path</th><th scope="col">ugrep --sort=name</th><th scope="col">ag</th><th scope="col">grep</th><th scope="col">git grep</th><th scope="col">cs</th><th scope="col">ast-grep</th></tr></thead>
-<tbody><tr><th scope="row"><code>collectScopes</code></th><td class="n">2.64 s</td><td class="n">3.19 s</td><td class="n">1.64 s</td><td class="n">951 ms</td><td class="n">6.81 s</td><td class="n">879 ms</td><td class="n">2.82 s</td><td class="n">3.42 s</td></tr><tr><th scope="row"><code>handleComposerKeydown</code></th><td class="n">876 ms</td><td class="n">3.28 s</td><td class="n">221 ms</td><td class="n">931 ms</td><td class="n">5.64 s</td><td class="n">864 ms</td><td class="n">3.96 s</td><td class="n">3.05 s</td></tr><tr><th scope="row"><code>githubResponse</code></th><td class="n">957 ms</td><td class="n">3.82 s</td><td class="n">1.33 s</td><td class="n">1.05 s</td><td class="n">6.47 s</td><td class="n">908 ms</td><td class="n">3.53 s</td><td class="n">2.72 s</td></tr>
-<tr class="rss"><th scope="row">peak memory</th><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td></tr></tbody></table></div>
+<tbody><tr><th scope="row"><code>collectScopes</code></th><td class="n">864 ms</td><td class="n">2.75 s</td><td class="n">1.02 s</td><td class="n">854 ms</td><td class="n">5.15 s</td><td class="n">917 ms</td><td class="n">2.05 s</td><td class="n">1.87 s</td></tr><tr><th scope="row"><code>handleComposerKeydown</code></th><td class="n">827 ms</td><td class="n">2.75 s</td><td class="n">235 ms</td><td class="n">924 ms</td><td class="n">3.97 s</td><td class="n">816 ms</td><td class="n">2.00 s</td><td class="n">1.96 s</td></tr><tr><th scope="row"><code>githubResponse</code></th><td class="n">742 ms</td><td class="n">1.82 s</td><td class="n">848 ms</td><td class="n">820 ms</td><td class="n">4.34 s</td><td class="n">830 ms</td><td class="n">2.20 s</td><td class="n">1.97 s</td></tr>
+<tr class="rss"><th scope="row">peak memory</th><td class="n">15 MB</td><td class="n">8 MB</td><td class="n">9 MB</td><td class="n">17 MB</td><td class="n">3 MB</td><td class="n">53 MB</td><td class="n">33 MB</td><td class="n">48 MB</td></tr></tbody></table></div>
 </section>
 <section class="corpus">
 <h3>ripgrep</h3>
@@ -814,16 +816,16 @@ as <code>hay / rg</code>, never absorbed into another metric.</p>
 </tr></thead>
 <tbody><tr class="subject">
   <th scope="row">hay (this project)</th>
-  <td class="n">0.800<span class="bar" aria-hidden="true"><span style="width:80.0%"></span></span></td>
+  <td class="n">0.877<span class="bar" aria-hidden="true"><span style="width:87.7%"></span></span></td>
   <td class="n">100%</td>
   <td class="n">1</td>
   <td class="n">0%</td>
-  <td class="d up sig">+0.381 [0.228, 0.541]</td>
+  <td class="d up sig">+0.458 [0.304, 0.613]</td>
   <td class="n">&lt;0.001</td>
 </tr>
 <tr>
   <th scope="row">ast-grep (structural snapshot)</th>
-  <td class="n">0.686<span class="bar" aria-hidden="true"><span style="width:68.6%"></span></span></td>
+  <td class="n">0.717<span class="bar" aria-hidden="true"><span style="width:71.7%"></span></span></td>
   <td class="n">87%</td>
   <td class="n">1</td>
   <td class="n">0%</td>
@@ -841,7 +843,7 @@ as <code>hay / rg</code>, never absorbed into another metric.</p>
 </tr>
 <tr>
   <th scope="row">the_silver_searcher</th>
-  <td class="n">0.460<span class="bar" aria-hidden="true"><span style="width:46.0%"></span></span></td>
+  <td class="n">0.467<span class="bar" aria-hidden="true"><span style="width:46.7%"></span></span></td>
   <td class="n">70%</td>
   <td class="n">4</td>
   <td class="n">0%</td>
@@ -888,8 +890,8 @@ as <code>hay / rg</code>, never absorbed into another metric.</p>
 <h4>Time to complete a full search</h4>
 <div class="scroll" tabindex="0"><table class="perf">
 <thead><tr><th scope="col">query</th><th scope="col">hay</th><th scope="col">rg --sort path</th><th scope="col">ugrep --sort=name</th><th scope="col">ag</th><th scope="col">grep</th><th scope="col">git grep</th><th scope="col">cs</th><th scope="col">ast-grep</th></tr></thead>
-<tbody><tr><th scope="row"><code>basic</code></th><td class="n">13 ms</td><td class="n">18 ms</td><td class="n">8 ms</td><td class="n">27 ms</td><td class="n">32 ms</td><td class="n">18 ms</td><td class="n">41 ms</td><td class="n">32 ms</td></tr><tr><th scope="row"><code>enforce_literal_len</code></th><td class="n">14 ms</td><td class="n">22 ms</td><td class="n">12 ms</td><td class="n">30 ms</td><td class="n">43 ms</td><td class="n">16 ms</td><td class="n">41 ms</td><td class="n">31 ms</td></tr><tr><th scope="row"><code>quiet</code></th><td class="n">13 ms</td><td class="n">22 ms</td><td class="n">9 ms</td><td class="n">27 ms</td><td class="n">27 ms</td><td class="n">16 ms</td><td class="n">45 ms</td><td class="n">36 ms</td></tr>
-<tr class="rss"><th scope="row">peak memory</th><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td></tr></tbody></table></div>
+<tbody><tr><th scope="row"><code>basic</code></th><td class="n">11 ms</td><td class="n">16 ms</td><td class="n">6 ms</td><td class="n">20 ms</td><td class="n">32 ms</td><td class="n">11 ms</td><td class="n">29 ms</td><td class="n">29 ms</td></tr><tr><th scope="row"><code>enforce_literal_len</code></th><td class="n">12 ms</td><td class="n">13 ms</td><td class="n">8 ms</td><td class="n">19 ms</td><td class="n">43 ms</td><td class="n">11 ms</td><td class="n">28 ms</td><td class="n">29 ms</td></tr><tr><th scope="row"><code>quiet</code></th><td class="n">10 ms</td><td class="n">13 ms</td><td class="n">6 ms</td><td class="n">20 ms</td><td class="n">28 ms</td><td class="n">11 ms</td><td class="n">33 ms</td><td class="n">33 ms</td></tr>
+<tr class="rss"><th scope="row">peak memory</th><td class="n">6 MB</td><td class="n">5 MB</td><td class="n">5 MB</td><td class="n">7 MB</td><td class="n">2 MB</td><td class="n">10 MB</td><td class="n">22 MB</td><td class="n">31 MB</td></tr></tbody></table></div>
 </section>
 <section class="corpus">
 <h3>alamofire</h3>
@@ -904,12 +906,21 @@ as <code>hay / rg</code>, never absorbed into another metric.</p>
 </tr></thead>
 <tbody><tr class="subject">
   <th scope="row">hay (this project)</th>
-  <td class="n">0.691<span class="bar" aria-hidden="true"><span style="width:69.1%"></span></span></td>
-  <td class="n">93%</td>
+  <td class="n">0.776<span class="bar" aria-hidden="true"><span style="width:77.6%"></span></span></td>
+  <td class="n">100%</td>
   <td class="n">1</td>
   <td class="n">0%</td>
-  <td class="d up sig">+0.258 [0.152, 0.377]</td>
+  <td class="d up sig">+0.343 [0.235, 0.459]</td>
   <td class="n">&lt;0.001</td>
+</tr>
+<tr>
+  <th scope="row">ast-grep (structural snapshot)</th>
+  <td class="n">0.452<span class="bar" aria-hidden="true"><span style="width:45.2%"></span></span></td>
+  <td class="n">76%</td>
+  <td class="n">3</td>
+  <td class="n">7%</td>
+  <td class="d snapshot">snapshot only</td>
+  <td class="n">—</td>
 </tr>
 <tr>
   <th scope="row">ripgrep --sort path (deterministic baseline)</th>
@@ -948,24 +959,6 @@ as <code>hay / rg</code>, never absorbed into another metric.</p>
   <td class="n">—</td>
 </tr>
 <tr>
-  <th scope="row">ast-grep (structural snapshot)</th>
-  <td class="n">0.386<span class="bar" aria-hidden="true"><span style="width:38.6%"></span></span></td>
-  <td class="n">69%</td>
-  <td class="n">4</td>
-  <td class="n">7%</td>
-  <td class="d snapshot">snapshot only</td>
-  <td class="n">—</td>
-</tr>
-<tr>
-  <th scope="row">the_silver_searcher</th>
-  <td class="n">0.326<span class="bar" aria-hidden="true"><span style="width:32.6%"></span></span></td>
-  <td class="n">41%</td>
-  <td class="n">12</td>
-  <td class="n">10%</td>
-  <td class="d snapshot">snapshot only</td>
-  <td class="n">—</td>
-</tr>
-<tr>
   <th scope="row">BSD grep</th>
   <td class="n">0.294<span class="bar" aria-hidden="true"><span style="width:29.4%"></span></span></td>
   <td class="n">38%</td>
@@ -973,18 +966,27 @@ as <code>hay / rg</code>, never absorbed into another metric.</p>
   <td class="n">3%</td>
   <td class="d snapshot">snapshot only</td>
   <td class="n">—</td>
+</tr>
+<tr>
+  <th scope="row">the_silver_searcher</th>
+  <td class="n">0.293<span class="bar" aria-hidden="true"><span style="width:29.3%"></span></span></td>
+  <td class="n">38%</td>
+  <td class="n">13</td>
+  <td class="n">10%</td>
+  <td class="d snapshot">snapshot only</td>
+  <td class="n">—</td>
 </tr></tbody></table></div>
 <p class="meta"><code>snapshot only</code> means the invocation has no stable-order contract: point estimates are shown, but confidence intervals and p-values are deliberately omitted.</p>
 <h4>Time to complete a full search</h4>
 <div class="scroll" tabindex="0"><table class="perf">
 <thead><tr><th scope="col">query</th><th scope="col">hay</th><th scope="col">rg --sort path</th><th scope="col">ugrep --sort=name</th><th scope="col">ag</th><th scope="col">grep</th><th scope="col">git grep</th><th scope="col">cs</th><th scope="col">ast-grep</th></tr></thead>
-<tbody><tr><th scope="row"><code>requestDidCancel</code></th><td class="n">22 ms</td><td class="n">77 ms</td><td class="n">13 ms</td><td class="n">60 ms</td><td class="n">178 ms</td><td class="n">24 ms</td><td class="n">299 ms</td><td class="n">58 ms</td></tr><tr><th scope="row"><code>reset</code></th><td class="n">40 ms</td><td class="n">39 ms</td><td class="n">9 ms</td><td class="n">43 ms</td><td class="n">142 ms</td><td class="n">20 ms</td><td class="n">85 ms</td><td class="n">30 ms</td></tr><tr><th scope="row"><code>value</code></th><td class="n">20 ms</td><td class="n">48 ms</td><td class="n">8 ms</td><td class="n">66 ms</td><td class="n">124 ms</td><td class="n">21 ms</td><td class="n">177 ms</td><td class="n">31 ms</td></tr>
-<tr class="rss"><th scope="row">peak memory</th><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td></tr></tbody></table></div>
+<tbody><tr><th scope="row"><code>requestDidCancel</code></th><td class="n">16 ms</td><td class="n">33 ms</td><td class="n">7 ms</td><td class="n">35 ms</td><td class="n">144 ms</td><td class="n">16 ms</td><td class="n">62 ms</td><td class="n">30 ms</td></tr><tr><th scope="row"><code>reset</code></th><td class="n">15 ms</td><td class="n">28 ms</td><td class="n">7 ms</td><td class="n">34 ms</td><td class="n">137 ms</td><td class="n">14 ms</td><td class="n">59 ms</td><td class="n">28 ms</td></tr><tr><th scope="row"><code>value</code></th><td class="n">18 ms</td><td class="n">34 ms</td><td class="n">6 ms</td><td class="n">55 ms</td><td class="n">115 ms</td><td class="n">15 ms</td><td class="n">148 ms</td><td class="n">29 ms</td></tr>
+<tr class="rss"><th scope="row">peak memory</th><td class="n">11 MB</td><td class="n">6 MB</td><td class="n">4 MB</td><td class="n">7 MB</td><td class="n">3 MB</td><td class="n">13 MB</td><td class="n">44 MB</td><td class="n">26 MB</td></tr></tbody></table></div>
 </section>
 <section class="corpus thin">
 <h3>hay</h3>
 <p class="thin-note"><strong>Too few queries to conclude anything (1).</strong> Reported for completeness; these numbers are not evidence and no difference is marked as detected.</p>
-<p class="meta">revision 32b319badb00 · clean · RUST · 540 files · 80 after gitignore · 91 tracked · 51 symbols declared once · <strong>1 query</strong></p>
+<p class="meta">revision e25075cbb833 · clean · RUST · 40,105 files · 82 after gitignore · 93 tracked · 57 symbols declared once · <strong>1 query</strong></p>
 <div class="scroll" tabindex="0"><table>
 <thead><tr>
   <th scope="col">tool</th><th scope="col" class="n">MRR</th><th scope="col" class="n">top 10</th>
@@ -1001,6 +1003,15 @@ as <code>hay / rg</code>, never absorbed into another metric.</p>
   <td class="d snapshot">snapshot only</td>
   <td class="n">—</td>
 </tr>
+<tr class="subject">
+  <th scope="row">hay (this project)</th>
+  <td class="n">0.250<span class="bar" aria-hidden="true"><span style="width:25.0%"></span></span></td>
+  <td class="n">100%</td>
+  <td class="n">4</td>
+  <td class="n">0%</td>
+  <td class="d up">+0.238 [0.238, 0.238]</td>
+  <td class="n">1.000</td>
+</tr>
 <tr>
   <th scope="row">codespelunker (ranked)</th>
   <td class="n">0.250<span class="bar" aria-hidden="true"><span style="width:25.0%"></span></span></td>
@@ -1010,29 +1021,11 @@ as <code>hay / rg</code>, never absorbed into another metric.</p>
   <td class="d snapshot">snapshot only</td>
   <td class="n">—</td>
 </tr>
-<tr class="subject">
-  <th scope="row">hay (this project)</th>
-  <td class="n">0.200<span class="bar" aria-hidden="true"><span style="width:20.0%"></span></span></td>
-  <td class="n">100%</td>
-  <td class="n">5</td>
-  <td class="n">0%</td>
-  <td class="d up">+0.188 [0.188, 0.188]</td>
-  <td class="n">1.000</td>
-</tr>
 <tr>
   <th scope="row">the_silver_searcher</th>
-  <td class="n">0.029<span class="bar" aria-hidden="true"><span style="width:2.9%"></span></span></td>
+  <td class="n">0.026<span class="bar" aria-hidden="true"><span style="width:2.6%"></span></span></td>
   <td class="n">0%</td>
-  <td class="n">35</td>
-  <td class="n">0%</td>
-  <td class="d snapshot">snapshot only</td>
-  <td class="n">—</td>
-</tr>
-<tr>
-  <th scope="row">BSD grep</th>
-  <td class="n">0.022<span class="bar" aria-hidden="true"><span style="width:2.2%"></span></span></td>
-  <td class="n">0%</td>
-  <td class="n">46</td>
+  <td class="n">39</td>
   <td class="n">0%</td>
   <td class="d snapshot">snapshot only</td>
   <td class="n">—</td>
@@ -1041,7 +1034,7 @@ as <code>hay / rg</code>, never absorbed into another metric.</p>
   <th scope="row">ripgrep --sort path (deterministic baseline)</th>
   <td class="n">0.012<span class="bar" aria-hidden="true"><span style="width:1.2%"></span></span></td>
   <td class="n">0%</td>
-  <td class="n">81</td>
+  <td class="n">86</td>
   <td class="n">0%</td>
   <td class="d base">baseline</td>
   <td class="n">baseline</td>
@@ -1050,26 +1043,35 @@ as <code>hay / rg</code>, never absorbed into another metric.</p>
   <th scope="row">git grep</th>
   <td class="n">0.011<span class="bar" aria-hidden="true"><span style="width:1.1%"></span></span></td>
   <td class="n">0%</td>
-  <td class="n">87</td>
+  <td class="n">92</td>
   <td class="n">0%</td>
   <td class="d down">-0.001 [-0.001, -0.001]</td>
   <td class="n">1.000</td>
 </tr>
 <tr>
   <th scope="row">ugrep --sort=name</th>
-  <td class="n">0.010<span class="bar" aria-hidden="true"><span style="width:1.0%"></span></span></td>
+  <td class="n">0.009<span class="bar" aria-hidden="true"><span style="width:0.9%"></span></span></td>
   <td class="n">0%</td>
-  <td class="n">104</td>
+  <td class="n">112</td>
   <td class="n">0%</td>
   <td class="d down">-0.003 [-0.003, -0.003]</td>
   <td class="n">1.000</td>
+</tr>
+<tr>
+  <th scope="row">BSD grep</th>
+  <td class="n">0.005<span class="bar" aria-hidden="true"><span style="width:0.5%"></span></span></td>
+  <td class="n">0%</td>
+  <td class="n">211</td>
+  <td class="n">0%</td>
+  <td class="d snapshot">snapshot only</td>
+  <td class="n">—</td>
 </tr></tbody></table></div>
 <p class="meta"><code>snapshot only</code> means the invocation has no stable-order contract: point estimates are shown, but confidence intervals and p-values are deliberately omitted.</p>
 <h4>Time to complete a full search</h4>
 <div class="scroll" tabindex="0"><table class="perf">
 <thead><tr><th scope="col">query</th><th scope="col">hay</th><th scope="col">rg --sort path</th><th scope="col">ugrep --sort=name</th><th scope="col">ag</th><th scope="col">grep</th><th scope="col">git grep</th><th scope="col">cs</th><th scope="col">ast-grep</th></tr></thead>
-<tbody><tr><th scope="row"><code>write</code></th><td class="n">11 ms</td><td class="n">15 ms</td><td class="n">9 ms</td><td class="n">26 ms</td><td class="n">472 ms</td><td class="n">18 ms</td><td class="n">23 ms</td><td class="n">17 ms</td></tr>
-<tr class="rss"><th scope="row">peak memory</th><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td></tr></tbody></table></div>
+<tbody><tr><th scope="row"><code>write</code></th><td class="n">10 ms</td><td class="n">13 ms</td><td class="n">7 ms</td><td class="n">17 ms</td><td class="n">28.04 s</td><td class="n">11 ms</td><td class="n">15 ms</td><td class="n">14 ms</td></tr>
+<tr class="rss"><th scope="row">peak memory</th><td class="n">6 MB</td><td class="n">5 MB</td><td class="n">4 MB</td><td class="n">7 MB</td><td class="n">26 MB</td><td class="n">10 MB</td><td class="n">23 MB</td><td class="n">11 MB</td></tr></tbody></table></div>
 </section>
 
 <h2 id="data">What each tool is</h2>
@@ -1108,8 +1110,8 @@ bun benchmark-report.ts             # writes BENCHMARK.md and this page</code></
 
 <footer>
   Generated from <code>evidence/benchmark.json</code> by <code>benchmark-report.ts</code>.
-  Generated: 2026-08-26T23:27:43.571Z ·
-  Versions: hay hay 0.1.4 · rg ripgrep 15.2.0 · ugrep ugrep 7.8.4 · ag ag version · grep grep (BSD · git-grep git version · cs cs version · ast-grep ast-grep 0.45.2
+  Generated: 2026-08-27T23:51:30.846Z ·
+  Versions: hay hay 0.2.0 · rg ripgrep 15.2.0 · ugrep ugrep 7.8.4 · ag ag version · grep grep (BSD · git-grep git version · cs cs version · ast-grep ast-grep 0.45.2
 </footer>
 </main>
 </body>

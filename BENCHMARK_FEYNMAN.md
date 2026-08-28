@@ -110,7 +110,7 @@ value is.
 
 Average those flipped values across all queries and you get **Mean Reciprocal Rank** — MRR.
 "Reciprocal" is just the fancy word for "1 divided by". That's the whole metric. An MRR of 1.0
-means the answer was always first. In the committed benchmark, `hay` scores 0.907 on the Linux
+means the answer was always first. In the committed benchmark, `hay` scores 0.933 on the Linux
 kernel; deterministic `ripgrep --sort path` scores 0.541.
 
 **An honest complication.** A researcher named Norbert Fuhr published a paper arguing you shouldn't
@@ -149,14 +149,14 @@ is a much better position than one metric you had to defend.
 
 ## 5. Why a single number is a lie
 
-Say `hay` scores 0.907 and `ripgrep --sort path` scores 0.541. Difference: 0.366. Done?
+Say `hay` scores 0.933 and `ripgrep --sort path` scores 0.541. Difference: 0.392. Done?
 
 No. Because I only asked **30 questions**. If I'd picked 30 *different* symbols from the same
 kernel, I'd have got different numbers. So the real question isn't "what's the difference" but
 **"how much would this difference move if I'd been unlucky with which questions I picked?"**
 
-If the difference would jump around between −0.1 and +0.7 depending on the sample, then 0.366 is
-noise wearing a suit. If it would stay somewhere between 0.22 and 0.52 no matter which questions I
+If the difference would jump around between −0.1 and +0.7 depending on the sample, then 0.392 is
+noise wearing a suit. If it would stay somewhere between 0.25 and 0.54 no matter which questions I
 drew, that's a real effect.
 
 ### Trick one: compare on the same questions
@@ -232,8 +232,8 @@ small samples. Thirty queries is a small sample.
 
 So the report no longer bolds on the interval alone. A difference is claimed only when **both**
 tests agree; where they disagree the table says so and takes the conservative reading. That pre-public 0.5.0 development
-report reduced `hay`'s detected wins from three corpora to two. A later code revision cleared both checks; the current clean-revision run also does: +0.092
-[0.031, 0.169], randomization p=0.017. Because the corpus revision changed too, that is a
+report reduced `hay`'s detected wins from three corpora to two. A later code revision cleared both checks; the current clean-revision run also does: +0.109
+[0.035, 0.200], randomization p=0.017. Because the corpus revision changed too, that is a
 current cross-sectional result, not proof that the tool change alone caused the difference.
 
 I've left my original wording standing above rather than quietly editing it, because the sequence

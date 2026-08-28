@@ -53,7 +53,25 @@ unreachable — the remaining gap is ranking quality, not measurement.
   individually and counted — never written to disk, which is what the check was for — and
   ripgrep does not follow symlinks anyway, so the extracted tree is identical for the measurement.
   The run goes from 75 to 96 scored instances, the one remaining exclusion being an archive over
-  the size budget.
+  the size budget. A from-scratch re-download of all 96 reproduces the statistics exactly and
+  reports the 206 dropped symlink members in the payload.
+
+### Public benchmark
+
+- Re-measured on the same pinned query samples: `hay` ranks first on all four usable code corpora
+  and both tests agree on every one — Linux 0.933 (+0.392 [0.247, 0.544]), openclaw 0.928
+  (+0.109 [0.035, 0.200]), ripgrep 0.877 (+0.458 [0.304, 0.613]), Alamofire 0.776
+  (+0.343 [0.235, 0.459]), against 0.907 / 0.911 / 0.800 / 0.691 at 0.1.4.
+- **The Linux corpus was never clean, and the report said it was.** The kernel contains paths
+  differing only in case, so it cannot be checked out on a case-insensitive filesystem; `git
+  status` answered from a stat cache and reported `dirty: false` for four releases while thirteen
+  files did not match the recorded commit. The corpora now live on a case-sensitive volume, and
+  ripgrep's kernel baseline moves 0.508 → 0.541 once the tree matches its revision.
+- Documentation track, re-measured: `hay` is detectably worse than `rg --sort path` on Alamofire
+  (−0.194 [−0.276, −0.118]), ripgrep (−0.087 [−0.148, −0.033]) and now openclaw
+  (−0.072 [−0.135, −0.009], newly detected, on a newer corpus revision). Alamofire's deficit
+  roughly halved (−0.370 → −0.194). The warning against using a definition ranker for prose
+  search stands.
 
 ### Measurement kit
 
