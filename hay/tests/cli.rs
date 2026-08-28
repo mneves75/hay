@@ -359,9 +359,16 @@ fn results_are_interleaved_by_file_and_the_flag_turns_it_off() {
     // The first page is worth more as several files than as several lines of one file: an agent
     // opens files. `--no-diversify` must restore strict score order, or the signal could not be
     // ablated like every other ranking decision.
-    let d = tempfile::Builder::new().prefix("diversify").tempdir().unwrap();
+    let d = tempfile::Builder::new()
+        .prefix("diversify")
+        .tempdir()
+        .unwrap();
     fs::create_dir_all(d.path().join("src")).unwrap();
-    write(d.path(), "src/a.ts", "const session = 1\nuse(session)\nuse(session)\n");
+    write(
+        d.path(),
+        "src/a.ts",
+        "const session = 1\nuse(session)\nuse(session)\n",
+    );
     write(d.path(), "src/b.ts", "use(session)\n");
     let files = |args: &[&str]| -> Vec<String> {
         let out = hay().args(args).current_dir(d.path()).assert().success();
@@ -371,9 +378,18 @@ fn results_are_interleaved_by_file_and_the_flag_turns_it_off() {
             .collect()
     };
     let interleaved = files(&["-F", "session", "."]);
-    assert_eq!(interleaved[1], "./src/b.ts", "b.ts must not wait behind a.ts: {interleaved:?}");
+    assert_eq!(
+        interleaved[1], "./src/b.ts",
+        "b.ts must not wait behind a.ts: {interleaved:?}"
+    );
     let strict = files(&["--no-diversify", "-F", "session", "."]);
-    assert_eq!(strict[1], "./src/a.ts", "--no-diversify keeps score order: {strict:?}");
+    assert_eq!(
+        strict[1], "./src/a.ts",
+        "--no-diversify keeps score order: {strict:?}"
+    );
     // `-l` prints the same file order either way: diversification is a layout, not a re-ranking.
-    assert_eq!(files(&["-l", "-F", "session", "."]), files(&["-l", "--no-diversify", "-F", "session", "."]));
+    assert_eq!(
+        files(&["-l", "-F", "session", "."]),
+        files(&["-l", "--no-diversify", "-F", "session", "."])
+    );
 }

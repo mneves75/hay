@@ -1457,7 +1457,10 @@ mod tests {
             }
             seen
         }
-        let after: Vec<&str> = diversified_order(&paths).into_iter().map(|i| paths[i]).collect();
+        let after: Vec<&str> = diversified_order(&paths)
+            .into_iter()
+            .map(|i| paths[i])
+            .collect();
         assert_eq!(first_seen(&paths), first_seen(&after));
     }
 
