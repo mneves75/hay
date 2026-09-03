@@ -13,7 +13,7 @@
     "remotion": "4.0.515"
   },
   "devDependencies": {
-    "@remotion/eslint-config-flat": "4.0.515",
+    "@remotion/eslint-config-flat": "4.0.518",
     "@types/react": "19.2.18",
     "@types/web": "0.0.354",
     "eslint": "10.9.0",
