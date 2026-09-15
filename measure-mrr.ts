@@ -68,14 +68,25 @@ export function rootCommits(repo: string): string[] {
   return run.stdout.split("\n").filter((line) => /^[0-9a-f]{40}$/.test(line));
 }
 
+/** A shallow checkout reports its boundary commits as roots, so its history cannot prove identity. */
+export function isShallowCheckout(repo: string): boolean {
+  const run = spawnSync("git", ["-C", repo, "rev-parse", "--is-shallow-repository"], { encoding: "utf8" });
+  return run.status === 0 && run.stdout.trim() === "true";
+}
+
 /**
  * Any checkout of this repository — this one, a worktree, or a sibling clone — contains the hint
  * feature and its evaluation documents, so searches made there are development-set contamination.
- * Identity is shared history (a common root commit), not a directory name.
+ * Identity is shared history (a common root commit), not a directory name. A shallow checkout's
+ * apparent roots are only its boundary, so its relation is `unknown` and the caller must exclude it
+ * rather than guess.
  */
-export function isThisRepository(repo: string, ownRoots: ReadonlySet<string>, projectRoot: string): boolean {
-  if (pathIsWithin(projectRoot, repo)) return true;
-  return rootCommits(repo).some((commit) => ownRoots.has(commit));
+export function repositoryRelation(
+  repo: string, ownRoots: ReadonlySet<string>, projectRoot: string,
+): "this" | "other" | "unknown" {
+  if (pathIsWithin(projectRoot, repo)) return "this";
+  if (isShallowCheckout(repo)) return "unknown";
+  return rootCommits(repo).some((commit) => ownRoots.has(commit)) ? "this" : "other";
 }
 
 export type RepoScore = {
@@ -570,6 +581,8 @@ export type HintConfirmationEffect = {
 type HintExclusions = {
   /** Observations from any checkout of this repository, found by shared root commit. */
   hayCheckoutObservations: number;
+  /** Observations from shallow checkouts, whose history cannot show whether they are this repository. */
+  unverifiableIdentityObservations: number;
   missingRepoObservations: number;
   belowMinimumRepositories: number;
   belowMinimumObservations: number;
@@ -1280,7 +1293,7 @@ if (import.meta.main) {
       const report = hintConfirmationReport(
         [hp("/r/a", 0, 1), hp("/r/a", 1, 0), hp("/r/b", 0.5, 0.5, 0), incomplete],
         { repositories: 3, observations: 4 },
-        { hayCheckoutObservations: 0, missingRepoObservations: 0, belowMinimumRepositories: 0, belowMinimumObservations: 0 },
+        { hayCheckoutObservations: 0, unverifiableIdentityObservations: 0, missingRepoObservations: 0, belowMinimumRepositories: 0, belowMinimumObservations: 0 },
       );
       eq([report.mrr.better, report.mrr.worse, report.mrr.tied], [1, 1, 1], "private hint direction counts are paired");
       eq([report.mrr.byObservation.n, report.mrr.byRepoCluster.clusters], [3, 2], "private hint report clusters by repo");
@@ -1294,7 +1307,7 @@ if (import.meta.main) {
       eq(report.decision.privateConclusion, "insufficient", "too small a private confirmation is insufficient");
       const reconciled = hintConfirmationReport(
         [hp("/r/a", 0, 1)], { repositories: 1, observations: 4 },
-        { hayCheckoutObservations: 0, missingRepoObservations: 0, belowMinimumRepositories: 0, belowMinimumObservations: 0 },
+        { hayCheckoutObservations: 0, unverifiableIdentityObservations: 0, missingRepoObservations: 0, belowMinimumRepositories: 0, belowMinimumObservations: 0 },
         { noValidAnswer: 2, noVisibleMatch: 1 },
       );
       eq(
@@ -1305,23 +1318,34 @@ if (import.meta.main) {
       );
       eq(reconciled.decision.reasonCodes.includes("fewer-than-5-repositories"), true, "minimum reason code names its constant");
 
+      // Synthetic repositories rather than this checkout, which CI clones shallow.
       const cloneRoot = mkdtempSync(join(tmpdir(), "hay-own-clone-"));
       try {
-        const ownRoots = new Set(rootCommits(PROJECT_ROOT));
-        if (ownRoots.size > 0) {
-          const clone = join(cloneRoot, "clone");
-          const cloned = spawnSync("git", ["clone", "--quiet", "--no-checkout", PROJECT_ROOT, clone]);
-          eq(cloned.status, 0, "local clone for the exclusion control");
-          eq(pathIsWithin(PROJECT_ROOT, clone), false, "the clone lives outside this checkout");
-          eq(isThisRepository(clone, ownRoots, PROJECT_ROOT), true, "a sibling clone of this repository is excluded");
-          const stranger = join(cloneRoot, "stranger");
-          mkdirSync(stranger);
-          const git = (...args: string[]) => spawnSync("git", ["-C", stranger, ...args], { encoding: "utf8" });
-          git("init", "--quiet");
-          git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "--quiet", "--allow-empty", "-m", "root");
-          eq(rootCommits(stranger).length, 1, "the unrelated repository has a readable root commit");
-          eq(isThisRepository(stranger, ownRoots, join(cloneRoot, "clone")), false, "an unrelated repository is kept");
-        }
+        const git = (cwd: string, ...args: string[]) =>
+          spawnSync("git", ["-C", cwd, "-c", "user.name=t", "-c", "user.email=t@t", ...args], { encoding: "utf8" });
+        const commitTwice = (repo: string) => {
+          mkdirSync(repo);
+          git(repo, "init", "--quiet");
+          git(repo, "commit", "--quiet", "--allow-empty", "-m", "root");
+          git(repo, "commit", "--quiet", "--allow-empty", "-m", "second");
+        };
+        const origin = join(cloneRoot, "origin");
+        commitTwice(origin);
+        const ownRoots = new Set(rootCommits(origin));
+        eq(ownRoots.size, 1, "the synthetic project has one readable root commit");
+        const clone = join(cloneRoot, "clone");
+        eq(spawnSync("git", ["clone", "--quiet", "--no-checkout", origin, clone]).status, 0, "full clone for the control");
+        eq(repositoryRelation(clone, ownRoots, origin), "this", "a sibling clone of the project is excluded");
+        const shallow = join(cloneRoot, "shallow");
+        eq(
+          spawnSync("git", ["clone", "--quiet", "--depth", "1", `file://${origin}`, shallow]).status, 0,
+          "shallow clone for the control",
+        );
+        eq(rootCommits(shallow).some((commit) => ownRoots.has(commit)), false, "a shallow clone hides the real root");
+        eq(repositoryRelation(shallow, ownRoots, origin), "unknown", "a shallow clone's identity is unknown, not other");
+        const stranger = join(cloneRoot, "stranger");
+        commitTwice(stranger);
+        eq(repositoryRelation(stranger, ownRoots, origin), "other", "an unrelated repository is kept");
       } finally {
         rmSync(cloneRoot, { recursive: true, force: true });
       }
@@ -1331,7 +1355,7 @@ if (import.meta.main) {
       const emptyReport = hintConfirmationReport(
         [onlyIncomplete],
         { repositories: 1, observations: 1 },
-        { hayCheckoutObservations: 0, missingRepoObservations: 0, belowMinimumRepositories: 0, belowMinimumObservations: 0 },
+        { hayCheckoutObservations: 0, unverifiableIdentityObservations: 0, missingRepoObservations: 0, belowMinimumRepositories: 0, belowMinimumObservations: 0 },
       );
       eq(emptyReport.validatedPairs, 0, "an all-incomplete confirmation has no validated pairs");
       eq(
@@ -1592,15 +1616,19 @@ if (import.meta.main) {
   const allCandidates = [...byRepo.entries()];
   const projectRoot = realpathSync(PROJECT_ROOT);
   const ownRoots = new Set(confirmHints ? rootCommits(projectRoot) : []);
-  if (confirmHints && ownRoots.size === 0) {
-    console.error("--confirm-hints could not read this checkout's root commit, so it cannot exclude its clones");
+  if (confirmHints && (ownRoots.size === 0 || isShallowCheckout(projectRoot))) {
+    console.error("--confirm-hints needs this checkout's complete history to recognize its clones; unshallow it first");
     process.exit(2);
   }
-  const hayCheckouts = confirmHints
-    ? allCandidates.filter(([repo]) => isThisRepository(repo, ownRoots, projectRoot))
-    : [];
-  const hayCheckoutObservations = hayCheckouts.reduce((sum, [, entries]) => sum + entries.length, 0);
-  const candidateRepos = allCandidates.filter(([repo]) => !hayCheckouts.some(([own]) => own === repo));
+  const relation = new Map(allCandidates.map(([repo]) => [
+    repo, confirmHints ? repositoryRelation(repo, ownRoots, projectRoot) : "other",
+  ]));
+  const observationsWith = (kind: "this" | "unknown") => allCandidates
+    .filter(([repo]) => relation.get(repo) === kind)
+    .reduce((sum, [, entries]) => sum + entries.length, 0);
+  const hayCheckoutObservations = observationsWith("this");
+  const unverifiableIdentityObservations = observationsWith("unknown");
+  const candidateRepos = allCandidates.filter(([repo]) => relation.get(repo) === "other");
   const targets = candidateRepos
     .filter(([, es]) => es.length >= minQueries)
     .sort((a, b) => b[1].length - a[1].length);
@@ -1638,7 +1666,8 @@ if (import.meta.main) {
       pairs,
       { repositories: targets.length, observations: targets.reduce((sum, [, entries]) => sum + entries.length, 0) },
       {
-        hayCheckoutObservations, missingRepoObservations: missingHintObservations,
+        hayCheckoutObservations, unverifiableIdentityObservations,
+        missingRepoObservations: missingHintObservations,
         belowMinimumRepositories: belowMinimum.length,
         belowMinimumObservations: belowMinimum.reduce((sum, [, entries]) => sum + entries.length, 0),
       },

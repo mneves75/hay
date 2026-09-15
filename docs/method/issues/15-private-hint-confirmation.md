@@ -132,6 +132,12 @@ both primary point estimates are negative (`negative-mrr-point-estimate`,
 the rule does not require either, and it does not move now that the numbers are known. The signal
 is deleted.
 
+A post-run review found that a shallow sibling clone would report its boundary commit as a root
+and escape the clone exclusion. The runner now treats a shallow checkout's identity as unknown and
+excludes it (`unverifiableIdentityObservations`), and refuses to run from a shallow checkout. Counted
+against this run's candidates: 0 of 37 repositories on disk, and 0 of the 11 eligible, were shallow,
+so the result above is unchanged.
+
 What this does and does not show: the private effect is indistinguishable from zero and slightly
 negative, against a public effect of +0.0187 [+0.0063, +0.0325]. Hints derived from what a human
 actually typed did not help real agent searches, while hints derived from SWE-Explore issue text

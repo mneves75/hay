@@ -2,7 +2,7 @@
 # Fail-closed policy for main-dispatched releases.
 #
 # The maintainer creates a lightweight `v*` tag at a main commit whose push CI succeeded, then
-# dispatches release.yml FROM main. The workflow is therefore always loaded from main, never from
+# dispatches release-dispatch.yml FROM main. The workflow is therefore always loaded from main, never from
 # the tag: a tag aimed at older history cannot run an older copy of this policy, and the build,
 # attestation and draft all bind to the dispatch SHA, which the tag must name exactly.
 set -euo pipefail
@@ -75,6 +75,24 @@ check_tag() {
   echo "release-policy: $tag is a lightweight tag at $target_sha"
 }
 
+# A draft may only be refreshed when every asset it already holds is one this run built. The asset
+# list is captured on its own: inside a process substitution a failed query would read as an empty
+# draft and wave the upload through.
+check_draft_assets() {
+  local tag="${RELEASE_TAG:-}" repository="${GITHUB_REPOSITORY:-}" dist="${DIST_DIR:-dist}"
+  local assets built foreign
+
+  valid_release_tag "$tag" || die "invalid release tag '$tag'"
+  [ -n "$repository" ] || die "GITHUB_REPOSITORY is required"
+  [ -d "$dist" ] || die "build output directory $dist is missing"
+  assets="$(gh release view "$tag" -R "$repository" --json assets -q '.assets[].name')" ||
+    die "could not list the assets of draft $tag"
+  built="$(find "$dist" -maxdepth 1 -type f -exec basename {} \; | LC_ALL=C sort)"
+  foreign="$(comm -13 <(printf '%s\n' "$built") <(printf '%s\n' "$assets" | LC_ALL=C sort) | sed '/^$/d')"
+  [ -z "$foreign" ] || die "draft $tag holds assets this run did not build: $(printf '%s' "$foreign" | tr '\n' ' ')"
+  echo "release-policy: every asset on draft $tag was built by this run"
+}
+
 verify_release() {
   local tag="${RELEASE_TAG:-}" repository="${GITHUB_REPOSITORY:-}"
   local source_ref="${GITHUB_REF:-}" source_sha="${GITHUB_SHA:-}" ci_count package_version
@@ -115,7 +133,7 @@ verify_release() {
 selftest() {
   local good_sha="0123456789abcdef0123456789abcdef01234567"
   local upper_sha="0123456789ABCDEF0123456789ABCDEF01234567"
-  local workflow=.github/workflows/release.yml
+  local workflow=.github/workflows/release-dispatch.yml
   local bad manifest_version
 
   valid_release_tag v1.2.3 || { echo "selftest: stable tag rejected" >&2; exit 1; }
@@ -190,6 +208,41 @@ selftest() {
     { echo "selftest: tag at the dispatch commit rejected" >&2; exit 1; }
   unset -f gh
 
+  # Draft refresh: a failed asset query, and a draft holding a foreign asset, must each stop.
+  local dist
+  dist="$(mktemp -d "${TMPDIR:-/tmp}/hay-release-policy.XXXXXX")"
+  touch "$dist/hay-v1.2.3-x.tar.gz" "$dist/hay-v1.2.3-x.tar.gz.sha256"
+  # shellcheck disable=SC2317  # invoked indirectly by check_draft_assets
+  gh() { return 1; }
+  if out="$(RELEASE_TAG=v1.2.3 GITHUB_REPOSITORY=o/r DIST_DIR="$dist" check_draft_assets 2>&1)"; then
+    echo "selftest: failed asset query admitted the upload" >&2; exit 1
+  fi
+  printf '%s' "$out" | grep -Fq 'could not list the assets' ||
+    { echo "selftest: failed asset query stopped for the wrong reason: $out" >&2; exit 1; }
+  # shellcheck disable=SC2317
+  gh() { printf 'hay-v1.2.3-x.tar.gz\nhand-uploaded.tar.gz\n'; }
+  if out="$(RELEASE_TAG=v1.2.3 GITHUB_REPOSITORY=o/r DIST_DIR="$dist" check_draft_assets 2>&1)"; then
+    echo "selftest: foreign draft asset admitted" >&2; exit 1
+  fi
+  printf '%s' "$out" | grep -Fq 'hand-uploaded.tar.gz' ||
+    { echo "selftest: foreign asset not named: $out" >&2; exit 1; }
+  # shellcheck disable=SC2317
+  gh() { printf 'hay-v1.2.3-x.tar.gz\n'; }
+  RELEASE_TAG=v1.2.3 GITHUB_REPOSITORY=o/r DIST_DIR="$dist" check_draft_assets >/dev/null ||
+    { echo "selftest: draft holding only built assets rejected" >&2; exit 1; }
+  # shellcheck disable=SC2317
+  gh() { return 0; }
+  RELEASE_TAG=v1.2.3 GITHUB_REPOSITORY=o/r DIST_DIR="$dist" check_draft_assets >/dev/null ||
+    { echo "selftest: empty draft rejected" >&2; exit 1; }
+  unset -f gh
+  rm -r "$dist"
+
+  # The replaced tag-triggered file must not come back under its old, disabled identity.
+  if [ -e .github/workflows/release.yml ]; then
+    echo "selftest: .github/workflows/release.yml exists again; its identity is disabled on purpose" >&2
+    exit 1
+  fi
+
   # Workflow wiring is part of the security boundary. A tag trigger loads policy from the tag's
   # own commit, so its absence is a negative security invariant, not a style preference.
   grep -Eq '^  workflow_dispatch:$' "$workflow" ||
@@ -206,7 +259,7 @@ selftest() {
     { echo "selftest: workflow does not invoke verifier" >&2; exit 1; }
   grep -Fq './release-policy.sh check-tag' "$workflow" ||
     { echo "selftest: draft does not re-check the tag before publishing assets" >&2; exit 1; }
-  grep -Fq 'holds assets this run did not build' "$workflow" ||
+  grep -Fq './release-policy.sh check-draft-assets' "$workflow" ||
     { echo "selftest: draft refresh no longer refuses foreign assets" >&2; exit 1; }
   grep -Fq -- '--json isDraft -q .isDraft' "$workflow" ||
     { echo "selftest: published release overwrite guard missing" >&2; exit 1; }
@@ -234,6 +287,7 @@ selftest() {
 case "${1:-}" in
   verify) verify_release ;;
   check-tag) check_tag ;;
+  check-draft-assets) check_draft_assets ;;
   --selftest) selftest ;;
-  *) echo "usage: $0 verify | check-tag | --selftest" >&2; exit 2 ;;
+  *) echo "usage: $0 verify | check-tag | check-draft-assets | --selftest" >&2; exit 2 ;;
 esac

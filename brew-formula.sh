@@ -2,7 +2,7 @@
 # brew-formula.sh — render the Homebrew formula for a PUBLISHED hay release.
 #
 # Every release ends with a formula bump, and the checksums must come from the release itself
-# rather than from a local build: the tap installs the exact archives `release.yml` produced, so
+# rather than from a local build: the tap installs the exact archives `release-dispatch.yml` produced, so
 # anything computed here from a local `cargo build` would be a different binary wearing the same
 # version. Each archive is checksum-verified AND provenance-verified before its hash reaches the
 # formula — a formula can never be generated from an artifact whose build cannot be proven.
@@ -29,7 +29,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# The four targets Homebrew can install. `release.yml` also builds a Windows zip, which brew has
+# The four targets Homebrew can install. `release-dispatch.yml` also builds a Windows zip, which brew has
 # no use for; if that list ever changes, this one has to change with it deliberately.
 MAC_ARM_TARGET="aarch64-apple-darwin"
 MAC_INTEL_TARGET="x86_64-apple-darwin"
@@ -188,7 +188,7 @@ checksum_of_verified_asset() {
   # Requiring both source ref and digest prevents a workflow run on another ref, or another main
   # commit, from lending its provenance to these bytes.
   gh attestation verify "$workdir/$asset" -R "$REPO_SLUG" \
-    --signer-workflow "${REPO_SLUG}/.github/workflows/release.yml" \
+    --signer-workflow "${REPO_SLUG}/.github/workflows/release-dispatch.yml" \
     --source-ref refs/heads/main --source-digest "$source_digest" >/dev/null 2>&1 ||
     { echo "brew-formula: provenance attestation failed for $asset" >&2; return 2; }
   printf '%s\n' "$sum"

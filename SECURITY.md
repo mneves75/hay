@@ -105,11 +105,11 @@ source commit. For releases produced by the 0.3.1+ policy, verify both before in
 shasum -a 256 -c hay-vX.Y.Z-<target>.tar.gz.sha256
 source_sha="$(gh api repos/mneves75/hay/git/ref/tags/vX.Y.Z --jq .object.sha)"
 gh attestation verify hay-vX.Y.Z-<target>.tar.gz -R mneves75/hay \
-  --signer-workflow mneves75/hay/.github/workflows/release.yml \
+  --signer-workflow mneves75/hay/.github/workflows/release-dispatch.yml \
   --source-ref refs/heads/main --source-digest "$source_sha"
 ```
 
-Releases through 0.3.x used a tag-triggered workflow and therefore attest `refs/tags/vX.Y.Z`;
+Releases through 0.3.0 used the tag-triggered `release.yml` and therefore attest `refs/tags/vX.Y.Z`;
 that historical statement describes their provenance but does not provide the 0.3.1+ rollback
 protection.
 
@@ -119,7 +119,7 @@ Releases are cut from `main` only, by two separate acts:
 
 1. The maintainer creates a **lightweight** tag `vX.Y.Z` or `vX.Y.Z-betaN` at a `main` commit
    whose push CI succeeded, and whose `hay/Cargo.toml` version is `X.Y.Z`.
-2. The maintainer dispatches `release.yml` **from `main`** with that tag as input.
+2. The maintainer dispatches `release-dispatch.yml` **from `main`** with that tag as input.
 
 The workflow is loaded from `main`, never from the tag, so a tag aimed at older history cannot
 run an older copy of the policy. `release-policy.sh verify` requires the dispatch ref to be
@@ -144,6 +144,10 @@ defence in depth behind the checks above, not inputs to them:
 - `main` branch ruleset: deletion and non-fast-forward updates are blocked.
 - `v*` tag ruleset: creation, update, and deletion are blocked for everyone except the repository
   admin role, so no workflow token can create or move a release tag.
+- The old `.github/workflows/release.yml` workflow identity is **disabled**. GitHub runs a pushed
+  tag's workflow from the tagged commit, so while it was enabled a `v*` tag at older history ran
+  the old, ungated, tag-triggered release. Disabling the path stops it on every ref; the new
+  workflow lives at a different path, and the selftest fails if the old path reappears.
 - `release` environment: deployments are admitted from `main` only. `draft-release` is the only
   job granted `contents: write`; every other job, and the workflow default, is read-only.
 

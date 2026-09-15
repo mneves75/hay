@@ -46,7 +46,8 @@ the failed signal forced. Ranking, weights and the failed ship gate are unchange
   first page, while still counting them. Candidates dropped before pairing (no valid answer, no
   visible match) are counted too, so candidates reconcile with pairs.
 - The hint confirmation excludes every checkout of this repository by shared root commit, not just
-  the working directory it runs from.
+  the working directory it runs from. A shallow checkout, whose apparent root is only its boundary,
+  is excluded as unverifiable, and the runner refuses to start from one.
 - Answer judgments outside the measured checkout or through a symlink are rejected before they are
   read, and each SWE-Explore checkout cache key binds instance, repository, base commit and archive
   budget.
@@ -60,12 +61,15 @@ the failed signal forced. Ranking, weights and the failed ship gate are unchange
 
 ### Security
 
-- Releases are dispatched manually from `main` instead of triggered by a tag push, so a tag aimed
-  at older history can no longer run an older copy of the release policy. The maintainer creates a
+- Releases are dispatched manually from `main` by `release-dispatch.yml` instead of triggered by a
+  tag push. The old tag-triggered `release.yml` workflow identity is disabled, because GitHub runs a
+  pushed tag's workflow from the tagged commit: while it stayed enabled, a tag aimed at older
+  history still ran the old, ungated release. The maintainer creates a
   lightweight tag at a `main` commit whose push CI succeeded; the workflow requires that exact
   commit, a tag base version matching Cargo metadata, and the dispatch ref `main`. It attests from
   `refs/heads/main`, verifies source ref and digest, re-checks the tag, refuses a draft holding any
-  asset this run did not build, and only then uploads to a draft.
+  asset this run did not build (checked with the asset query captured on its own, so a failed query
+  stops the job), and only then uploads to a draft.
 - Only the draft job, gated by a main-only `release` environment, can write repository contents. A
   `v*` tag ruleset limits creating, moving and deleting release tags to the repository admin, a
   `main` ruleset forbids deletion and force pushes, and immutable releases lock a published

@@ -1,6 +1,10 @@
 name: Release
 
-# Manually authorized binary builds from main. The maintainer first creates a lightweight v* tag at
+# Manually authorized binary builds from main. This file replaced the tag-triggered
+# `.github/workflows/release.yml`, whose workflow identity is DISABLED in the repository settings:
+# GitHub runs a pushed tag's workflow from the tagged commit, so while that identity was enabled a
+# tag at older history ran the old, ungated release. Never recreate that path.
+# The maintainer first creates a lightweight v* tag at
 # a main commit whose push CI succeeded, then dispatches this workflow FROM main with that tag. The
 # workflow is loaded from main, never from the tag, so a tag aimed at older history cannot run an
 # older copy of the policy. It builds and attests the dispatch SHA, which the tag must name exactly,
@@ -158,7 +162,7 @@ jobs:
           set -euo pipefail
           for asset in dist/*.tar.gz dist/*.zip; do
             gh attestation verify "$asset" -R "$GITHUB_REPOSITORY" \
-              --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/release.yml" \
+              --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/release-dispatch.yml" \
               --source-ref refs/heads/main --source-digest "$SOURCE_SHA" \
               --deny-self-hosted-runners >/dev/null
           done
@@ -186,12 +190,7 @@ jobs:
             fi
             # --clobber replaces same-named files but keeps every other one, so a draft carrying an
             # asset this run did not build would publish bytes nobody attested. Refuse instead.
-            foreign="$(comm -13 <(find dist -maxdepth 1 -type f -exec basename {} \; | LC_ALL=C sort) \
-              <(gh release view "$TAG" -R "$GITHUB_REPOSITORY" --json assets -q '.assets[].name' | LC_ALL=C sort))"
-            if [ -n "$foreign" ]; then
-              printf 'draft %s holds assets this run did not build:\n%s\n' "$TAG" "$foreign" >&2
-              exit 1
-            fi
+            RELEASE_TAG="$TAG" DIST_DIR=dist bash ./release-policy.sh check-draft-assets
             gh release upload "$TAG" -R "$GITHUB_REPOSITORY" --clobber dist/*
           else
             gh release create "$TAG" -R "$GITHUB_REPOSITORY" --draft --verify-tag \
