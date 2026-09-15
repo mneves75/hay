@@ -237,9 +237,21 @@ selftest() {
   unset -f gh
   rm -r "$dist"
 
-  # The replaced tag-triggered file must not come back under its old, disabled identity.
-  if [ -e .github/workflows/release.yml ]; then
-    echo "selftest: .github/workflows/release.yml exists again; its identity is disabled on purpose" >&2
+  # The retired path must stay present (GitHub can only keep a workflow disabled while its file
+  # exists on the default branch) and inert: no trigger but manual dispatch, no permissions, and a
+  # job that only refuses.
+  local retired=.github/workflows/release.yml
+  [ -f "$retired" ] ||
+    { echo "selftest: $retired was deleted; historical tag-triggered copies can run again" >&2; exit 1; }
+  if grep -Eq '^  (push|pull_request|pull_request_target|release|schedule|workflow_run|create):' "$retired" ||
+    grep -Eq '^[[:space:]]+tags:' "$retired"; then
+    echo "selftest: $retired regained an automatic trigger" >&2
+    exit 1
+  fi
+  grep -Fxq 'permissions: {}' "$retired" ||
+    { echo "selftest: $retired must grant no permissions" >&2; exit 1; }
+  if grep -Eq 'uses:|cargo|gh release|attest' "$retired"; then
+    echo "selftest: $retired does real work again" >&2
     exit 1
   fi
 

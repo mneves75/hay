@@ -80,8 +80,9 @@ a line scored.
    Never hand-edit the urls or hashes. Releases are cut by creating a lightweight `v*` tag at a
    CI-green `main` commit and then dispatching `release-dispatch.yml` **from `main`** with that tag;
    never add a tag trigger back, because a tag-triggered workflow runs the policy from the tag's
-   own, possibly older, commit — and never recreate `release.yml`, whose identity is disabled so
-   historical tag-triggered copies cannot run. The workflow refuses unless the tag names exactly the dispatch SHA.
+   own, possibly older, commit. Never delete, rename, or re-enable the inert
+   `.github/workflows/release.yml` stub: its disabled identity is what stops historical
+   tag-triggered copies from running, and deleting the file re-arms them. The workflow refuses unless the tag names exactly the dispatch SHA.
    Builds and attestations use that SHA, and consumers verify both `refs/heads/main` and that
    exact source digest. `SECURITY.md` lists the rulesets and environment this relies on.
 5. **`corpus/` is never committed.** It holds real queries and paths from private repositories.

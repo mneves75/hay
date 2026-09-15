@@ -1,0 +1,26 @@
+name: Retired tag-triggered release
+
+# DO NOT DELETE, RENAME, OR RE-ENABLE. Releases run from `release-dispatch.yml`.
+#
+# Until 0.3.0 this path held a release workflow triggered by `push: tags: v*`. GitHub runs a pushed
+# tag's workflow from the TAGGED commit, so every historical copy of that file would still build and
+# draft a release for a new tag aimed at old history, with none of the current policy. Deleting the
+# file did not stop it: a 2026-09-15 negative test pushed a tag at the pre-0.3.1 commit and the old
+# workflow started (cancelled before it drafted anything). GitHub can only disable a workflow whose
+# file exists on the default branch, and a disabled path is not triggered from any ref. This inert
+# stub keeps the path present so its identity stays DISABLED in the repository's Actions settings.
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  retired:
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - name: Refuse
+        run: |
+          echo "release.yml is retired and must stay disabled; dispatch release-dispatch.yml" >&2
+          exit 1

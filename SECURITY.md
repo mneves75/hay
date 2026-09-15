@@ -145,9 +145,12 @@ defence in depth behind the checks above, not inputs to them:
 - `v*` tag ruleset: creation, update, and deletion are blocked for everyone except the repository
   admin role, so no workflow token can create or move a release tag.
 - The old `.github/workflows/release.yml` workflow identity is **disabled**. GitHub runs a pushed
-  tag's workflow from the tagged commit, so while it was enabled a `v*` tag at older history ran
-  the old, ungated, tag-triggered release. Disabling the path stops it on every ref; the new
-  workflow lives at a different path, and the selftest fails if the old path reappears.
+  tag's workflow from the tagged commit, so while it was active a `v*` tag at older history ran
+  the old, ungated, tag-triggered release — and deleting the file did not stop that: a negative
+  test on 2026-09-15 started the old workflow from a tag at the pre-0.3.1 commit. GitHub only
+  disables a workflow whose file exists on the default branch, so an inert stub stays at that path
+  (manual dispatch only, no permissions, a job that refuses) and the path is disabled. The selftest
+  fails if the stub is deleted or regains a trigger, permissions, or real work.
 - `release` environment: deployments are admitted from `main` only. `draft-release` is the only
   job granted `contents: write`; every other job, and the workflow default, is read-only.
 

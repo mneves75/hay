@@ -1,9 +1,9 @@
 name: Release
 
 # Manually authorized binary builds from main. This file replaced the tag-triggered
-# `.github/workflows/release.yml`, whose workflow identity is DISABLED in the repository settings:
-# GitHub runs a pushed tag's workflow from the tagged commit, so while that identity was enabled a
-# tag at older history ran the old, ungated release. Never recreate that path.
+# `.github/workflows/release.yml`, which remains as a DISABLED inert stub: GitHub runs a pushed
+# tag's workflow from the tagged commit, so while that identity was active a tag at older history
+# ran the old, ungated release. See the stub for why it must never be deleted.
 # The maintainer first creates a lightweight v* tag at
 # a main commit whose push CI succeeded, then dispatches this workflow FROM main with that tag. The
 # workflow is loaded from main, never from the tag, so a tag aimed at older history cannot run an

@@ -62,9 +62,10 @@ the failed signal forced. Ranking, weights and the failed ship gate are unchange
 ### Security
 
 - Releases are dispatched manually from `main` by `release-dispatch.yml` instead of triggered by a
-  tag push. The old tag-triggered `release.yml` workflow identity is disabled, because GitHub runs a
-  pushed tag's workflow from the tagged commit: while it stayed enabled, a tag aimed at older
-  history still ran the old, ungated release. The maintainer creates a
+  tag push. The old tag-triggered `release.yml` is replaced by an inert stub whose workflow identity is
+  disabled, because GitHub runs a pushed tag's workflow from the tagged commit: a negative test
+  showed a tag aimed at older history still started the old, ungated release after the file was
+  deleted, and only a workflow whose file exists on the default branch can be disabled. The maintainer creates a
   lightweight tag at a `main` commit whose push CI succeeded; the workflow requires that exact
   commit, a tag base version matching Cargo metadata, and the dispatch ref `main`. It attests from
   `refs/heads/main`, verifies source ref and digest, re-checks the tag, refuses a draft holding any
