@@ -20,10 +20,16 @@
 import { randomUUID } from "node:crypto";
 import {
   chmodSync, closeSync, constants, existsSync, fchmodSync, linkSync, lstatSync, mkdirSync,
-  mkdtempSync, openSync, realpathSync, renameSync, rmSync, statSync, symlinkSync, writeFileSync,
+  mkdtempSync, openSync, readFileSync, realpathSync, renameSync, rmSync, statSync, symlinkSync,
+  writeFileSync,
 } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
+import { fileURLToPath } from "node:url";
+import { HDERIVE_VERSION, deriveHints } from "./hint-derive.ts";
+
+/** This checkout, whose gitignored `corpus/` is the only place private output may land. */
+export const HARVEST_ROOT = dirname(fileURLToPath(import.meta.url));
 
 // ── shell parsing ─────────────────────────────────────────────────────────────
 
@@ -133,47 +139,139 @@ export function isConceptQuery(q: string): boolean {
 
 // ── transcript walk ───────────────────────────────────────────────────────────
 
-type Event = { kind: "search"; query: string; cwd: string } | { kind: "read"; path: string; cwd: string };
+type Event =
+  | { kind: "search"; query: string; cwd: string; hints?: string[] }
+  | { kind: "read"; path: string; cwd: string };
 
-function eventsFrom(file: string): Event[] {
+function hintsFromTask(task: string | null, query: string): string[] {
+  if (task === null) return [];
+  const title = task.split("\n", 1)[0] ?? "";
+  const body = task.slice(title.length);
+  return deriveHints(title, body, query);
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+/**
+ * Transcript rows that have the shape of a user message but whose text a human did not type.
+ * Each was found in real transcripts passing the original type/userType/role/string filter
+ * (2026-09-15): the prompt a parent agent writes for a subagent (`isSidechain`), skill bodies and
+ * caveats (`isMeta`), compaction summaries (assistant prose), background-task notifications that
+ * carry agent results, and captured command output. Issue 15 forbids all of them as task context.
+ */
+const INJECTED_USER_TEXT = /^\s*<(task-notification|local-command-stdout|local-command-stderr|local-command-caveat|bash-stdout|bash-stderr|system-reminder)>/;
+
+/** The text of a message a human typed, or null for every other row. */
+export function humanTaskText(row: unknown): string | null {
+  if (!isRecord(row) || row["type"] !== "user" || row["userType"] !== "external") return null;
+  if (row["isSidechain"] === true || row["isMeta"] === true || row["isCompactSummary"] === true) return null;
+  const message = row["message"];
+  if (!isRecord(message) || message["role"] !== "user" || typeof message["content"] !== "string") return null;
+  // Newer transcripts label provenance directly; older ones carry neither field.
+  if (isRecord(row["origin"]) && row["origin"]["kind"] !== "human") return null;
+  if (row["promptSource"] === "system" || row["promptSource"] === "sdk") return null;
+  if (INJECTED_USER_TEXT.test(message["content"])) return null;
+  return message["content"];
+}
+
+/** Parse one transcript without ever treating assistant/tool content as task context. */
+export function eventsFromTranscript(text: string, withHints = false): Event[] {
   const events: Event[] = [];
-  let text: string;
-  try { text = require("node:fs").readFileSync(file, "utf8"); } catch { return events; }
+  let lastUserTask: string | null = null;
   for (const line of text.split("\n")) {
     if (!line) continue;
-    let d: any;
+    let d: unknown;
     try { d = JSON.parse(line); } catch { continue; }
-    const cwd: string | undefined = d.cwd;
-    const content = d.message?.content;
-    if (!cwd || !Array.isArray(content)) continue;
-    for (const b of content) {
-      if (b?.type !== "tool_use") continue;
-      if (b.name === "Bash" && typeof b.input?.command === "string") {
-        for (const q of extractQueries(b.input.command)) {
-          if (isConceptQuery(q)) events.push({ kind: "search", query: q, cwd });
+    if (!isRecord(d)) continue;
+    if (withHints) lastUserTask = humanTaskText(d) ?? lastUserTask;
+    const cwd = d["cwd"];
+    const message = d["message"];
+    const content = isRecord(message) ? message["content"] : undefined;
+    if (typeof cwd !== "string" || !cwd || !Array.isArray(content)) continue;
+    for (const b of content as unknown[]) {
+      if (!isRecord(b) || b["type"] !== "tool_use") continue;
+      const input = isRecord(b["input"]) ? b["input"] : {};
+      if (b["name"] === "Bash" && typeof input["command"] === "string") {
+        for (const q of extractQueries(input["command"])) {
+          if (isConceptQuery(q)) {
+            events.push({
+              kind: "search", query: q, cwd,
+              ...(withHints ? { hints: hintsFromTask(lastUserTask, q) } : {}),
+            });
+          }
         }
-      } else if ((b.name === "Read" || b.name === "Edit") && typeof b.input?.file_path === "string") {
-        events.push({ kind: "read", path: b.input.file_path, cwd });
+      } else if ((b["name"] === "Read" || b["name"] === "Edit") && typeof input["file_path"] === "string") {
+        events.push({ kind: "read", path: input["file_path"], cwd });
       }
     }
   }
   return events;
 }
 
+function eventsFrom(file: string, withHints = false): Event[] {
+  try { return eventsFromTranscript(readFileSync(file, "utf8"), withHints); }
+  catch { return []; }
+}
+
 /** How many reads after a search still count as "that search led here". */
 const ATTRIBUTION_WINDOW = 3;
 
 export type CorpusEntry = { query: string; repo: string; answeredBy: Record<string, number>; searches: number };
+export type HintCorpusEntry = CorpusEntry & { hints: string[] };
+export type HintCorpus = { hderive: typeof HDERIVE_VERSION; observations: HintCorpusEntry[] };
 
-function harvest(files: string[]): CorpusEntry[] {
-  const byKey = new Map<string, CorpusEntry>();
+/** Resolve a transcript CWD to its nearest real Git checkout root, including worktrees. */
+export function repositoryRootFromCwd(cwd: string): string | null {
+  if (!existsSync(cwd)) return null;
+  let cursor: string;
+  try {
+    cursor = realpathSync(cwd);
+    if (!statSync(cursor).isDirectory()) return null;
+  } catch {
+    return null;
+  }
+  while (true) {
+    const marker = join(cursor, ".git");
+    if (existsSync(marker)) {
+      const info = lstatSync(marker);
+      if (info.isDirectory() || info.isFile()) return cursor;
+    }
+    const parent = dirname(cursor);
+    if (parent === cursor) return null;
+    cursor = parent;
+  }
+}
+
+/** True when `candidate` is the root itself or a path inside it, with a real path boundary. */
+export function pathIsWithin(root: string, candidate: string): boolean {
+  const rel = relative(root, candidate);
+  return rel === "" || (rel !== ".." && !rel.startsWith(`..${sep}`) && !isAbsolute(rel));
+}
+
+/** The preregistered observation unit: one real repository, lower-cased query, ordered hints. */
+export function observationKey(repo: string, query: string, hints: readonly string[]): string {
+  return `${repo}\0${query.toLowerCase()}\0${JSON.stringify(hints)}`;
+}
+
+export function harvest(files: string[], withHints = false): (CorpusEntry | HintCorpusEntry)[] {
+  const byKey = new Map<string, CorpusEntry | HintCorpusEntry>();
   for (const f of files) {
-    const events = eventsFrom(f);
+    const events = eventsFrom(f, withHints);
     for (let i = 0; i < events.length; i++) {
       const e = events[i]!;
       if (e.kind !== "search") continue;
-      const key = `${e.cwd}\0${e.query.toLowerCase()}`;
-      const entry = byKey.get(key) ?? { query: e.query.toLowerCase(), repo: e.cwd, answeredBy: {}, searches: 0 };
+      const hints = withHints ? (e.hints ?? []) : [];
+      const cwd = existsSync(e.cwd) ? realpathSync(e.cwd) : resolve(e.cwd);
+      const repo = repositoryRootFromCwd(cwd) ?? cwd;
+      const key = withHints
+        ? observationKey(repo, e.query, hints)
+        : `${repo}\0${e.query.toLowerCase()}`;
+      const entry = byKey.get(key) ?? {
+        query: e.query.toLowerCase(), repo,
+        answeredBy: Object.create(null) as Record<string, number>, searches: 0,
+        ...(withHints ? { hints } : {}),
+      };
       entry.searches++;
       // The next few file opens in the same session are the behavioural relevance signal.
       let taken = 0;
@@ -181,8 +279,17 @@ function harvest(files: string[]): CorpusEntry[] {
         const n = events[j]!;
         if (n.kind === "search") break; // a new search means the old one stopped driving reads
         if (n.cwd !== e.cwd) continue;
-        const rel = isAbsolute(n.path) ? relative(e.cwd, n.path) : n.path;
-        if (rel.startsWith("..")) continue; // outside the repo under measurement
+        const unresolved = isAbsolute(n.path) ? resolve(n.path) : resolve(cwd, n.path);
+        // macOS exposes /var as /private/var, and transcript CWDs may also be symlink aliases.
+        // Rebase an absolute logical path through the real CWD without resolving the answer itself:
+        // later validation must still see and reject a symlinked file.
+        const absolute = isAbsolute(n.path) && !pathIsWithin(repo, unresolved)
+          ? resolve(cwd, relative(resolve(e.cwd), unresolved))
+          : unresolved;
+        const rel = relative(resolve(repo), absolute);
+        if (rel.length === 0 || !pathIsWithin(resolve(repo), absolute)) {
+          continue; // repo root or outside measurement
+        }
         entry.answeredBy[rel] = (entry.answeredBy[rel] ?? 0) + 1;
         taken++;
       }
@@ -266,8 +373,11 @@ export function writePrivateCorpus(candidate: string, data: string, cwd = proces
 
 if (import.meta.main) {
   const argv = Bun.argv.slice(2);
+  const withHints = argv.includes("--with-hints");
   const outAt = argv.indexOf("--out");
-  const out = outAt === -1 ? "corpus/queries.json" : argv[outAt + 1];
+  const out = outAt === -1
+    ? (withHints ? "corpus/hint-queries.json" : "corpus/queries.json")
+    : argv[outAt + 1];
   if (!out) throw new Error("--out needs a path under corpus/");
   const limit = argv.includes("--limit") ? Number(argv[argv.indexOf("--limit") + 1]) : Infinity;
 
@@ -299,6 +409,89 @@ if (import.meta.main) {
     eq(extractQueries(`rg -n "auth|session" src`), ["auth|session"], "alternation not truncated");
     eq(isConceptQuery("auth|session"), false, "...and is then rejected as a concept query");
     eq(extractQueries(`rg createClient | head -5`), ["createClient"], "query survives a pipe");
+    eq(
+      hintsFromTask("Fix `validateSession` with authContext and retryPolicy", "validateSession"),
+      ["authContext", "retryPolicy"],
+      "task hints come from the latest external user string and exclude the query",
+    );
+    const transcriptRoot = mkdtempSync(join(tmpdir(), "hay-harvest-transcript-"));
+    try {
+      const transcript = join(transcriptRoot, "fixture.jsonl");
+      const rows = [
+        { type: "user", userType: "external", cwd: "/repo", message: { role: "user", content: "Fix `validateSession` using authContext" } },
+        { type: "assistant", userType: "external", cwd: "/repo", message: { role: "assistant", content: "assistantLeak and assistantContext" } },
+        { type: "user", userType: "external", cwd: "/repo", message: { role: "user", content: [{ type: "tool_result", content: "toolResultLeak" }] } },
+        // Each row below has the user-message shape and was seen passing the original filter.
+        { type: "user", userType: "external", isSidechain: true, cwd: "/repo", message: { role: "user", content: "Find sidechainLeak for the parent" } },
+        { type: "user", userType: "external", isMeta: true, cwd: "/repo", message: { role: "user", content: "Skill body metaLeak" } },
+        { type: "user", userType: "external", isCompactSummary: true, cwd: "/repo", message: { role: "user", content: "Summary compactLeak" } },
+        { type: "user", userType: "external", origin: { kind: "task-notification" }, promptSource: "system", cwd: "/repo", message: { role: "user", content: "<task-notification>notifyLeak</task-notification>" } },
+        { type: "user", userType: "external", promptSource: "sdk", cwd: "/repo", message: { role: "user", content: "Scripted sdkLeak" } },
+        { type: "user", userType: "external", cwd: "/repo", message: { role: "user", content: "<local-command-stdout>stdoutLeak</local-command-stdout>" } },
+        { type: "user", userType: "external", cwd: "/repo", message: { role: "user", content: "<bash-stdout>bashLeak</bash-stdout>" } },
+        { type: "assistant", cwd: "/repo", message: { role: "assistant", content: [{ type: "tool_use", name: "Read", input: { file_path: "src/readPathLeak.ts" } }] } },
+        { type: "assistant", cwd: "/repo", message: { role: "assistant", content: [{ type: "tool_use", name: "Bash", input: { command: "rg validateSession src" } }] } },
+        { type: "assistant", cwd: "/repo", message: { role: "assistant", content: [{ type: "tool_use", name: "Read", input: { file_path: "/repo" } }] } },
+        { type: "assistant", cwd: "/repo", message: { role: "assistant", content: [{ type: "tool_use", name: "Read", input: { file_path: "src/answer.ts" } }] } },
+        { type: "assistant", cwd: "/repo", message: { role: "assistant", content: [{ type: "tool_use", name: "Read", input: { file_path: "__proto__" } }] } },
+        { type: "assistant", cwd: "/repo", message: { role: "assistant", content: [{ type: "tool_use", name: "Read", input: { file_path: "/repo/..config" } }] } },
+      ].map((row) => JSON.stringify(row)).join("\n");
+      writeFileSync(transcript, rows);
+      const hinted = harvest([transcript], true) as HintCorpusEntry[];
+      const expectedAnswers = Object.fromEntries([
+        ["src/answer.ts", 1], ["__proto__", 1], ["..config", 1],
+      ]);
+      eq(hinted, [{
+        query: "validatesession", repo: "/repo", answeredBy: expectedAnswers, searches: 1,
+        hints: ["authContext"],
+      }], "only the preceding external plain-string user message supplies context");
+      if (JSON.stringify(hinted).match(/assistantLeak|toolResultLeak|readPathLeak|sidechainLeak|metaLeak|compactLeak|notifyLeak|sdkLeak|stdoutLeak|bashLeak/)) {
+        throw new Error("assistant, tool-result, read-path, or injected content leaked into task hints");
+      }
+      // The fixture's last injected row would mask an earlier one, so each is also checked alone.
+      for (const row of rows.split("\n").map((line) => JSON.parse(line) as unknown)) {
+        if (/Leak/.test(JSON.stringify(row)) && humanTaskText(row) !== null) {
+          throw new Error(`injected row accepted as task context: ${JSON.stringify(row)}`);
+        }
+      }
+      eq(
+        humanTaskText({ type: "user", userType: "external", origin: { kind: "human" }, promptSource: "typed", message: { role: "user", content: "typed task" } }),
+        "typed task",
+        "a message labelled human-typed is task context",
+      );
+      eq(
+        humanTaskText({ type: "user", userType: "external", message: { role: "user", content: "<command-name>/review</command-name>" } }),
+        "<command-name>/review</command-name>",
+        "a slash command the human typed is still task context",
+      );
+      eq(
+        harvest([transcript], false),
+        [{ query: "validatesession", repo: "/repo", answeredBy: expectedAnswers, searches: 1 }],
+        "default harvest output and aggregation remain schema-compatible",
+      );
+
+      const repoRoot = join(transcriptRoot, "repo");
+      const nestedCwd = join(repoRoot, "src");
+      mkdirSync(join(repoRoot, ".git"), { recursive: true });
+      mkdirSync(nestedCwd);
+      mkdirSync(join(repoRoot, "tests"));
+      const nestedTranscript = join(transcriptRoot, "nested.jsonl");
+      const nestedRows = [
+        { type: "assistant", cwd: nestedCwd, message: { role: "assistant", content: [{ type: "tool_use", name: "Bash", input: { command: "rg nestedNeedle ." } }] } },
+        { type: "assistant", cwd: nestedCwd, message: { role: "assistant", content: [{ type: "tool_use", name: "Read", input: { file_path: "../tests/answer.ts" } }] } },
+      ].map((row) => JSON.stringify(row)).join("\n");
+      writeFileSync(nestedTranscript, nestedRows);
+      eq(
+        harvest([nestedTranscript], false),
+        [{
+          query: "nestedneedle", repo: realpathSync(repoRoot),
+          answeredBy: { "tests/answer.ts": 1 }, searches: 1,
+        }],
+        "nested CWD searches and judgments are rooted at the real repository",
+      );
+    } finally {
+      rmSync(transcriptRoot, { recursive: true, force: true });
+    }
     const privateRoot = mkdtempSync(join(tmpdir(), "hay-harvest-private-"));
     try {
       writePrivateCorpus("corpus/queries.json", "[]", privateRoot);
@@ -338,9 +531,14 @@ if (import.meta.main) {
   const root = join(homedir(), ".claude", "projects");
   const files = [...new Bun.Glob("**/*.jsonl").scanSync(root)].map((f) => join(root, f)).slice(0, limit);
   console.error(`scanning ${files.length} transcripts...`);
-  const corpus = harvest(files).sort((a, b) => b.searches - a.searches);
+  const corpus = harvest(files, withHints).sort((a, b) => b.searches - a.searches);
 
-  writePrivateCorpus(out, JSON.stringify(corpus, null, 2));
+  const output: CorpusEntry[] | HintCorpus = withHints
+    ? { hderive: HDERIVE_VERSION, observations: corpus as HintCorpusEntry[] }
+    : corpus as CorpusEntry[];
+  // Anchored to this checkout, not the shell's directory: run from another repository, a relative
+  // `corpus/` would land in a tree whose .gitignore nobody checked.
+  writePrivateCorpus(out, JSON.stringify(output, null, 2), HARVEST_ROOT);
   const repos = new Map<string, number>();
   for (const e of corpus) repos.set(e.repo, (repos.get(e.repo) ?? 0) + 1);
   console.error(`${corpus.length} judged queries across ${repos.size} repos -> ${out}`);

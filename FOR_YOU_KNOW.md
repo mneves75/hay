@@ -76,6 +76,15 @@ matching, and (in v0.2.0) a filename match. Removing binary whole-word matching 
 score. Every one of them had sounded obviously correct when it was written. **Intuition about
 ranking is worthless; ablation is not.**
 
+Then came an opt-in signal that looked like the five-year shape in miniature: `--hint auth
+--hint cookie session` still searched only for `session`, but ranked hits that also mentioned the
+task's vocabulary higher. The public benchmark agreed (+0.019 MRR, interval above zero). The
+pre-registered private confirmation did not (−0.002), and the rule written before either number
+existed said any failure deletes it, so it is gone. The harder lesson was upstream of the verdict:
+the first private run had quietly treated subagent prompts, skill text and compaction summaries as
+"what the user asked", because they share the user-message shape. A non-contradictory result from
+an instrument that reads the assistant's own words as the task is not a confirmation of anything.
+
 The filename one is worth a paragraph, because it is the most expensive deletion here. Ranking a
 file called `session_store.ts` first when you search `sessionStore` is what every serious code
 search engine does — it is the whole point of BM25F — and simulated against this project's private
@@ -175,6 +184,15 @@ the differential suite. Version 0.1.4 makes the second one explicit enough to au
 - **`-g '*.ts'` does not override `.gitignore`** — a reviewer claimed it did; a four-line test
   disproved it. Test the claim, including when it comes from something smarter than you.
 - **`corpus/` holds real queries and paths from private work.** It is gitignored. Keep it that way.
+- **A candidate cap invalidates a paired ranking effect when treatment changes prescore.** Both
+  arms may print 20,000 candidates while retaining different lines. Count capped pairs, but keep
+  their scores out of effects, intervals and tests.
+- **A source hash does not validate a stale cache.** If the cache key names only an instance while
+  its repo or base commit changes, the artifact can honestly hash the new metadata and score old
+  bytes. Bind every source coordinate and admission policy (such as a byte budget) into the cache identity.
+- **A behavioral judgment must be reachable by the retriever.** Reading a corpus path directly can
+  follow `../` or a symlink that ripgrep would never search. Resolve inside the real checkout and
+  reject symlinked components before reading it.
 - **`.scratch/` is ignored by convention**, so anything you link to from a README lives there at the
   cost of being a dead link in every clone. The method record moved to `docs/method/` for that
   reason. `hay` also classifies `.scratch/` as buried, which makes it a poor home for the record a

@@ -6,6 +6,80 @@ history lives in git and `memory/`.
 
 ## [Unreleased]
 
+## [0.3.1] — 2026-09-15
+
+**No new ranking.** A task-context signal, `--hint`, was built, passed the public benchmark, failed
+its pre-registered private confirmation, and was deleted before release. What ships is the
+release-chain hardening built alongside it, a faster context re-read, and the instrument fixes that
+the failed signal forced. Ranking, weights and the failed ship gate are unchanged from 0.3.0.
+
+### Changed
+
+- Context re-reads coalesce overlapping `-C`/`-A`/`-B` windows before scanning a file, so a broad
+  context page no longer re-checks every window per line. Emitted bytes and separators are
+  unchanged.
+- Help text and documentation say "ripgrep traversal order" where they said "path order": ripgrep's
+  default order is its parallel traversal, not a sort, and the old wording promised a stability
+  the unranked modes never had.
+
+### Deleted before release: `--hint`
+
+- `--hint <LITERAL>` added up to +2.0 for covering caller-supplied task terms. Public SWE-Explore,
+  412 complete pairs: MRR 0.2150 → 0.2336 (clustered 95% CI [0.0063, 0.0325], Fisher p=0.0044).
+  Private confirmation, 494 complete pairs in 11 repositories: MRR 0.3819 → 0.3799 (−0.0020
+  [−0.0041, +0.0005]) and nDCG@10 0.4159 → 0.4148 (−0.0011 [−0.0045, +0.0004]). Both private point
+  estimates are negative, which the rule fixed in issue 15 before either run defines as failure.
+  `evidence/ablations/hint-signal.patch` rebuilds the measured binary; `evidence/swe-explore-hints.json`
+  keeps the public payload.
+
+### Measurement
+
+- **The private harvester read assistant-written text as the human's task.** Its task-context
+  filter checked only the user-message shape, which subagent prompts, skill bodies, background-task
+  notifications, captured command output, SDK prompts and compaction summaries also carry. It now
+  accepts only human-typed messages, with one planted selftest row per rejected class. The earlier
+  non-contradictory private run used the old filter and was withdrawn in writing before the
+  corrected corpus was harvested.
+- Transcript CWDs resolve to the nearest real Git root, with judgments rebased before observations
+  combine; nested directories were previously separate repositories and bootstrap clusters.
+- Paired effects exclude any pair where either arm hit the candidate cap or could not fill its
+  first page, while still counting them. Candidates dropped before pairing (no valid answer, no
+  visible match) are counted too, so candidates reconcile with pairs.
+- The hint confirmation excludes every checkout of this repository by shared root commit, not just
+  the working directory it runs from.
+- Answer judgments outside the measured checkout or through a symlink are rejected before they are
+  read, and each SWE-Explore checkout cache key binds instance, repository, base commit and archive
+  budget.
+- `swe-explore.ts` downloads its instance list and every repository archive under byte and
+  wall-clock limits, and writes the list atomically; the limits existed but were not wired to those
+  two fetches.
+- Private corpus output is anchored to this checkout's `corpus/`, not the shell's working
+  directory.
+- The hint instrument refuses a binary without `--hint` and names the patch, rather than scoring
+  hundreds of "unknown option" failures as misses.
+
+### Security
+
+- Releases are dispatched manually from `main` instead of triggered by a tag push, so a tag aimed
+  at older history can no longer run an older copy of the release policy. The maintainer creates a
+  lightweight tag at a `main` commit whose push CI succeeded; the workflow requires that exact
+  commit, a tag base version matching Cargo metadata, and the dispatch ref `main`. It attests from
+  `refs/heads/main`, verifies source ref and digest, re-checks the tag, refuses a draft holding any
+  asset this run did not build, and only then uploads to a draft.
+- Only the draft job, gated by a main-only `release` environment, can write repository contents. A
+  `v*` tag ruleset limits creating, moving and deleting release tags to the repository admin, a
+  `main` ruleset forbids deletion and force pushes, and immutable releases lock a published
+  release's assets and tag.
+- Release and formula validators match whole strings; the previous line-based `grep` checks admitted
+  a value with an embedded newline whenever one of its lines matched.
+- `brew-formula.sh` binds a checksum manifest to exactly one archive filename, lowercase SHA-256 and
+  the actual downloaded bytes before any hash reaches generated Ruby, checks provenance against the
+  release workflow, `refs/heads/main` and the tag's exact source digest, validates an overridden
+  repository slug, and propagates download, manifest and attestation failures through Bash command
+  substitutions.
+- `SECURITY.md` documents the scoped attestation verification command, the release control plane
+  and its threat model.
+
 ## [0.3.0] — 2026-08-28
 
 **`hay` now answers every valid ripgrep invocation.** Four of the eight rows in the README's

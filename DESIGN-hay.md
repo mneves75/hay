@@ -11,9 +11,9 @@ rank of the answer 5 to 28, answer in the top ten only 34-62% of the time, and n
 property (documentation share, naming, size) predicts which repo is worse. If hygiene does not
 explain the variance, the constraint is not the corpus. It is the retriever.
 
-`ripgrep` is not bad. It is **prior-free**: it returns matches in path order, so a dead
-`plan-v3-FINAL.md` outranks the function definition whenever it sorts earlier. `hay` adds the
-priors and nothing else.
+`ripgrep` is not bad. It is **prior-free**: it returns matches in unranked traversal order, so a
+dead `plan-v3-FINAL.md` can outrank the function definition. `hay` adds the priors and nothing
+else.
 
 **Scope discipline, from the prior-art survey:** indexing products (tree-sitter graphs over MCP,
 context engines) already report ~10x token reductions and are well funded. `hay` is deliberately

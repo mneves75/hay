@@ -84,7 +84,7 @@ ln -sf "$PWD/hay/target/release/hay" ~/.local/bin/hay   # or wherever your PATH 
 
 ### The idea in one paragraph
 
-`rg config` prints matches in **path order**, which is arbitrary. If a dead `plan-v3-FINAL.md`
+`rg config` prints matches in an **unranked traversal order**, which is arbitrary. If a dead `plan-v3-FINAL.md`
 sorts before `src/config.ts`, the plan comes first. An agent reads the first page and acts on it.
 `hay` runs the corresponding ripgrep-engine search and reorders the output so the line that
 *declares* the thing, in source code rather than in an archived document, comes first.
@@ -121,8 +121,8 @@ hay --explain classify_path hay/src
 
 ```text
    9.00 [def +6.0 path +1.0 word +1.0 tf +1.00]  hay/src/score.rs:29:pub fn classify_path(path: &str) -> PathClass {
-   3.00 [def +0.0 path +1.0 word +1.0 tf +1.00]  hay/src/score.rs:415:    let path = w.path * path_weight(classify_path(inp.path));
-   3.00 [def +0.0 path +1.0 word +1.0 tf +1.00]  hay/src/score.rs:460:        assert_eq!(classify_path("src/auth/session.ts"), PathClass::Source);
+   3.00 [def +0.0 path +1.0 word +1.0 tf +1.00]  hay/src/score.rs:445:    let path = w.path * path_weight(classify_path(inp.path));
+   3.00 [def +0.0 path +1.0 word +1.0 tf +1.00]  hay/src/score.rs:490:        assert_eq!(classify_path("src/auth/session.ts"), PathClass::Source);
    ... (12 more, all 3.00)
 ```
 
@@ -165,7 +165,7 @@ hay --no-ignore config        # ignore .gitignore
 hay -m 100 config             # show 100 results (default 50; 0 = no limit)
 hay --no-path config          # turn off one ranking signal, to see what it was doing
 hay --no-diversify config     # strict score order, without interleaving files
-hay --stream config           # skip ranking: stream in path order like rg, with no cap
+hay --stream config           # skip ranking: stream in ripgrep traversal order, with no cap
 hay -c config                 # count matching lines per file (unranked)
 hay -v config                 # the lines that did NOT match (unranked)
 hay -o config                 # just the matched substrings (unranked)
@@ -177,7 +177,7 @@ Important deliberate divergences:
 
 | | ripgrep | hay |
 |---|---|---|
-| result order | path order | rank order |
+| result order | unranked traversal order | rank order |
 | `-m N` | at most N matches **per file** | at most N results **in total** |
 | exhaustiveness | every match | 20,000 candidates retained by prescore |
 | `--json` | `begin`, `match`, `context`, `end`, `summary` | `match` and `context` only |
@@ -185,8 +185,9 @@ Important deliberate divergences:
 
 A search matching more than 20,000 lines ranks only the 20,000 strongest-by-prescore candidates,
 says so on stderr, and exits 2 because the result is incomplete. `-m 0` prints everything `hay`
-ranked rather than every match in the tree. The cap keeps memory flat in match count; use `rg` for
-exhaustive broad searches.
+ranked rather than every match in the tree. The cap keeps memory flat in match count; use
+`hay --stream` for an exhaustive unranked search, or `rg --sort path` when stable path order is the
+requirement.
 
 `begin`/`end`/`summary` are file-scoped messages, and rank-ordered output is not grouped by file,
 so there is no honest moment to emit them. Consumers that filter for `"type":"match"` — which is
@@ -227,10 +228,10 @@ Works the same for Claude Code, Codex, Cursor, or anything else that shells out 
 ### When *not* to use it
 
 - **You want every match, in file order** — use `rg`. `hay` shows the best 50 by default.
-- **You are piping to `head` in a tight loop** — `hay` must see all matches before it can rank
-  them, so it cannot stream the first result the way `rg` does. On a large repo that is a fraction
-  of a second, but it is a real difference.
-- **You are counting** (`rg -c`) — `hay` does not do counts.
+- **You are piping to `head` in a tight loop** — ranked `hay` must see all matches first. Use
+  `hay --stream` when ripgrep-compatible traversal order is acceptable, or `rg --sort path` when
+  stable path order is the requirement.
+- **You need a structural query** — use `ast-grep`. `hay` does lexical search and rank only.
 
 ---
 
@@ -400,7 +401,7 @@ aggregates-only and safe to commit — that is why `evidence/` contains that one
 
 `-c`, `--count-matches`, `-v`, `-o` and `--stream` have nothing to order, so they behave exactly
 as the corresponding ripgrep invocation does: ripgrep's parallel traversal, ripgrep's output,
-ripgrep's per-file `-m`, and no candidate cap. `differential-test.sh` holds them there with 31
+ripgrep's per-file `-m`, and no candidate cap. `differential-test.sh` holds them there with 32
 cases, seven of which are flag COMBINATIONS — every defect these modes shipped with lived in a
 pair of flags that single-flag cases could not reach.
 
@@ -452,8 +453,17 @@ Everything it writes to `evidence/` is public data — instance ids, aggregates,
 the sampled instance list is committed so a rerun scores exactly the same set. Archive downloads
 and expanded contents have independent byte caps; member count, path depth, compression ratio,
 links, special entries, and traversal are rejected before the temporary checkout is promoted.
+The cache identity includes the instance, repository, base commit and archive budget; neither a
+changed source coordinate nor a larger-budget run can contaminate a fixed-budget sample.
 Read the `claim` field before quoting a number: it tests reordering under identical queries, not
 issue localization.
+
+The deleted `--hint` signal's measurements stay reproducible. Its instrument refuses a binary
+without the flag, so first rebuild the measured one with
+`git apply evidence/ablations/hint-signal.patch`; then `bun swe-explore.ts --compare-hints` reruns
+the public comparison, and `bun harvest-queries.ts --with-hints` followed by
+`bun measure-mrr.ts --confirm-hints --corpus corpus/<file>.json` reruns the private confirmation.
+That corpus stays gitignored; only aggregate output may leave `corpus/`. Reverse the patch after.
 
 Full method, limits and the list of everything that went wrong: [DESIGN-hay.md](DESIGN-hay.md) and
 the tickets under [`docs/method/issues/`](docs/method/issues/).
@@ -532,7 +542,7 @@ earlier version exited 0 with no output, which is indistinguishable from "no mat
 
 **`hay: N matches; ranked the 20000 strongest-by-prescore candidates` (exit 2)** — your pattern is
 very broad. `hay` capped its retained candidates, so the output is incomplete. Narrow the pattern
-or use `rg` for an exhaustive result.
+or use `hay --stream` for an exhaustive unranked result.
 
 **`measure-mrr.ts` is slow** — it runs one search per query. A few minutes across twelve
 repositories is normal.

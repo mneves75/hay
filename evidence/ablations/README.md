@@ -4,6 +4,35 @@ Payloads from ablation runs — measurements that decided whether a signal ships
 because a deletion decision with no artifact is an assertion, and this project's whole complaint
 about itself is assertions presented as measurements.
 
+## `hint-signal` — built, measured, deleted (v0.3.1)
+
+Opt-in `--hint <LITERAL>` task context: up to eight literals, +2.0 for full coverage in the matched
+line or display path, never adding a match. Fixed in `docs/method/issues/14-task-aware-ranking-hints.md`
+before measuring; its private confirmation protocol and the amendment that withdrew the first
+private corpus are in `docs/method/issues/15-private-hint-confirmation.md`.
+
+| set | control | hints | clustered Δ (95% CI) |
+|---|---|---|---|
+| SWE-Explore, 412 complete pairs (public) | MRR 0.2150 | MRR 0.2336 | **+0.0187** [+0.0063, +0.0325] |
+| private one-shot, 494 complete pairs, 11 repositories | MRR 0.3819 | MRR 0.3799 | **−0.0020** [−0.0041, +0.0005] |
+| private one-shot, nDCG@10 | 0.4159 | 0.4148 | **−0.0011** [−0.0045, +0.0004] |
+
+The public payload is `evidence/swe-explore-hints.json`. The private run's aggregates are recorded
+in issue 15 only; its corpus holds real queries and paths and never leaves `corpus/`.
+
+`hint-signal.patch` applies to the tree that shipped v0.3.1 and restores the four files the signal
+touched (`hay/src/main.rs`, `hay/src/score.rs`, `hay/tests/cli.rs`, `hay/differential-test.sh`)
+byte-for-byte as measured. It has been applied and reverse-applied to prove the round trip. The
+instrument (`swe-explore.ts --compare-hints`, `harvest-queries.ts --with-hints`,
+`measure-mrr.ts --confirm-hints`) stays in the tree and refuses a binary without the flag:
+
+```bash
+git apply evidence/ablations/hint-signal.patch
+cargo build --release --manifest-path hay/Cargo.toml
+bun swe-explore.ts --compare-hints --out /tmp/hints.json
+git apply -R evidence/ablations/hint-signal.patch
+```
+
 ## `heading-signal` — built, measured, deleted (v0.3.0)
 
 A markdown-heading signal: `## Foo` declares the section about `Foo` as `function foo` declares

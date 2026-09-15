@@ -92,8 +92,8 @@ jobs:
     timeout-minutes: 10
     # Scoped to this job: the action reports advisories as a check run.
     permissions:
-      contents: read
-      checks: write
+      contents: read # checkout
+      checks: write # publish the advisory report as a check run
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -125,6 +125,7 @@ jobs:
       # Each tool self-checks its pure functions; none of them needs agent transcripts to do it.
       - run: bun grep-hygiene.ts --selftest
       - run: bun harvest-queries.ts --selftest
+      - run: bun hint-derive.ts --selftest
       - run: bun measure-mrr.ts --selftest
       - run: bun doc-authority.ts --selftest
       - run: bun categorize-misses.ts --selftest
@@ -134,12 +135,13 @@ jobs:
       - run: bun explainer-html.ts --selftest
       - run: bash install.sh --selftest
       - run: bash brew-formula.sh --selftest
+      - run: bash release-policy.sh --selftest
       - name: Generated reports are current
         run: |
           bun benchmark-report.ts
           bun explainer-html.ts --in BENCHMARK_FEYNMAN.md --out BENCHMARK_FEYNMAN.html
           git diff --exit-code -- BENCHMARK.md benchmark.html BENCHMARK_FEYNMAN.html
-      - run: shellcheck benchmark-corpora.sh hay/differential-test.sh install.sh brew-formula.sh
+      - run: shellcheck benchmark-corpora.sh hay/differential-test.sh install.sh brew-formula.sh release-policy.sh
 
   site:
     name: benchmark film source

@@ -40,6 +40,65 @@ need() {
   command -v "$1" >/dev/null 2>&1 || { echo "brew-formula: missing '$1' ($2)" >&2; exit 2; }
 }
 
+# Every validator matches the WHOLE string with [[ =~ ]]. `printf | grep -E '^...$'` is
+# line-based, so a value with an embedded newline passed as long as any one line matched.
+valid_repo_slug() {
+  [[ "$1" =~ ^[A-Za-z0-9]([A-Za-z0-9-]{0,37}[A-Za-z0-9])?/[A-Za-z0-9][A-Za-z0-9._-]{0,99}$ ]]
+}
+
+valid_commit_sha() {
+  [[ "$1" =~ ^[0-9a-f]{40}$ ]]
+}
+
+valid_stable_tag() {
+  [[ "$1" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+}
+
+require_lightweight_release_tag() {
+  [ "$1" = commit ] && valid_commit_sha "$2"
+}
+
+source_digest_for_tag() {
+  local tag="$1" record object_type source_digest
+  record="$(gh api "repos/${REPO_SLUG}/git/ref/tags/${tag}" \
+    --jq '[.object.type, .object.sha] | @tsv')" ||
+    { echo "brew-formula: could not resolve $tag" >&2; return 2; }
+  IFS=$'\t' read -r object_type source_digest <<<"$record"
+  require_lightweight_release_tag "$object_type" "$source_digest" ||
+    { echo "brew-formula: $tag is not a lightweight tag at a commit" >&2; return 2; }
+  printf '%s\n' "$source_digest"
+}
+
+sha256_file() {
+  shasum -a 256 "$1" | awk '{print $1}'
+}
+
+checksum_from_manifest() {
+  local manifest="$1" archive="$2" expected_name="$3"
+  local line sum count actual
+  count="$(awk 'END { print NR }' "$manifest")"
+  if [ "$count" != "1" ]; then
+    echo "brew-formula: $manifest must contain exactly one checksum record" >&2
+    return 2
+  fi
+  IFS= read -r line <"$manifest" || [ -n "$line" ]
+  if ! printf '%s\n' "$line" | grep -Eq '^[0-9a-f]{64}  '; then
+    echo "brew-formula: $manifest checksum must be lowercase 64-hex" >&2
+    return 2
+  fi
+  sum="${line%%  *}"
+  if [ "$line" != "$sum  $expected_name" ]; then
+    echo "brew-formula: $manifest must name exactly $expected_name" >&2
+    return 2
+  fi
+  actual="$(sha256_file "$archive")"
+  if [ "$sum" != "$actual" ]; then
+    echo "brew-formula: $expected_name checksum mismatch" >&2
+    return 2
+  fi
+  printf '%s\n' "$sum"
+}
+
 # Pure rendering, separated from the network so it can be tested offline. Every value it prints is
 # an argument: there is no hidden state that a selftest would fail to cover.
 render_formula() {
@@ -114,37 +173,49 @@ EOF
 
 # Download one release archive, prove it is the artifact the release workflow built, and print its
 # sha256. Both checks are load-bearing: the checksum proves the bytes match the release's own
-# manifest, the attestation proves that manifest came from the tagged build rather than from
+# manifest, the attestation proves that manifest came from the authorized main build rather than from
 # someone with write access to the release page.
 checksum_of_verified_asset() {
-  local tag="$1" target="$2" workdir="$3"
+  local tag="$1" target="$2" workdir="$3" source_digest="$4"
   local asset="hay-${tag}-${target}.tar.gz"
   gh release download "$tag" -R "$REPO_SLUG" -p "$asset" -p "$asset.sha256" \
-    -D "$workdir" --clobber >&2
-  ( cd "$workdir" && shasum -a 256 -c "$asset.sha256" >&2 )
-  # Scoped to the workflow AND the tag, not just the repository (review finding): an attestation
-  # proving only "something in this repo built it" would be satisfied by any other workflow with
-  # id-token permission, including one added by an attacker with write access.
+    -D "$workdir" --clobber >&2 ||
+    { echo "brew-formula: could not download $asset and its checksum" >&2; return 2; }
+  local sum
+  sum="$(checksum_from_manifest "$workdir/$asset.sha256" "$workdir/$asset" "$asset")" ||
+    return 2
+  # The release workflow is loaded from main and refuses unless the tag names that same commit.
+  # Requiring both source ref and digest prevents a workflow run on another ref, or another main
+  # commit, from lending its provenance to these bytes.
   gh attestation verify "$workdir/$asset" -R "$REPO_SLUG" \
     --signer-workflow "${REPO_SLUG}/.github/workflows/release.yml" \
-    --source-ref "refs/tags/${tag}" >/dev/null 2>&1 ||
-    { echo "brew-formula: provenance attestation failed for $asset" >&2; exit 2; }
-  # ONE checksum, from the first line, and only if it is one. `awk '{print $1}'` over the whole
-  # file printed a field per line, so an extra line in a `.sha256` asset became extra text
-  # substituted straight into the generated Ruby — arbitrary code in the formula the tap installs
-  # (review finding). The hash is validated before it can be interpolated anywhere.
-  local sum
-  sum="$(awk 'NR == 1 { print $1 }' "$workdir/$asset.sha256")"
-  case "$sum" in
-    [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]*)
-      [ "${#sum}" -eq 64 ] || { echo "brew-formula: $asset checksum is not 64 hex chars" >&2; exit 2; } ;;
-    *) echo "brew-formula: $asset checksum is not hexadecimal" >&2; exit 2 ;;
-  esac
+    --source-ref refs/heads/main --source-digest "$source_digest" >/dev/null 2>&1 ||
+    { echo "brew-formula: provenance attestation failed for $asset" >&2; return 2; }
   printf '%s\n' "$sum"
 }
 
 selftest() {
   local out
+  valid_repo_slug "mneves75/hay" || { echo "selftest: real repository slug rejected" >&2; exit 1; }
+  valid_repo_slug "owner-name/repo_name.rs" || { echo "selftest: safe repository slug rejected" >&2; exit 1; }
+  local good_sha="0123456789abcdef0123456789abcdef01234567"
+  require_lightweight_release_tag commit "$good_sha" ||
+    { echo "selftest: valid release tag object rejected" >&2; exit 1; }
+  if require_lightweight_release_tag tag "$good_sha" ||
+    require_lightweight_release_tag commit "${good_sha}0" ||
+    require_lightweight_release_tag commit $'0123456789abcdef0123456789abcdef01234567\nx'; then
+    echo "selftest: annotated or malformed release tag object admitted" >&2
+    exit 1
+  fi
+  local bad_slug
+  # shellcheck disable=SC2016  # hostile literals must stay literal
+  for bad_slug in '' owner /repo owner/ 'owner/repo/extra' '../owner/repo' \
+    'owner/repo"; system("id"); #' 'owner/repo#{`id`}' 'owner name/repo' $'owner/repo\nx"; #'; do
+    if valid_repo_slug "$bad_slug"; then
+      echo "selftest: repository slug validation admits '$bad_slug'" >&2
+      exit 1
+    fi
+  done
   out="$(render_formula 9.9.9 aaa bbb ccc ddd)"
   # No explicit `version` stanza: `brew audit --strict` rejects one that repeats what it can scan
   # from the url, and every url here carries the tag. The version must therefore live in the urls,
@@ -164,13 +235,14 @@ selftest() {
   # interpolated into Ruby. These are the shapes an injection would take.
   local bad
   # shellcheck disable=SC2016  # these are hostile literals, not expressions to expand
-  for bad in 'v1.0.0"; system("id"); #' 'v1.0.0 #{`id`}' 'main' 'v1' 'v1.0' '../v1.0.0'; do
-    if printf '%s' "$bad" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+  for bad in 'v1.0.0"; system("id"); #' 'v1.0.0 #{`id`}' 'main' 'v1' 'v1.0' '../v1.0.0' \
+    $'v1.0.0\n"; system("id"); #' $'\nv1.0.0' 'v1.0.0-beta1'; do
+    if valid_stable_tag "$bad"; then
       echo "selftest: tag validation admits '$bad'" >&2
       exit 1
     fi
   done
-  printf '%s' 'v10.20.30' | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$' ||
+  valid_stable_tag 'v10.20.30' ||
     { echo "selftest: tag validation rejects a real tag" >&2; exit 1; }
 
   # Four distinct checksums, each landing under its own url: a rendering bug that reused one hash
@@ -200,10 +272,50 @@ selftest() {
   fi
   WORKDIR=""
 
+  local tmp asset sum
+  tmp="$(mktemp -d "${TMPDIR:-/tmp}/hay-brew-checksum.XXXXXX")"
+  asset="$tmp/hay-v9.9.9-${MAC_ARM_TARGET}.tar.gz"
+  printf 'archive bytes' >"$asset"
+  sum="$(sha256_file "$asset")"
+  printf '%s  %s\n' "$sum" "$(basename "$asset")" >"$asset.sha256"
+  [ "$(checksum_from_manifest "$asset.sha256" "$asset" "$(basename "$asset")")" = "$sum" ] ||
+    { echo "selftest: valid checksum manifest rejected" >&2; exit 1; }
+  printf '%s  other.tar.gz\n' "$sum" >"$asset.sha256"
+  if checksum_from_manifest "$asset.sha256" "$asset" "$(basename "$asset")" >/dev/null 2>&1; then
+    echo "selftest: wrong filename accepted" >&2; exit 1
+  fi
+  printf '%s  %s\n%s  %s\n' "$sum" "$(basename "$asset")" "$sum" extra.tar.gz >"$asset.sha256"
+  if checksum_from_manifest "$asset.sha256" "$asset" "$(basename "$asset")" >/dev/null 2>&1; then
+    echo "selftest: extra checksum record accepted" >&2; exit 1
+  fi
+  printf '%s  %s\n' "ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789" "$(basename "$asset")" >"$asset.sha256"
+  if checksum_from_manifest "$asset.sha256" "$asset" "$(basename "$asset")" >/dev/null 2>&1; then
+    echo "selftest: uppercase checksum accepted" >&2; exit 1
+  fi
+  printf '%s  %s\n' "$(printf '%064d' 0)" "$(basename "$asset")" >"$asset.sha256"
+  if checksum_from_manifest "$asset.sha256" "$asset" "$(basename "$asset")" >/dev/null 2>&1; then
+    echo "selftest: checksum mismatch accepted" >&2; exit 1
+  fi
+
+  # A checksum failure occurs inside command substitution in production. Bash disables errexit
+  # there, so this control must exercise the whole wrapper rather than only the parser.
+  gh() { return 0; }
+  if checksum_of_verified_asset v9.9.9 "$MAC_ARM_TARGET" "$tmp" "$good_sha" \
+    >/dev/null 2>&1; then
+    echo "selftest: wrapper swallowed an invalid checksum manifest" >&2
+    exit 1
+  fi
+  unset -f gh
+  rm -r "$tmp"
+
   echo "brew-formula selftest ok"
 }
 
 main() {
+  if ! valid_repo_slug "$REPO_SLUG"; then
+    echo "brew-formula: HAY_REPO_SLUG must be a safe owner/repo slug" >&2
+    exit 2
+  fi
   if [ "${1:-}" = "--selftest" ]; then
     selftest
     return 0
@@ -221,7 +333,7 @@ main() {
   # goes on to be interpolated verbatim into Ruby (review finding); the tag reaches the formula's
   # urls and its `#{version}` assertion, so anything but digits and dots is a code-injection
   # vector into the file the tap installs.
-  if ! printf '%s' "$tag" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+  if ! valid_stable_tag "$tag"; then
     echo "brew-formula: expected a published release tag like v0.2.0, got '${tag}'" >&2
     exit 2
   fi
@@ -236,11 +348,12 @@ main() {
 
   WORKDIR="$(mktemp -d "${TMPDIR:-/tmp}/hay-brew.XXXXXX")"
 
-  local mac_arm mac_intel linux_arm linux_intel
-  mac_arm="$(checksum_of_verified_asset "$tag" "$MAC_ARM_TARGET" "$WORKDIR")"
-  mac_intel="$(checksum_of_verified_asset "$tag" "$MAC_INTEL_TARGET" "$WORKDIR")"
-  linux_arm="$(checksum_of_verified_asset "$tag" "$LINUX_ARM_TARGET" "$WORKDIR")"
-  linux_intel="$(checksum_of_verified_asset "$tag" "$LINUX_INTEL_TARGET" "$WORKDIR")"
+  local source_digest mac_arm mac_intel linux_arm linux_intel
+  source_digest="$(source_digest_for_tag "$tag")"
+  mac_arm="$(checksum_of_verified_asset "$tag" "$MAC_ARM_TARGET" "$WORKDIR" "$source_digest")"
+  mac_intel="$(checksum_of_verified_asset "$tag" "$MAC_INTEL_TARGET" "$WORKDIR" "$source_digest")"
+  linux_arm="$(checksum_of_verified_asset "$tag" "$LINUX_ARM_TARGET" "$WORKDIR" "$source_digest")"
+  linux_intel="$(checksum_of_verified_asset "$tag" "$LINUX_INTEL_TARGET" "$WORKDIR" "$source_digest")"
 
   render_formula "${tag#v}" "$mac_arm" "$mac_intel" "$linux_arm" "$linux_intel"
 }

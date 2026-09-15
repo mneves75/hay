@@ -205,6 +205,19 @@ destination is public. Use `=label` for repo identity and `--redact-names` for i
   A three-way review workflow found 20 real defects in the first two commits, including a `-o -v`
   that printed nothing and exited 0.
 
+- **v0.3.1 — `--hint` deleted by its own pre-registered rule; release chain simplified**
+  (2026-09-15). Public SWE-Explore +0.0187 MRR [+0.0063, +0.0325]; corrected private one-shot
+  −0.0020 [−0.0041, +0.0005] and nDCG@10 −0.0011, 494 pairs / 11 repos → contradictory → deleted.
+  The first private run was void: the harvester read subagent prompts, skill bodies, task
+  notifications, command output and compaction summaries as "the user's task" (2,200+ rows share
+  the user-message shape). `evidence/ablations/hint-signal.patch` rebuilds the measured binary; the
+  instrument stays and refuses a binary without the flag. Release chain: owner chose no GitHub App —
+  maintainer creates a lightweight tag at a CI-green main SHA, dispatches `release.yml` from main,
+  policy requires tag == dispatch SHA; only env-gated `draft-release` has contents write. Rulesets
+  `release-tags` (v* admin-only) and `main` (no deletion/force push) plus a main-only `release`
+  environment were created 2026-09-15 and read back. Ships context-window coalescing, traversal-order
+  wording, bounded SWE-Explore fetches, whole-string validators.
+
 - **v0.2.0 RELEASED** (2026-08-28): `v0.2.0-beta1` (staging prerelease) then `v0.2.0`, both built
   by `release.yml` at commit `14ed268`, five platform archives each with sha256 and SLSA
   attestations; the arm64 macOS archive was downloaded back, checksum- and attestation-verified

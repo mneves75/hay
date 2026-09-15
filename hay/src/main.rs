@@ -2,10 +2,10 @@
 
 //! `hay` — a ranked grep for coding agents.
 //!
-//! ripgrep returns matches in path order. For an agent that reads the first page and acts, path
-//! order is arbitrary: a dead `plan-v3-FINAL.md` outranks the function definition whenever it
-//! sorts earlier. `hay` runs the same search using ripgrep's own engine and reorders the results
-//! by how likely each line is to be the answer.
+//! ripgrep returns matches in unranked traversal order. For an agent that reads the first page and
+//! acts, that order is arbitrary: a dead `plan-v3-FINAL.md` can outrank the function definition.
+//! `hay` runs the same search using ripgrep's own engine and reorders the results by how likely
+//! each line is to be the answer.
 //!
 //! No index, no daemon, no state. Output is ripgrep-compatible so an agent switches by typing
 //! `hay` instead of `rg`.
@@ -71,11 +71,11 @@ OPTIONS:
         --json            emit ripgrep-shaped JSON Lines (match/context messages)
         --hidden          search hidden files and directories
         --no-ignore       do not respect .gitignore
-    -c, --count           count matching lines per file (unranked, path order)
-        --count-matches   count matches per file (unranked, path order)
+    -c, --count           count matching lines per file (unranked, ripgrep traversal order)
+        --count-matches   count matches per file (unranked, ripgrep traversal order)
     -v, --invert-match    print the lines that did NOT match (unranked)
     -o, --only-matching   print each matched substring (unranked)
-        --stream          skip ranking: stream in path order like rg, with no candidate cap
+        --stream          skip ranking: use ripgrep traversal order, with no candidate cap
     -m, --max-count <N>   stop after N ranked results (default 50; 0 = no limit)
         --explain         show the score for each result
         --no-<signal>     disable a ranking signal: definition, path, word, tf
@@ -87,7 +87,7 @@ Results are interleaved by file: the first pass carries each file's best line, t
 next-best, and so on. An agent opens files, so the first page is worth more as ten files than
 as ten lines of one file. `--no-diversify` restores strict score order.
 
-Differences from ripgrep, deliberate: results are rank-ordered rather than path-ordered,
+Differences from ripgrep, deliberate: results are rank-ordered rather than traversal-ordered,
 `-m` bounds total results rather than matches per file, `--json` emits only `match`
 and `context` messages (`begin`/`end`/`summary` are file-scoped and output is not), and
 `-l` prints plain paths even under `--json`. For deterministic traversal, repository
@@ -133,7 +133,7 @@ struct Opts {
     /// Interleave results by file so the first page shows distinct files. Default on; the flag
     /// exists so its contribution can be ablated like every other ranking decision.
     diversify: bool,
-    /// Skip ranking entirely and stream in path order, exactly as ripgrep does.
+    /// Skip ranking entirely and stream in ripgrep's parallel traversal order.
     stream: bool,
     /// Whether `-m` was actually typed. The ranked page has a default of 50 because an agent reads
     /// a page; an unranked mode is ripgrep's job and ripgrep has no default cap, so silently
@@ -151,10 +151,10 @@ struct Opts {
 }
 
 impl Opts {
-    /// Modes with nothing to rank, which therefore run ripgrep's way: streaming, path-ordered,
-    /// uncapped. Refusing them (as hay did until 0.3.0) meant an agent could not alias `rg` to
-    /// `hay` unconditionally — the flag was valid, the tool said no, and the agent had to know
-    /// which of two binaries to reach for. A tool that answers every valid invocation, ranking
+    /// Modes with nothing to rank, which therefore run ripgrep's way: streaming in parallel
+    /// traversal order, uncapped. Refusing them (as hay did until 0.3.0) meant an agent could not
+    /// alias `rg` to `hay` unconditionally — the flag was valid, the tool said no, and the agent had
+    /// to know which of two binaries to reach for. A tool that answers every valid invocation, ranking
     /// the ones where rank means something, is the only shape that removes that decision.
     fn unranked(&self) -> bool {
         self.stream || self.count_lines || self.count_matches || self.invert || self.only_matching
@@ -1225,6 +1225,23 @@ fn window(h: &Hit, before: usize, after: usize) -> (u64, u64) {
     )
 }
 
+/// Sort and coalesce context windows into their union. Adjacent windows are one continuous block,
+/// so merging them changes neither the bytes retained nor the separators later chosen by emission.
+fn merge_windows(mut ranges: Vec<(u64, u64)>) -> Vec<(u64, u64)> {
+    ranges.sort_unstable();
+    let mut merged: Vec<(u64, u64)> = Vec::with_capacity(ranges.len());
+    for (lo, hi) in ranges {
+        if let Some(last) = merged.last_mut()
+            && lo <= last.1.saturating_add(1)
+        {
+            last.1 = last.1.max(hi);
+        } else {
+            merged.push((lo, hi));
+        }
+    }
+    merged
+}
+
 fn read_context(
     page: &[(ScoreBreakdown, &Hit)],
     before: usize,
@@ -1247,7 +1264,8 @@ fn read_context(
             .push(window(h, before, after));
     }
     for (path, ranges) in wanted {
-        let last = ranges.iter().map(|&(_, hi)| hi).max().unwrap_or(0);
+        let ranges = merge_windows(ranges);
+        let last = ranges.last().map(|&(_, hi)| hi).unwrap_or(0);
         let file = root
             .open(path)
             .map_err(|e| io::Error::new(e.kind(), format!("{}: {e}", path.display())))?;
@@ -1256,6 +1274,7 @@ fn read_context(
         // to search. A genuine IO error makes the requested output incomplete, so it must fail.
         let mut reader = BufReader::new(file);
         let (mut n, mut seen, mut offset, mut buf) = (0u64, 0u64, 0u64, Vec::new());
+        let mut range_index = 0usize;
         loop {
             buf.clear();
             let line_offset = offset;
@@ -1271,7 +1290,10 @@ fn read_context(
                 break;
             }
             seen = n;
-            if ranges.iter().any(|&(lo, hi)| n >= lo && n <= hi) {
+            while range_index < ranges.len() && n > ranges[range_index].1 {
+                range_index += 1;
+            }
+            if range_index < ranges.len() && n >= ranges[range_index].0 {
                 out.lines.insert(
                     (path.to_path_buf(), n),
                     ContextLine {
@@ -1727,6 +1749,23 @@ mod tests {
 
     fn render(hits: &[Hit], ctx: &[(&str, u64, &str)], argv: &[&str]) -> String {
         render_scored(hits, &[], ctx, argv)
+    }
+
+    #[test]
+    fn context_windows_are_coalesced_without_overflow() {
+        assert_eq!(
+            merge_windows(vec![
+                (10, 12),
+                (1, 3),
+                (3, 8),
+                (13, 14),
+                (20, 20),
+                (19, 19),
+                (u64::MAX, u64::MAX),
+            ]),
+            vec![(1, 8), (10, 14), (19, 20), (u64::MAX, u64::MAX)]
+        );
+        assert!(merge_windows(Vec::new()).is_empty());
     }
 
     #[test]

@@ -19,12 +19,23 @@
  * Usage:
  *   bun measure-mrr.ts [--corpus corpus/queries.json] [--min-queries N] [--json]
  *   bun measure-mrr.ts --min-queries 60 --compare [--json]   # paired A/B with bootstrap intervals
+ *   bun measure-mrr.ts --confirm-hints [--corpus corpus/hint-queries.json] [--json]
  *   bun measure-mrr.ts --selftest
  */
 
-import { existsSync, readlinkSync, realpathSync, statSync, lstatSync } from "node:fs";
-import { basename, dirname, join, resolve } from "node:path";
-import { privateCorpusPath, writePrivateCorpus } from "./harvest-queries.ts";
+import {
+  existsSync, lstatSync, mkdirSync, mkdtempSync, readlinkSync, realpathSync, rmSync, statSync,
+  symlinkSync, writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
+import { fileURLToPath } from "node:url";
+import { spawnSync } from "node:child_process";
+import {
+  HARVEST_ROOT, observationKey, pathIsWithin, privateCorpusPath, repositoryRootFromCwd,
+  writePrivateCorpus, type HintCorpus, type HintCorpusEntry,
+} from "./harvest-queries.ts";
+import { HDERIVE_VERSION } from "./hint-derive.ts";
 
 /** Beyond this many results an answer is unreachable by scrolling grep output; RR counts as 0. */
 const RANK_CAP = 1000;
@@ -44,6 +55,28 @@ const NDCG_K = 10;
 const LINE_BUDGET = 10_000;
 
 export type CorpusEntry = { query: string; repo: string; answeredBy: Record<string, number>; searches: number };
+
+const PROJECT_ROOT = dirname(fileURLToPath(import.meta.url));
+const PRIVATE_HINT_MINIMUMS = { candidateEntriesPerRepo: 40, repositories: 5, validatedPairs: 100 } as const;
+
+export { pathIsWithin };
+
+/** Root commits of a checkout's HEAD, or an empty list when it is not a readable Git repository. */
+export function rootCommits(repo: string): string[] {
+  const run = spawnSync("git", ["-C", repo, "rev-list", "--max-parents=0", "HEAD"], { encoding: "utf8" });
+  if (run.status !== 0) return [];
+  return run.stdout.split("\n").filter((line) => /^[0-9a-f]{40}$/.test(line));
+}
+
+/**
+ * Any checkout of this repository — this one, a worktree, or a sibling clone — contains the hint
+ * feature and its evaluation documents, so searches made there are development-set contamination.
+ * Identity is shared history (a common root commit), not a directory name.
+ */
+export function isThisRepository(repo: string, ownRoots: ReadonlySet<string>, projectRoot: string): boolean {
+  if (pathIsWithin(projectRoot, repo)) return true;
+  return rootCommits(repo).some((commit) => ownRoots.has(commit));
+}
 
 export type RepoScore = {
   repo: string;
@@ -68,6 +101,26 @@ export type RepoScore = {
 /** Which retriever is under test. `rg` is the baseline; `hay` is the ranked one. */
 export type Retriever = "rg" | "hay";
 const HAY_BIN = new URL("./hay/target/release/hay", import.meta.url).pathname;
+
+/**
+ * `--hint` was measured, failed its private confirmation, and was deleted (issue 15). The hint
+ * instrument stays so that negative result is reproducible, which needs the measured binary:
+ * `git apply evidence/ablations/hint-signal.patch` and rebuild. This check turns a shipped binary
+ * into one clear refusal instead of hundreds of "unknown option" failures scored as misses.
+ */
+export const HINT_SIGNAL_PATCH = "evidence/ablations/hint-signal.patch";
+export function helpAdvertisesHint(help: string): boolean {
+  return /^\s+--hint <LITERAL>/m.test(help);
+}
+export function requireHintSignalBinary(bin = HAY_BIN): void {
+  const help = spawnSync(bin, ["--help"], { encoding: "utf8" });
+  if (help.status === 0 && helpAdvertisesHint(help.stdout)) return;
+  console.error(
+    `${bin} has no --hint: the signal was deleted after issue 15. To reproduce the measurement, ` +
+    `git apply ${HINT_SIGNAL_PATCH} && cargo build --release --manifest-path hay/Cargo.toml`,
+  );
+  process.exit(2);
+}
 let RETRIEVER: Retriever = "rg";
 let HAY_FLAGS: string[] = [];
 
@@ -90,7 +143,11 @@ export function setHayFlags(flags: string[]): void {
  * instead of calling it. Both harnesses (`measure-mrr.ts`, `swe-explore.ts`) now feed both
  * retrievers through this one function, which is what invariant 6 is about.
  */
-export function retrieverArgv(retriever: Retriever, query: string): string[] {
+export function retrieverArgv(
+  retriever: Retriever,
+  query: string,
+  extraHayFlags: readonly string[] = [],
+): string[] {
   if (retriever === "hay") {
     // -m 0 = unlimited, so rank can exceed hay's default page size during evaluation.
     // `-e query`, not a bare positional: a harvested query beginning with `-` would otherwise be
@@ -108,7 +165,12 @@ export function retrieverArgv(retriever: Retriever, query: string): string[] {
     // `--no-ignore-global` matches `.git_global(false)`, `--no-ignore-exclude` matches
     // `.git_exclude(false)`, `-g '!.git/'` matches hay's built-in VCS exclusion — so `--hidden`
     // was the single remaining asymmetry, and it is the one this file's own comment forbids.
-    return [HAY_BIN, "--hidden", "-i", "-F", "-n", "-m", "0", ...HAY_FLAGS, "-e", query, "."];
+    // Global flags describe a whole ablation run. Per-call flags describe one treatment arm
+    // (for example repeatable task hints) and must not mutate module state between paired calls.
+    return [
+      HAY_BIN, "--hidden", "-i", "-F", "-n", "-m", "0",
+      ...HAY_FLAGS, ...extraHayFlags, "-e", query, ".",
+    ];
   }
   return ["rg", "--no-config", "--no-ignore-dot", "--no-ignore-global", "--no-ignore-exclude",
           "--hidden", "-g", "!.git/", "--sort", "path", "-i", "-F", "-n", "-e", query, "."];
@@ -259,6 +321,7 @@ export async function rankOfAnswer(
   query: string,
   answers: Set<string>,
   retriever: Retriever = RETRIEVER,
+  extraHayFlags: readonly string[] = [],
 ): Promise<{ rank: number | null; scanned: number; ndcg: number; rPrec: number; rPrecTruncated: boolean; pageComplete: boolean; files: string[]; truncated: boolean }> {
   // hay's stderr carries the candidate-cap warning — "N matches; ranked the 20000
   // strongest-by-prescore candidates" (format pinned by a contract test in hay/tests/cli.rs). On
@@ -267,7 +330,7 @@ export async function rankOfAnswer(
   // BEFORE scoring, which is a different failure from "ranked it badly". Invariant 7: a measure's
   // truncations are counted, never absorbed. hay prints it before any stdout, so reading the
   // stream after the kill cannot lose it.
-  const proc = Bun.spawn(retrieverArgv(retriever, query), {
+  const proc = Bun.spawn(retrieverArgv(retriever, query, extraHayFlags), {
     cwd: repo,
     stdout: "pipe",
     stderr: "pipe",
@@ -357,14 +420,42 @@ async function mapPool<T, R>(xs: T[], limit: number, f: (x: T) => Promise<R>): P
  * term cannot have been reached by matching it — whatever led the agent there, it was not this
  * search. Queries left with no valid answer have no usable judgment and are dropped, not scored.
  */
+export function safeAnswerPath(
+  repo: string,
+  rel: string,
+): { absolute: string; resultPath: string } | null {
+  if (rel.length === 0 || rel.includes("\0") || isAbsolute(rel)) return null;
+  let root: string;
+  try { root = realpathSync(repo); }
+  catch { return null; }
+  const absolute = resolve(root, rel);
+  if (!pathIsWithin(root, absolute)) return null;
+  const resultPath = relative(root, absolute);
+  if (resultPath.length === 0) return null;
+  const components = resultPath.split(sep).filter(Boolean);
+  let cursor = root;
+  try {
+    for (let index = 0; index < components.length; index++) {
+      cursor = join(cursor, components[index]!);
+      const info = lstatSync(cursor);
+      if (info.isSymbolicLink()) return null;
+      const last = index === components.length - 1;
+      if (last ? !info.isFile() : !info.isDirectory()) return null;
+    }
+  } catch {
+    return null;
+  }
+  return { absolute, resultPath };
+}
+
 async function validAnswers(repo: string, e: CorpusEntry): Promise<Set<string>> {
   const ok = new Set<string>();
   const needle = e.query.toLowerCase();
   for (const rel of Object.keys(e.answeredBy)) {
-    const f = Bun.file(`${repo}/${rel}`);
-    if (!(await f.exists())) continue;
-    const text = await f.text().catch(() => "");
-    if (text.toLowerCase().includes(needle)) ok.add(rel);
+    const answer = safeAnswerPath(repo, rel);
+    if (!answer) continue;
+    const text = await Bun.file(answer.absolute).text().catch(() => "");
+    if (text.toLowerCase().includes(needle)) ok.add(answer.resultPath);
   }
   return ok;
 }
@@ -450,6 +541,77 @@ export type Pair = {
   answers?: string[];
   /** hay hit its candidate cap on this query: the answer may have been dropped before scoring. */
   hayTruncated?: boolean;
+};
+
+export type HintPair = {
+  repo: string;
+  rrBaseline: number; rrHinted: number;
+  top10Baseline: number; top10Hinted: number;
+  ndcgBaseline: number; ndcgHinted: number;
+  hintCount: number;
+  baselineTruncated: boolean;
+  hintedTruncated: boolean;
+  baselinePageComplete: boolean;
+  hintedPageComplete: boolean;
+};
+
+export type HintConfirmationEffect = {
+  baselineMean: number;
+  hintedMean: number;
+  better: number;
+  worse: number;
+  tied: number;
+  byObservation: Interval;
+  randomizationByObservation: number;
+  byRepoCluster: Interval;
+  randomizationByRepoCluster: number;
+};
+
+type HintExclusions = {
+  /** Observations from any checkout of this repository, found by shared root commit. */
+  hayCheckoutObservations: number;
+  missingRepoObservations: number;
+  belowMinimumRepositories: number;
+  belowMinimumObservations: number;
+};
+
+export type HintDrops = {
+  /** No opened file exists, is reachable without a symlink, and contains the query. */
+  noValidAnswer: number;
+  /** Neither hay arm returned any match, so there is no ranking to compare. */
+  noVisibleMatch: number;
+};
+
+export type HintConfirmationReport = {
+  mode: "confirm-hints";
+  scope: "private-one-shot-only";
+  hderive: typeof HDERIVE_VERSION;
+  primaryContrast: "paired-observation";
+  statisticalReplicates: 10_000;
+  minimums: typeof PRIVATE_HINT_MINIMUMS;
+  candidates: { repositories: number; observations: number };
+  excluded: HintExclusions;
+  /** Candidate observations that never became a pair, so candidates reconcile with pairs. */
+  droppedBeforePairing: HintDrops;
+  observedPairs: number;
+  repositories: number;
+  validatedPairs: number;
+  zeroHintPairs: number;
+  incompletePairs: {
+    candidateCap: number;
+    pageTruncated: number;
+    total: number;
+  };
+  candidateCapQueries: { baseline: number; hinted: number };
+  pageTruncatedQueries: { baseline: number; hinted: number };
+  mrr: HintConfirmationEffect;
+  top10: HintConfirmationEffect;
+  ndcg10: HintConfirmationEffect;
+  decision: {
+    informative: boolean;
+    privateConclusion: "non-contradictory" | "contradictory" | "insufficient";
+    reasonCodes: string[];
+  };
 };
 
 /**
@@ -674,7 +836,7 @@ export function namesTheSameFile(a: string, b: string): boolean {
 
 
 /** Use the same canonical boundary and symlink-aware writer as transcript harvesting. */
-export function isUnderCorpus(p: string, cwd = process.cwd()): boolean {
+export function isUnderCorpus(p: string, cwd = HARVEST_ROOT): boolean {
   try {
     privateCorpusPath(p, cwd);
     return true;
@@ -685,6 +847,10 @@ export function isUnderCorpus(p: string, cwd = process.cwd()): boolean {
 
 /** Group paired differences by repository, for the cluster bootstrap. */
 export function byCluster(pairs: Pair[], diff: (p: Pair) => number): number[][] {
+  return clusterByRepo(pairs, diff);
+}
+
+function clusterByRepo<T extends { repo: string }>(pairs: T[], diff: (p: T) => number): number[][] {
   const m = new Map<string, number[]>();
   for (const p of pairs) m.set(p.repo, [...(m.get(p.repo) ?? []), diff(p)]);
   return [...m.values()];
@@ -722,6 +888,230 @@ export async function pairRepo(repo: string, entries: CorpusEntry[], label?: str
   return out;
 }
 
+/** Validate and collapse the preregistered (repo, lower query, ordered hints) observation unit. */
+export function validateHintCorpus(value: unknown): HintCorpusEntry[] {
+  const fail = (message: string): never => { throw new Error(`private hint corpus invalid: ${message}`); };
+  if (typeof value !== "object" || value === null || Array.isArray(value)) fail("root must be an object");
+  const root = value as Partial<HintCorpus>;
+  if (root.hderive !== HDERIVE_VERSION) fail(`hderive must be ${HDERIVE_VERSION}`);
+  if (!Array.isArray(root.observations)) fail("observations must be an array");
+  const observations = root.observations as unknown[];
+  const combined = new Map<string, HintCorpusEntry>();
+  observations.forEach((raw, index) => {
+    if (typeof raw !== "object" || raw === null || Array.isArray(raw)) fail(`observation ${index} must be an object`);
+    const row = raw as Partial<HintCorpusEntry>;
+    const queryValue = row.query;
+    const repoValue = row.repo;
+    const hintsValue = row.hints;
+    const searchesValue = row.searches;
+    const answeredByValue = row.answeredBy;
+    if (typeof queryValue !== "string" || queryValue.length < 3 || queryValue.length > 40) {
+      fail(`observation ${index} has an invalid query`);
+    }
+    if (typeof repoValue !== "string" || repoValue.length === 0) fail(`observation ${index} has an invalid repo`);
+    if (!Array.isArray(hintsValue) || hintsValue.length > 8 || hintsValue.some(
+      (hint) => typeof hint !== "string" || hint.length === 0 || Buffer.byteLength(hint, "utf8") > 80,
+    )) fail(`observation ${index} has invalid hints`);
+    const hints = hintsValue as string[];
+    const folded = hints.map((hint) => hint.toLowerCase());
+    if (new Set(folded).size !== folded.length) fail(`observation ${index} has duplicate hints`);
+    if (!Number.isInteger(searchesValue) || (searchesValue ?? 0) < 1) fail(`observation ${index} has invalid searches`);
+    if (typeof answeredByValue !== "object" || answeredByValue === null || Array.isArray(answeredByValue)) {
+      fail(`observation ${index} has invalid judgments`);
+    }
+    const query = queryValue as string;
+    const repo = repoValue as string;
+    const searches = searchesValue as number;
+    const answers = Object.create(null) as Record<string, number>;
+    for (const [path, count] of Object.entries(answeredByValue as Record<string, number>)) {
+      if (path.length === 0 || !Number.isInteger(count) || count < 1) fail(`observation ${index} has an invalid judgment`);
+      answers[path] = count;
+    }
+    const lowerQuery = query.toLowerCase();
+    const key = observationKey(repo, query, hints);
+    const prior = combined.get(key);
+    if (prior) {
+      prior.searches += searches;
+      for (const [path, count] of Object.entries(answers)) {
+        prior.answeredBy[path] = (prior.answeredBy[path] ?? 0) + count;
+      }
+    } else {
+      combined.set(key, { query: lowerQuery, repo, hints: [...hints], searches, answeredBy: answers });
+    }
+  });
+  return [...combined.values()];
+}
+
+function rebaseAnswersToRepoRoot(
+  cwd: string,
+  root: string,
+  answeredBy: Record<string, number>,
+): Record<string, number> {
+  const rebased = Object.create(null) as Record<string, number>;
+  for (const [path, count] of Object.entries(answeredBy)) {
+    if (path.length === 0 || path.includes("\0") || isAbsolute(path)) continue;
+    const absolute = resolve(cwd, path);
+    if (!pathIsWithin(root, absolute)) continue;
+    const rootRelative = relative(root, absolute);
+    if (rootRelative.length === 0 || isAbsolute(rootRelative)) continue;
+    rebased[rootRelative] = (rebased[rootRelative] ?? 0) + count;
+  }
+  return rebased;
+}
+
+/** Canonicalize repository aliases and subdirectory CWDs before applying the preregistered observation unit. */
+export function canonicalizeHintCorpus(entries: HintCorpusEntry[]): {
+  entries: HintCorpusEntry[];
+  missingObservations: number;
+} {
+  const combined = new Map<string, HintCorpusEntry>();
+  let missingObservations = 0;
+  for (const entry of entries) {
+    let cwd: string;
+    try { cwd = realpathSync(entry.repo); }
+    catch {
+      missingObservations++;
+      continue;
+    }
+    const repo = repositoryRootFromCwd(cwd) ?? cwd;
+    const answeredBy = rebaseAnswersToRepoRoot(cwd, repo, entry.answeredBy);
+    const key = observationKey(repo, entry.query, entry.hints);
+    const prior = combined.get(key);
+    if (prior) {
+      prior.searches += entry.searches;
+      for (const [path, count] of Object.entries(answeredBy)) {
+        prior.answeredBy[path] = (prior.answeredBy[path] ?? 0) + count;
+      }
+    } else {
+      combined.set(key, {
+        ...entry, repo, hints: [...entry.hints],
+        answeredBy,
+      });
+    }
+  }
+  return { entries: [...combined.values()], missingObservations };
+}
+
+/** Pair current hay against the same hay with task hints from private transcripts. */
+export async function pairHintRepo(
+  repo: string, entries: HintCorpusEntry[],
+): Promise<{ pairs: HintPair[]; drops: HintDrops }> {
+  const judged = (await mapPool(entries, 8, async (e) => ({ e, answers: await validAnswers(repo, e) })))
+    .filter((x) => x.answers.size > 0);
+  const drops: HintDrops = { noValidAnswer: entries.length - judged.length, noVisibleMatch: 0 };
+  const out: HintPair[] = [];
+  for (const { e, answers } of judged) {
+    const hints = e.hints;
+    const extraFlags = hints.flatMap((hint) => ["--hint", hint]);
+    const baseline = await rankOfAnswer(repo, e.query, answers, "hay");
+    const hinted = hints.length === 0 ? baseline : await rankOfAnswer(repo, e.query, answers, "hay", extraFlags);
+    if ((baseline.scanned === 0) !== (hinted.scanned === 0)) {
+      throw new Error("paired hay arms disagreed on whether the query had any visible matches");
+    }
+    if (baseline.scanned === 0) {
+      drops.noVisibleMatch++;
+      continue;
+    }
+    const rr = (rank: number | null) => (rank ? 1 / rank : 0);
+    const top10 = (rank: number | null) => (rank !== null && rank <= 10 ? 1 : 0);
+    out.push({
+      repo,
+      rrBaseline: rr(baseline.rank), rrHinted: rr(hinted.rank),
+      top10Baseline: top10(baseline.rank), top10Hinted: top10(hinted.rank),
+      ndcgBaseline: baseline.ndcg, ndcgHinted: hinted.ndcg,
+      hintCount: hints.length,
+      baselineTruncated: baseline.truncated,
+      hintedTruncated: hinted.truncated,
+      baselinePageComplete: baseline.pageComplete,
+      hintedPageComplete: hinted.pageComplete,
+    });
+  }
+  return { pairs: out, drops };
+}
+
+function hintConfirmationEffect(
+  pairs: HintPair[], baseline: (pair: HintPair) => number, hinted: (pair: HintPair) => number,
+): HintConfirmationEffect {
+  const diff = (pair: HintPair) => hinted(pair) - baseline(pair);
+  const differences = pairs.map(diff);
+  const byRepo = clusterByRepo(pairs, diff);
+  return {
+    baselineMean: mean(pairs.map(baseline)), hintedMean: mean(pairs.map(hinted)),
+    better: differences.filter((value) => value > 0).length,
+    worse: differences.filter((value) => value < 0).length,
+    tied: differences.filter((value) => value === 0).length,
+    byObservation: bootstrapCI(differences.map((value) => [value])),
+    randomizationByObservation: randomizationP(differences.map((value) => [value])),
+    byRepoCluster: bootstrapCI(byRepo), randomizationByRepoCluster: randomizationP(byRepo),
+  };
+}
+
+/** Aggregate-only result; no query, path, hint, repo name, or transcript ID can enter the shape. */
+export function hintConfirmationReport(
+  observedPairs: HintPair[], candidates: { repositories: number; observations: number },
+  excluded: HintExclusions, droppedBeforePairing: HintDrops = { noValidAnswer: 0, noVisibleMatch: 0 },
+): HintConfirmationReport {
+  const capped = (pair: HintPair) => pair.baselineTruncated || pair.hintedTruncated;
+  const pageTruncated = (pair: HintPair) =>
+    !pair.baselinePageComplete || !pair.hintedPageComplete;
+  // Hints participate in prescore, so a capped arm may retain a different candidate set. An
+  // unfilled first page likewise makes nDCG incomplete. Keep both visible but outside effects.
+  const pairs = observedPairs.filter((pair) => !capped(pair) && !pageTruncated(pair));
+  const repositories = new Set(pairs.map((pair) => pair.repo)).size;
+  const mrr = hintConfirmationEffect(pairs, (p) => p.rrBaseline, (p) => p.rrHinted);
+  const top10 = hintConfirmationEffect(pairs, (p) => p.top10Baseline, (p) => p.top10Hinted);
+  const ndcg10 = hintConfirmationEffect(pairs, (p) => p.ndcgBaseline, (p) => p.ndcgHinted);
+  const informative = repositories >= PRIVATE_HINT_MINIMUMS.repositories &&
+    pairs.length >= PRIVATE_HINT_MINIMUMS.validatedPairs;
+  const candidateCapPairs = observedPairs.filter(capped).length;
+  const pageTruncatedPairs = observedPairs.filter(pageTruncated).length;
+  const reasonCodes: string[] = [];
+  if (repositories < PRIVATE_HINT_MINIMUMS.repositories) {
+    reasonCodes.push(`fewer-than-${PRIVATE_HINT_MINIMUMS.repositories}-repositories`);
+  }
+  if (pairs.length < PRIVATE_HINT_MINIMUMS.validatedPairs) {
+    reasonCodes.push(`fewer-than-${PRIVATE_HINT_MINIMUMS.validatedPairs}-validated-pairs`);
+  }
+  if (mrr.byObservation.mean < 0) reasonCodes.push("negative-mrr-point-estimate");
+  if (ndcg10.byObservation.mean < 0) reasonCodes.push("negative-ndcg10-point-estimate");
+  if (mrr.byRepoCluster.hi < 0) reasonCodes.push("mrr-cluster-interval-below-zero");
+  if (mrr.byRepoCluster.mean < 0 && mrr.randomizationByRepoCluster < 0.05) {
+    reasonCodes.push("mrr-negative-cluster-fisher");
+  }
+  if (ndcg10.byRepoCluster.hi < 0) reasonCodes.push("ndcg10-cluster-interval-below-zero");
+  if (ndcg10.byRepoCluster.mean < 0 && ndcg10.randomizationByRepoCluster < 0.05) {
+    reasonCodes.push("ndcg10-negative-cluster-fisher");
+  }
+  const contradiction = reasonCodes.some((code) => !code.startsWith("fewer-than-"));
+  return {
+    mode: "confirm-hints", scope: "private-one-shot-only", hderive: HDERIVE_VERSION,
+    primaryContrast: "paired-observation", statisticalReplicates: 10_000,
+    minimums: PRIVATE_HINT_MINIMUMS,
+    candidates, excluded, droppedBeforePairing, observedPairs: observedPairs.length,
+    repositories, validatedPairs: pairs.length,
+    zeroHintPairs: pairs.filter((pair) => pair.hintCount === 0).length,
+    incompletePairs: {
+      candidateCap: candidateCapPairs,
+      pageTruncated: pageTruncatedPairs,
+      total: observedPairs.length - pairs.length,
+    },
+    candidateCapQueries: {
+      baseline: observedPairs.filter((pair) => pair.baselineTruncated).length,
+      hinted: observedPairs.filter((pair) => pair.hintedTruncated).length,
+    },
+    pageTruncatedQueries: {
+      baseline: observedPairs.filter((pair) => !pair.baselinePageComplete).length,
+      hinted: observedPairs.filter((pair) => !pair.hintedPageComplete).length,
+    },
+    mrr, top10, ndcg10,
+    decision: {
+      informative,
+      privateConclusion: !informative ? "insufficient" : contradiction ? "contradictory" : "non-contradictory",
+      reasonCodes,
+    },
+  };
+}
+
 // ── main ──────────────────────────────────────────────────────────────────────
 
 if (import.meta.main) {
@@ -750,6 +1140,24 @@ if (import.meta.main) {
     let threw = false;
     try { parseArgv(["--retriever"]); } catch { threw = true; }
     if (!threw) throw new Error("missing option value must throw");
+    // An experiment can add treatment-only flags without changing the global ablation state.
+    setHayFlags(["--no-path"]);
+    eq(helpAdvertisesHint("        --hint <LITERAL>  add task context"), true, "measured binary's help is recognized");
+    eq(helpAdvertisesHint("        --no-<signal>     disable a ranking signal: definition, path, word, tf"), false, "shipped help has no hint");
+    const withTreatment = retrieverArgv("hay", "needle", ["--hint", "context"]);
+    const withoutTreatment = retrieverArgv("hay", "needle");
+    if (!withTreatment.includes("--no-path") || !withTreatment.includes("--hint") || !withTreatment.includes("context")) {
+      throw new Error("per-call hay flags must merge with global ablation flags");
+    }
+    if (withoutTreatment.includes("--hint") || withoutTreatment.includes("context")) {
+      throw new Error("per-call hay flags leaked into the next invocation");
+    }
+    eq(
+      retrieverArgv("rg", "needle", ["--hint", "context"]),
+      retrieverArgv("rg", "needle"),
+      "hay-only treatment flags never reach the rg baseline",
+    );
+    setHayFlags([]);
 
     // A natural incomplete child exit invalidates evidence; our own early stop remains valid.
     let exitThrew = false;
@@ -790,6 +1198,154 @@ if (import.meta.main) {
     // Two different repositories that share a basename must not collapse into one cluster.
     const collide = byCluster([mk("/x/core", "core", "q", 1), mk("/y/core", "core", "r", 1)], (p) => p.rrHay - p.rrRg);
     eq(collide.length, 2, "same basename, different paths, must stay separate clusters");
+    {
+      const corpus = validateHintCorpus({
+        hderive: HDERIVE_VERSION,
+        observations: [
+          { query: "Needle", repo: "/r/a", hints: ["Context"], searches: 1, answeredBy: { "src/a.ts": 1 } },
+          { query: "needle", repo: "/r/a", hints: ["Context"], searches: 2, answeredBy: { "src/a.ts": 2 } },
+        ],
+      });
+      eq(corpus, [{
+        query: "needle", repo: "/r/a", hints: ["Context"], searches: 3,
+        answeredBy: { "src/a.ts": 3 },
+      }], "private observation triples collapse before receiving weight");
+      const specialJudgment = validateHintCorpus({
+        hderive: HDERIVE_VERSION,
+        observations: [{
+          query: "needle", repo: "/r/a", hints: [], searches: 1,
+          answeredBy: Object.fromEntries([["__proto__", 1]]),
+        }],
+      });
+      eq(Object.entries(specialJudgment[0]!.answeredBy), [["__proto__", 1]], "special path keys remain own judgments");
+      let rejectedHintCorpus = false;
+      try {
+        validateHintCorpus({
+          hderive: HDERIVE_VERSION,
+          observations: [{
+            query: "needle", repo: "/r/a", hints: ["Context", "context"], searches: 1,
+            answeredBy: { "src/a.ts": 1 },
+          }],
+        });
+      } catch { rejectedHintCorpus = true; }
+      if (!rejectedHintCorpus) throw new Error("case-folded duplicate private hints must fail closed");
+
+      const canonicalRoot = mkdtempSync(join(tmpdir(), "hay-hint-canonical-"));
+      try {
+        const realRepo = join(canonicalRoot, "repo");
+        const aliasRepo = join(canonicalRoot, "alias");
+        mkdirSync(realRepo);
+        mkdirSync(join(realRepo, ".git"));
+        mkdirSync(join(realRepo, "src"));
+        symlinkSync(realRepo, aliasRepo);
+        const canonical = canonicalizeHintCorpus([
+          { query: "needle", repo: realRepo, hints: ["Context"], searches: 1, answeredBy: { "src/a.ts": 1 } },
+          { query: "needle", repo: aliasRepo, hints: ["Context"], searches: 1, answeredBy: { "src/b.ts": 1 } },
+          { query: "needle", repo: join(realRepo, "src"), hints: ["Context"], searches: 1, answeredBy: { "a.ts": 1 } },
+        ]);
+        eq(canonical.entries.length, 1, "filesystem aliases collapse to one real-repository observation");
+        eq(canonical.entries[0]!.searches, 3, "aliases and nested CWDs combine at repository root");
+        eq(
+          canonical.entries[0]!.answeredBy,
+          { "src/a.ts": 2, "src/b.ts": 1 },
+          "nested-CWD judgments are rebased before duplicate observations combine",
+        );
+        eq(canonical.missingObservations, 0, "existing aliases are not missing observations");
+        eq(pathIsWithin(realRepo, realRepo), true, "checkout root belongs to itself");
+        eq(pathIsWithin(realRepo, join(realRepo, "nested")), true, "checkout subdirectory is contained");
+        eq(pathIsWithin(realRepo, `${realRepo}-other`), false, "path-prefix sibling is not contained");
+        const answer = join(realRepo, "answer.ts");
+        const outside = join(canonicalRoot, "outside.ts");
+        writeFileSync(answer, "needle");
+        writeFileSync(outside, "needle");
+        symlinkSync(outside, join(realRepo, "escape.ts"));
+        eq(safeAnswerPath(realRepo, "answer.ts")?.resultPath, "answer.ts", "contained regular answer is readable");
+        eq(safeAnswerPath(realRepo, "../outside.ts"), null, "answer traversal is rejected");
+        eq(safeAnswerPath(realRepo, "escape.ts"), null, "symlinked answer is rejected");
+      } finally {
+        rmSync(canonicalRoot, { recursive: true, force: true });
+      }
+
+      const hp = (repo: string, base: number, hinted: number, hintCount = 1): HintPair => ({
+        repo,
+        rrBaseline: base, rrHinted: hinted,
+        top10Baseline: base > 0 ? 1 : 0, top10Hinted: hinted > 0 ? 1 : 0,
+        ndcgBaseline: base, ndcgHinted: hinted,
+        hintCount,
+        baselineTruncated: false, hintedTruncated: false,
+        baselinePageComplete: true, hintedPageComplete: true,
+      });
+      const incomplete = hp("/r/c", 1, 0);
+      incomplete.hintedTruncated = true;
+      const report = hintConfirmationReport(
+        [hp("/r/a", 0, 1), hp("/r/a", 1, 0), hp("/r/b", 0.5, 0.5, 0), incomplete],
+        { repositories: 3, observations: 4 },
+        { hayCheckoutObservations: 0, missingRepoObservations: 0, belowMinimumRepositories: 0, belowMinimumObservations: 0 },
+      );
+      eq([report.mrr.better, report.mrr.worse, report.mrr.tied], [1, 1, 1], "private hint direction counts are paired");
+      eq([report.mrr.byObservation.n, report.mrr.byRepoCluster.clusters], [3, 2], "private hint report clusters by repo");
+      eq(report.zeroHintPairs, 1, "zero-hint observations stay in the denominator");
+      eq([report.observedPairs, report.validatedPairs], [4, 3], "incomplete pairs never enter effects");
+      eq(
+        report.incompletePairs,
+        { candidateCap: 1, pageTruncated: 0, total: 1 },
+        "candidate-cap exclusions are explicit",
+      );
+      eq(report.decision.privateConclusion, "insufficient", "too small a private confirmation is insufficient");
+      const reconciled = hintConfirmationReport(
+        [hp("/r/a", 0, 1)], { repositories: 1, observations: 4 },
+        { hayCheckoutObservations: 0, missingRepoObservations: 0, belowMinimumRepositories: 0, belowMinimumObservations: 0 },
+        { noValidAnswer: 2, noVisibleMatch: 1 },
+      );
+      eq(
+        reconciled.droppedBeforePairing.noValidAnswer + reconciled.droppedBeforePairing.noVisibleMatch +
+          reconciled.observedPairs,
+        reconciled.candidates.observations,
+        "every candidate observation is either paired or counted as dropped",
+      );
+      eq(reconciled.decision.reasonCodes.includes("fewer-than-5-repositories"), true, "minimum reason code names its constant");
+
+      const cloneRoot = mkdtempSync(join(tmpdir(), "hay-own-clone-"));
+      try {
+        const ownRoots = new Set(rootCommits(PROJECT_ROOT));
+        if (ownRoots.size > 0) {
+          const clone = join(cloneRoot, "clone");
+          const cloned = spawnSync("git", ["clone", "--quiet", "--no-checkout", PROJECT_ROOT, clone]);
+          eq(cloned.status, 0, "local clone for the exclusion control");
+          eq(pathIsWithin(PROJECT_ROOT, clone), false, "the clone lives outside this checkout");
+          eq(isThisRepository(clone, ownRoots, PROJECT_ROOT), true, "a sibling clone of this repository is excluded");
+          const stranger = join(cloneRoot, "stranger");
+          mkdirSync(stranger);
+          const git = (...args: string[]) => spawnSync("git", ["-C", stranger, ...args], { encoding: "utf8" });
+          git("init", "--quiet");
+          git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "--quiet", "--allow-empty", "-m", "root");
+          eq(rootCommits(stranger).length, 1, "the unrelated repository has a readable root commit");
+          eq(isThisRepository(stranger, ownRoots, join(cloneRoot, "clone")), false, "an unrelated repository is kept");
+        }
+      } finally {
+        rmSync(cloneRoot, { recursive: true, force: true });
+      }
+
+      const onlyIncomplete = hp("/r/a", 1, 0);
+      onlyIncomplete.hintedTruncated = true;
+      const emptyReport = hintConfirmationReport(
+        [onlyIncomplete],
+        { repositories: 1, observations: 1 },
+        { hayCheckoutObservations: 0, missingRepoObservations: 0, belowMinimumRepositories: 0, belowMinimumObservations: 0 },
+      );
+      eq(emptyReport.validatedPairs, 0, "an all-incomplete confirmation has no validated pairs");
+      eq(
+        [emptyReport.mrr.baselineMean, emptyReport.mrr.hintedMean, emptyReport.mrr.byObservation.n,
+          emptyReport.mrr.byRepoCluster.clusters, emptyReport.mrr.randomizationByObservation],
+        [0, 0, 0, 0, 1],
+        "empty private effects stay finite and explicit",
+      );
+      eq(emptyReport.decision.privateConclusion, "insufficient", "all-incomplete private confirmation is insufficient");
+      const serialized = JSON.stringify(report);
+      if (/\/r\/a|\/r\/b|validatesession|authContext/.test(serialized)) {
+        throw new Error("private identifiers reached aggregate confirmation output");
+      }
+    }
     // A finite simulation cannot report an exact zero probability.
     if (constant.p <= 0) throw new Error("bootstrap p must be bounded by the replicate count, not 0");
 
@@ -959,13 +1515,58 @@ if (import.meta.main) {
 
   // Said once, before any of it is produced. The per-repo payload carries real search terms from
   // private repositories; the paired `--compare` payload is aggregates only and is safe to commit.
-  if (flags["--json"] && !flags["--compare"]) {
+  if (flags["--json"] && !flags["--compare"] && !flags["--confirm-hints"]) {
     console.error("hygiene: --json contains real queries harvested from your own repositories. Do not commit it; publish only the aggregates from --compare.");
   }
 
-  const corpusPath = typeof flags["--corpus"] === "string" ? flags["--corpus"] : "corpus/queries.json";
-  const minQueries = typeof flags["--min-queries"] === "string" ? Number(flags["--min-queries"]) : 40;
-  const corpus: CorpusEntry[] = await Bun.file(corpusPath).json();
+  const confirmHints = flags["--confirm-hints"] === true;
+  if (confirmHints) requireHintSignalBinary();
+  const confirmAllowed = new Set(["--confirm-hints", "--corpus", "--min-queries", "--json"]);
+  const unexpectedConfirmFlags = Object.keys(flags).filter((flag) => !confirmAllowed.has(flag));
+  if (confirmHints && (
+    positional.length > 0 || flags["--compare"] || flags["--retriever"] ||
+    flags["--ablate"] || flags["--dump-pairs"] ||
+    unexpectedConfirmFlags.length > 0 ||
+    (typeof flags["--min-queries"] === "string" &&
+      flags["--min-queries"] !== String(PRIVATE_HINT_MINIMUMS.candidateEntriesPerRepo))
+  )) {
+    console.error(`--confirm-hints is an isolated frozen comparison; it accepts only --corpus, --min-queries ${PRIVATE_HINT_MINIMUMS.candidateEntriesPerRepo}, and --json`);
+    process.exit(2);
+  }
+  const corpusPath = typeof flags["--corpus"] === "string"
+    ? flags["--corpus"]
+    : confirmHints ? "corpus/hint-queries.json" : "corpus/queries.json";
+  if (confirmHints && !isUnderCorpus(corpusPath)) {
+    console.error("--confirm-hints reads private task context and requires --corpus under corpus/");
+    process.exit(2);
+  }
+  // A private corpus is read from exactly the path the boundary check approved, under this checkout.
+  const rawCorpus: unknown = await Bun.file(
+    confirmHints ? privateCorpusPath(corpusPath, HARVEST_ROOT).path : corpusPath,
+  ).json();
+  let corpus: CorpusEntry[];
+  let missingHintObservations = 0;
+  if (confirmHints) {
+    if (typeof rawCorpus !== "object" || rawCorpus === null || Array.isArray(rawCorpus)) {
+      console.error("--confirm-hints needs the versioned object produced by harvest-queries.ts --with-hints");
+      process.exit(2);
+    }
+    try {
+      const canonical = canonicalizeHintCorpus(validateHintCorpus(rawCorpus));
+      corpus = canonical.entries;
+      missingHintObservations = canonical.missingObservations;
+    }
+    catch (error) { console.error(String(error)); process.exit(2); }
+  } else {
+    if (!Array.isArray(rawCorpus)) {
+      console.error("default measurement needs the array produced by the default harvest");
+      process.exit(2);
+    }
+    corpus = rawCorpus as CorpusEntry[];
+  }
+  const minQueries = confirmHints
+    ? PRIVATE_HINT_MINIMUMS.candidateEntriesPerRepo
+    : typeof flags["--min-queries"] === "string" ? Number(flags["--min-queries"]) : 40;
 
   const byRepo = new Map<string, CorpusEntry[]>();
   for (const e of corpus) {
@@ -988,7 +1589,21 @@ if (import.meta.main) {
     process.exit(0);
   }
 
-  const targets = [...byRepo.entries()].filter(([, es]) => es.length >= minQueries).sort((a, b) => b[1].length - a[1].length);
+  const allCandidates = [...byRepo.entries()];
+  const projectRoot = realpathSync(PROJECT_ROOT);
+  const ownRoots = new Set(confirmHints ? rootCommits(projectRoot) : []);
+  if (confirmHints && ownRoots.size === 0) {
+    console.error("--confirm-hints could not read this checkout's root commit, so it cannot exclude its clones");
+    process.exit(2);
+  }
+  const hayCheckouts = confirmHints
+    ? allCandidates.filter(([repo]) => isThisRepository(repo, ownRoots, projectRoot))
+    : [];
+  const hayCheckoutObservations = hayCheckouts.reduce((sum, [, entries]) => sum + entries.length, 0);
+  const candidateRepos = allCandidates.filter(([repo]) => !hayCheckouts.some(([own]) => own === repo));
+  const targets = candidateRepos
+    .filter(([, es]) => es.length >= minQueries)
+    .sort((a, b) => b[1].length - a[1].length);
   console.error(`${targets.length} repos with >= ${minQueries} judged queries`);
 
   // The pair dump is the error-analysis input: per-query ranks, answer files and first-page
@@ -1003,6 +1618,45 @@ if (import.meta.main) {
       "--dump-pairs writes real queries and file paths from private repositories and must stay under corpus/ (gitignored).",
     );
     process.exit(1);
+  }
+
+  if (confirmHints) {
+    const pairs: HintPair[] = [];
+    const drops: HintDrops = { noValidAnswer: 0, noVisibleMatch: 0 };
+    for (let index = 0; index < targets.length; index++) {
+      const [repo, entries] = targets[index]!;
+      const paired = await pairHintRepo(repo, entries as HintCorpusEntry[]);
+      pairs.push(...paired.pairs);
+      drops.noValidAnswer += paired.drops.noValidAnswer;
+      drops.noVisibleMatch += paired.drops.noVisibleMatch;
+      console.error(`private repository ${index + 1}/${targets.length}: paired n=${paired.pairs.length}`);
+    }
+    const belowMinimum = candidateRepos.filter(
+      ([, entries]) => entries.length < PRIVATE_HINT_MINIMUMS.candidateEntriesPerRepo,
+    );
+    const report = hintConfirmationReport(
+      pairs,
+      { repositories: targets.length, observations: targets.reduce((sum, [, entries]) => sum + entries.length, 0) },
+      {
+        hayCheckoutObservations, missingRepoObservations: missingHintObservations,
+        belowMinimumRepositories: belowMinimum.length,
+        belowMinimumObservations: belowMinimum.reduce((sum, [, entries]) => sum + entries.length, 0),
+      },
+      drops,
+    );
+    console.error(`\nprivate hint confirmation over ${report.validatedPairs} pairs in ${report.repositories} repositories`);
+    const show = (name: string, effect: HintConfirmationEffect) => {
+      console.error(`  ${name.padEnd(8)} ${effect.baselineMean.toFixed(4)} -> ${effect.hintedMean.toFixed(4)}  better/worse/tied=${effect.better}/${effect.worse}/${effect.tied}`);
+      const i = (label: string, v: Interval, rp: number) =>
+        console.error(`  ${label.padEnd(24)} ${v.mean >= 0 ? "+" : ""}${v.mean.toFixed(4)}  95% CI [${v.lo.toFixed(4)}, ${v.hi.toFixed(4)}]  boot p=${v.p.toFixed(4)}  rand p=${rp.toFixed(4)}  observations=${v.n}  clusters=${v.clusters}`);
+      i(`${name} (by observation)`, effect.byObservation, effect.randomizationByObservation);
+      i(`${name} (by repo)`, effect.byRepoCluster, effect.randomizationByRepoCluster);
+    };
+    show("MRR", report.mrr); show("top-10", report.top10); show("nDCG@10", report.ndcg10);
+    console.error(`  zero-hint pairs ${report.zeroHintPairs}; cap baseline/hinted ${report.candidateCapQueries.baseline}/${report.candidateCapQueries.hinted}; page truncation baseline/hinted ${report.pageTruncatedQueries.baseline}/${report.pageTruncatedQueries.hinted}`);
+    console.error(`  decision: ${report.decision.privateConclusion}`);
+    if (flags["--json"]) console.log(JSON.stringify(report, null, 2));
+    process.exit(report.decision.privateConclusion === "non-contradictory" ? 0 : 1);
   }
 
   if (flags["--compare"]) {
@@ -1105,7 +1759,7 @@ if (import.meta.main) {
     );
     if (dumpPath) {
       console.error(`\nhygiene: ${dumpPath} contains real queries and paths from private repositories. Never commit or publish it.`);
-      writePrivateCorpus(dumpPath, JSON.stringify(pairs, null, 2));
+      writePrivateCorpus(dumpPath, JSON.stringify(pairs, null, 2), HARVEST_ROOT);
       console.error(`wrote ${pairs.length} pairs to ${dumpPath}`);
     }
     if (flags["--json"]) console.log(JSON.stringify(report, null, 2));

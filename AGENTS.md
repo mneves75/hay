@@ -35,7 +35,7 @@ cargo test --manifest-path hay/Cargo.toml          # unit + tests/cli.rs contrac
 cargo clippy --manifest-path hay/Cargo.toml --all-targets -- -D warnings
 cargo fmt --manifest-path hay/Cargo.toml --check
 ./hay/differential-test.sh                          # exact match set under normalized traversal
-                                                    # 31 cases; 7 are flag COMBINATIONS, where
+                                                    # 32 cases; 7 are flag COMBINATIONS, where
                                                     # every unranked-mode defect actually lived
 bun measure-mrr.ts --selftest                       # each TS tool has a selftest
 bun measure-mrr.ts --min-queries 60 --compare       # paired A/B with bootstrap intervals
@@ -77,7 +77,12 @@ a line scored.
    `./brew-formula.sh vX.Y.Z > ../homebrew-tap/Formula/hay.rb` — it takes the checksums from the
    release's own manifest and refuses to emit one for an archive whose build-provenance
    attestation does not verify, so the formula can never describe a binary nobody can trace.
-   Never hand-edit the urls or hashes.
+   Never hand-edit the urls or hashes. Releases are cut by creating a lightweight `v*` tag at a
+   CI-green `main` commit and then dispatching `release.yml` **from `main`** with that tag; never
+   add a tag trigger back, because a tag-triggered workflow runs the policy from the tag's own,
+   possibly older, commit. The workflow refuses unless the tag names exactly the dispatch SHA.
+   Builds and attestations use that SHA, and consumers verify both `refs/heads/main` and that
+   exact source digest. `SECURITY.md` lists the rulesets and environment this relies on.
 5. **`corpus/` is never committed.** It holds real queries and paths from private repositories.
    Publish only aggregates, with `path=label` and `--redact-names`.
 6. **Never weaken an error into silence.** Exit 1 means "searched fine, found nothing"; exit 2
@@ -120,6 +125,10 @@ This repository exists because a number was published as though validated and wa
   oracle for the generator, not a retrieval result — it reversed the whole documentation deficit
   and still did not ship (issue 13). Write the circularity down BEFORE measuring; after the
   numbers arrive it reads as an excuse either way you decide.
+- **A transcript row shaped like a user message is not a user message.** Subagent prompts, skill
+  bodies, task notifications, command output and compaction summaries all carry `type: user`, and
+  a harvester that trusted the shape confirmed `--hint` on assistant-written "task context". Plant
+  one row of each class in the selftest before trusting any input that claims to be the human.
 - **A new metric that correlates 0.9 with an old one is a translation, not evidence.** Report the
   correlation beside it or do not add it.
 - **Every gate reports its own exit code, on its own line.** Twice a red test passed unnoticed

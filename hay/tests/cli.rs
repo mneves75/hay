@@ -129,8 +129,8 @@ fn the_argument_forms_agents_actually_type_are_accepted() {
 fn the_unranked_modes_answer_instead_of_refusing() {
     // Until 0.3.0 `-c`, `-v` and `-o` exited 2 telling the caller to go and use ripgrep. They are
     // valid ripgrep invocations; a search tool that answers only the questions it can rank is a
-    // tool you have to decide about before you use it. They now run unranked, in path order, and
-    // `differential-test.sh` holds them to ripgrep's exact output.
+    // tool you have to decide about before you use it. They now run unranked, in ripgrep's
+    // parallel traversal order, and `differential-test.sh` holds them to ripgrep's exact output.
     let d = fixture("unranked");
     let count = hay()
         .args(["-c", "-F", "validateSession", "."])

@@ -1,0 +1,747 @@
+--- a/hay/src/main.rs
++++ b/hay/src/main.rs
+@@ -22,7 +22,7 @@
+ 
+ use cap_std::{ambient_authority, fs::Dir};
+ use grep_matcher::Matcher;
+-use grep_regex::RegexMatcherBuilder;
++use grep_regex::{RegexMatcher, RegexMatcherBuilder};
+ use grep_searcher::{BinaryDetection, Searcher, SearcherBuilder, Sink, SinkContext, SinkMatch};
+ use ignore::WalkBuilder;
+ use ignore::types::TypesBuilder;
+@@ -78,7 +78,8 @@
+         --stream          skip ranking: use ripgrep traversal order, with no candidate cap
+     -m, --max-count <N>   stop after N ranked results (default 50; 0 = no limit)
+         --explain         show the score for each result
+-        --no-<signal>     disable a ranking signal: definition, path, word, tf
++        --hint <LITERAL>  add task context for ranking (repeatable, at most 8)
++        --no-<signal>     disable a ranking signal: definition, path, word, tf, hint
+         --no-diversify    do not interleave files; emit strictly in score order
+     -h, --help            print this help
+     -V, --version         print the version
+@@ -147,14 +148,16 @@
+     invert: bool,
+     /// `-o`: print each matched substring rather than its line.
+     only_matching: bool,
++    /// Caller-provided task context. Hints only re-rank lines matched by the primary pattern.
++    hints: Vec<String>,
+     weights: Weights,
+ }
+ 
+ impl Opts {
+     /// Modes with nothing to rank, which therefore run ripgrep's way: streaming in parallel
+     /// traversal order, uncapped. Refusing them (as hay did until 0.3.0) meant an agent could not
+-    /// alias `rg` to `hay` unconditionally — the flag was valid, the tool said no, and the agent had
+-    /// to know which of two binaries to reach for. A tool that answers every valid invocation, ranking
++    /// `hay` unconditionally — the flag was valid, the tool said no, and the agent had to know
++    /// which of two binaries to reach for. A tool that answers every valid invocation, ranking
+     /// the ones where rank means something, is the only shape that removes that decision.
+     fn unranked(&self) -> bool {
+         self.stream || self.count_lines || self.count_matches || self.invert || self.only_matching
+@@ -228,6 +231,19 @@
+             Long("no-ignore") => o.no_ignore = true,
+             Long("json") => o.json = true,
+             Long("explain") => o.explain = true,
++            Long("hint") => {
++                let hint = val!("--hint");
++                if hint.is_empty() {
++                    return Err("--hint must not be empty".into());
++                }
++                if hint.len() > 80 {
++                    return Err("--hint must be at most 80 UTF-8 bytes".into());
++                }
++                if o.hints.len() == 8 {
++                    return Err("--hint may be given at most 8 times".into());
++                }
++                o.hints.push(hint);
++            }
+             Short('e') | Long("regexp") => o.patterns.push(val!("-e")),
+             Short('g') | Long("glob") => o.globs.push(val!("-g")),
+             Short('t') | Long("type") => o.types.push(val!("-t")),
+@@ -251,6 +267,7 @@
+             Long("no-path") => o.weights.path = 0.0,
+             Long("no-word") => o.weights.word = 0.0,
+             Long("no-tf") => o.weights.term_frequency = 0.0,
++            Long("no-hint") => o.weights.hint = 0.0,
+             Long("no-diversify") => o.diversify = false,
+             Long("stream") => o.stream = true,
+             Short('c') | Long("count") => o.count_lines = true,
+@@ -283,6 +300,22 @@
+     if let Some(p) = positional.first() {
+         o.path = PathBuf::from(p);
+     }
++    // Deduplicate only after every flag has been seen: `-i` may legally appear after a hint, and
++    // duplicate hints must collapse under the final active case rule rather than argument order.
++    let mut unique_hints: Vec<String> = Vec::with_capacity(o.hints.len());
++    for hint in std::mem::take(&mut o.hints) {
++        let mut duplicate = false;
++        for existing in &unique_hints {
++            if hints_equal(existing, &hint, o.ignore_case)? {
++                duplicate = true;
++                break;
++            }
++        }
++        if !duplicate {
++            unique_hints.push(hint);
++        }
++    }
++    o.hints = unique_hints;
+     if o.explain && o.json {
+         return Err("--explain and --json are different output formats; pick one".into());
+     }
+@@ -295,6 +328,12 @@
+     }
+     if o.count_lines && o.count_matches {
+         return Err("-c counts lines and --count-matches counts matches; pick one".into());
++    }
++    if !o.hints.is_empty() && o.unranked() {
++        return Err(
++            "--hint affects ranking; --stream, -c, --count-matches, -o and -v do not rank. Drop one."
++                .into(),
++        );
+     }
+     Ok(o)
+ }
+@@ -333,6 +372,8 @@
+     /// silently scored zero. Taken on the original bytes because that is what the searcher
+     /// matched — a byte-oriented pattern can hit a sequence that lossy decoding has replaced.
+     span: (usize, usize),
++    /// Distinct task hints present in this matched line or its display path.
++    hint_matches: usize,
+ }
+ 
+ impl Hit {
+@@ -477,6 +518,54 @@
+         .join("|")
+ }
+ 
++/// Whether two hints collapse into one under the active case rule. Under `-i` equality is decided
++/// by the same regex engine that matches lines, not by Rust's `to_lowercase`, so a duplicate is
++/// exactly what the search itself would treat as the same literal (Unicode simple case folding).
++fn hints_equal(a: &str, b: &str, ignore_case: bool) -> Result<bool, String> {
++    if !ignore_case {
++        return Ok(a == b);
++    }
++    let matcher = RegexMatcherBuilder::new()
++        .case_insensitive(true)
++        .build(&format!(r"\A(?:{})\z", regex_escape(a)))
++        .map_err(|e| format!("invalid hint: {e}"))?;
++    matcher
++        .is_match(b.as_bytes())
++        .map_err(|e| format!("could not compare hints: {e}"))
++}
++
++/// Compile each already-deduplicated hint as its own literal matcher. Keeping them separate makes
++/// coverage count distinct hints rather than regex occurrences, and using the same engine as the
++/// primary search gives `-i` the same case behavior on both paths.
++fn build_hint_matchers(o: &Opts) -> Result<Vec<RegexMatcher>, String> {
++    if o.weights.hint == 0.0 {
++        return Ok(Vec::new());
++    }
++    o.hints
++        .iter()
++        .map(|hint| {
++            RegexMatcherBuilder::new()
++                .case_insensitive(o.ignore_case)
++                .build(&regex_escape(hint))
++                .map_err(|e| format!("invalid hint: {e}"))
++        })
++        .collect()
++}
++
++fn count_hint_matches(matchers: &[RegexMatcher], path: &str, line: &str) -> usize {
++    matchers
++        .iter()
++        .filter(|matcher| {
++            matcher
++                .is_match(line.as_bytes())
++                .expect("compiled regex matcher cannot fail")
++                || matcher
++                    .is_match(path.as_bytes())
++                    .expect("compiled regex matcher cannot fail")
++        })
++        .count()
++}
++
+ fn run(o: &Opts) -> Result<SearchOutcome, String> {
+     // A mistyped path must not look like "no matches". `ignore` walks a missing root silently,
+     // so exit 0 with no output would be indistinguishable from a successful empty search — the
+@@ -502,6 +591,8 @@
+         .word(o.word)
+         .build(&build_pattern(o))
+         .map_err(|e| format!("invalid pattern: {e}"))?;
++    let hint_matchers = std::sync::Arc::new(build_hint_matchers(o)?);
++    let hint_total = hint_matchers.len();
+ 
+     let mut builder = WalkBuilder::new(&o.path);
+     builder
+@@ -560,6 +651,8 @@
+                     line: &h.text,
+                     query: &h.matched(),
+                     file_matches: 0,
++                    hint_matches: h.hint_matches,
++                    hint_total,
+                 },
+                 &weights,
+             );
+@@ -582,6 +675,7 @@
+     walker.run(|| {
+         let tx = tx.clone();
+         let matcher = matcher.clone();
++        let hint_matchers = hint_matchers.clone();
+         // Match ripgrep's default: stop at the first NUL. Without this, hay searched files rg
+         // reports as "binary file matches" and printed raw binary bytes into agent-parsed output.
+         let mut searcher = SearcherBuilder::new()
+@@ -623,6 +717,7 @@
+                         .map(|m| (m.start(), m.end()))
+                         .unwrap_or((0, bytes.len()));
+                     let text = String::from_utf8_lossy(bytes);
++                    let hint_matches = count_hint_matches(&hint_matchers, &display, &text);
+                     // Only pay for the originals when decoding actually lost information.
+                     let raw = matches!(text, std::borrow::Cow::Owned(_)).then(|| bytes.to_vec());
+                     let _ = tx.send(Hit {
+@@ -634,6 +729,7 @@
+                         raw,
+                         terminated,
+                         span,
++                        hint_matches,
+                     });
+                 }),
+             );
+@@ -676,6 +772,8 @@
+                     // Every retained hit was counted on the way in; default defensively rather
+                     // than indexing, so a future refactor cannot turn a miss into a panic.
+                     file_matches: per_file.get(&h.path).copied().unwrap_or(1),
++                    hint_matches: h.hint_matches,
++                    hint_total,
+                 },
+                 &o.weights,
+             );
+@@ -1011,6 +1109,7 @@
+             raw,
+             terminated,
+             span,
++            hint_matches: 0,
+         }
+     }
+ }
+@@ -1022,6 +1121,7 @@
+     path: 0.0,
+     word: 0.0,
+     tf: 0.0,
++    hint: 0.0,
+     total: 0.0,
+ };
+ 
+@@ -1437,8 +1537,8 @@
+         // where it is. Format is pinned by a contract test in tests/cli.rs.
+         writeln!(
+             w,
+-            "{:>7.2} [def {:+.1} path {:+.1} word {:+.1} tf {:+.2}]  {}:{}:{}",
+-            s.total, s.definition, s.path, s.word, s.tf, h.path, h.line_no, h.text
++            "{:>7.2} [def {:+.1} path {:+.1} word {:+.1} tf {:+.2} hint {:+.2}]  {}:{}:{}",
++            s.total, s.definition, s.path, s.word, s.tf, s.hint, h.path, h.line_no, h.text
+         )
+     } else if o.line_numbers {
+         writeln!(w, "{}:{}:{}", h.path, h.line_no, h.text)
+@@ -1560,9 +1660,49 @@
+         let o = opts(&["--no-definition", "x"]);
+         assert_eq!(o.weights.definition, 0.0);
+         assert_ne!(o.weights.path, 0.0);
++        let o = opts(&["--no-hint", "--hint", "auth", "x"]);
++        assert_eq!(o.weights.hint, 0.0);
++        assert_ne!(o.weights.definition, 0.0);
++        assert_eq!(o.hints, ["auth"]);
++    }
++
++    #[test]
++    fn hints_are_bounded_and_deduplicated_under_the_active_case_rule() {
++        let sensitive = opts(&["--hint", "Auth", "--hint", "auth", "x"]);
++        assert_eq!(sensitive.hints, ["Auth", "auth"]);
++
++        let insensitive = opts(&["--hint", "Auth", "--hint", "auth", "-i", "x"]);
++        assert_eq!(insensitive.hints, ["Auth"]);
++
++        let eighty_bytes = "é".repeat(40);
++        assert!(parse_args(vec!["--hint".into(), eighty_bytes, "x".into()]).is_ok());
++        let eighty_one_bytes = format!("{}a", "é".repeat(40));
++        assert!(parse_args(vec!["--hint".into(), eighty_one_bytes, "x".into()]).is_err());
++        assert!(parse_args(vec!["--hint".into(), "".into(), "x".into()]).is_err());
++
++        // The limit applies to raw values, before deduplication, so duplicates cannot bypass the
++        // bounded-work contract.
++        let mut nine_duplicates = Vec::new();
++        for _ in 0..9 {
++            nine_duplicates.extend(["--hint".to_string(), "auth".to_string()]);
++        }
++        nine_duplicates.push("x".into());
++        assert!(parse_args(nine_duplicates).is_err());
+     }
+ 
+     #[test]
++    fn hint_matchers_are_literal_and_follow_ignore_case() {
++        let exact = opts(&["--hint", "refund.*", "x"]);
++        let matchers = build_hint_matchers(&exact).unwrap();
++        assert_eq!(count_hint_matches(&matchers, "src/a.rs", "refund.* x"), 1);
++        assert_eq!(count_hint_matches(&matchers, "src/a.rs", "refundXYZ x"), 0);
++
++        let insensitive = opts(&["-i", "--hint", "refund", "x"]);
++        let matchers = build_hint_matchers(&insensitive).unwrap();
++        assert_eq!(count_hint_matches(&matchers, "SRC/REFUND/A.RS", "x"), 1);
++    }
++
++    #[test]
+     fn multiple_patterns_become_one_alternation() {
+         let o = opts(&["-e", "foo", "-e", "bar", "src"]);
+         assert_eq!(o.patterns, vec!["foo", "bar"]);
+@@ -1671,6 +1811,18 @@
+         // ranking that did not happen.
+         assert!(parse_args(vec!["-c".into(), "--count-matches".into(), "x".into()]).is_err());
+         assert!(parse_args(vec!["--explain".into(), "--stream".into(), "x".into()]).is_err());
++        for mode in ["--stream", "-c", "--count-matches", "-o", "-v"] {
++            let err = parse_args(vec![
++                "--hint".into(),
++                "auth".into(),
++                mode.into(),
++                "x".into(),
++            ])
++            .expect_err("hints must be rejected when no ranking occurs");
++            assert!(err.contains("do not rank"), "{mode}: {err}");
++        }
++        // `-l` still ranks files and therefore supports task hints.
++        assert!(opts(&["-l", "--hint", "auth", "x"]).files_only);
+     }
+ 
+     #[test]
+@@ -1694,6 +1846,7 @@
+             raw: None,
+             terminated: true,
+             span: (0, text.len()),
++            hint_matches: 0,
+         }
+     }
+ 
+@@ -1717,6 +1870,7 @@
+                         path: 0.0,
+                         word: 0.0,
+                         tf: 0.0,
++                        hint: 0.0,
+                         total,
+                     },
+                     h,
+@@ -1778,6 +1932,7 @@
+             path: 0.0,
+             word: 0.0,
+             tf: 0.0,
++            hint: 0.0,
+             total: 1.0,
+         };
+         let page = [(score, &h)];
+@@ -1827,6 +1982,7 @@
+             path: 0.0,
+             word: 0.0,
+             tf: 0.0,
++            hint: 0.0,
+             total: 1.0,
+         };
+         let page = [(score, &h)];
+@@ -1946,6 +2102,7 @@
+             raw: None,
+             terminated: true,
+             span: (12, 24),
++            hint_matches: 0,
+         };
+         assert_eq!(h.matched(), "createClient");
+         // A byte-oriented pattern can legitimately match one continuation byte of `é`. That must
+--- a/hay/src/score.rs
++++ b/hay/src/score.rs
+@@ -401,6 +401,7 @@
+     pub path: f64,
+     pub word: f64,
+     pub term_frequency: f64,
++    pub hint: f64,
+ }
+ 
+ impl Default for Weights {
+@@ -410,6 +411,7 @@
+             path: 1.0,
+             word: 1.0,
+             term_frequency: 0.5,
++            hint: 2.0,
+         }
+     }
+ }
+@@ -421,6 +423,10 @@
+     /// Matches for this query in this file. Saturating, so a file with 200 mentions does not
+     /// swamp the file that defines it once.
+     pub file_matches: usize,
++    /// Distinct caller-provided hints present in this line or its display path.
++    pub hint_matches: usize,
++    /// Distinct hints after case-aware deduplication. Zero means the optional signal is inactive.
++    pub hint_total: usize,
+ }
+ 
+ /// Per-signal decomposition of one line's score. `--explain` prints it, and error analysis
+@@ -431,6 +437,7 @@
+     pub path: f64,
+     pub word: f64,
+     pub tf: f64,
++    pub hint: f64,
+     pub total: f64,
+ }
+ 
+@@ -449,12 +456,18 @@
+     // unsound, since a dropped candidate could out-score a kept one purely on frequency.
+     const TF_CAP: f64 = 2.0;
+     let tf = w.term_frequency * (1.0 + inp.file_matches as f64).ln().min(TF_CAP);
++    let hint = if inp.hint_total == 0 {
++        0.0
++    } else {
++        w.hint * inp.hint_matches.min(inp.hint_total) as f64 / inp.hint_total as f64
++    };
+     ScoreBreakdown {
+         definition,
+         path,
+         word,
+         tf,
+-        total: definition + path + word + tf,
++        hint,
++        total: definition + path + word + tf + hint,
+     }
+ }
+ 
+@@ -469,6 +482,8 @@
+             query: inp.query,
+             // ln(1 + 0) = 0: zero matches zeroes the frequency term exactly.
+             file_matches: 0,
++            hint_matches: inp.hint_matches,
++            hint_total: inp.hint_total,
+         },
+         w,
+     )
+@@ -698,6 +713,8 @@
+                 line: "export function foo() {}",
+                 query: "foo",
+                 file_matches: 1,
++                hint_matches: 0,
++                hint_total: 0,
+             },
+             &w,
+         );
+@@ -707,6 +724,8 @@
+                 line: "  foo(bar)",
+                 query: "foo",
+                 file_matches: 500_000,
++                hint_matches: 0,
++                hint_total: 0,
+             },
+             &w,
+         );
+@@ -727,6 +746,8 @@
+                 line: "export function validateSession(t: string) {",
+                 query: "validateSession",
+                 file_matches: 2,
++                hint_matches: 0,
++                hint_total: 0,
+             },
+             &w,
+         );
+@@ -736,6 +757,8 @@
+                 line: "we will call validateSession from the gateway, see validateSession notes",
+                 query: "validateSession",
+                 file_matches: 40,
++                hint_matches: 0,
++                hint_total: 0,
+             },
+             &w,
+         );
+@@ -755,9 +778,36 @@
+             line: "export function handleAuth() {",
+             query: "handleAuth",
+             file_matches: 7,
++            hint_matches: 2,
++            hint_total: 4,
+         };
+         let tf = w.term_frequency * (1.0 + 7.0f64).ln().min(2.0);
+         assert!((score_line(&inp, &w) - (prescore_line(&inp, &w) + tf)).abs() < 1e-9);
++        assert_eq!(explain_line(&inp, &w).hint, 1.0);
++    }
++
++    #[test]
++    fn hint_coverage_participates_in_prescore_and_is_capped() {
++        let w = Weights::default();
++        let without = LineInput {
++            path: "src/a.ts",
++            line: "handle(timeout)",
++            query: "timeout",
++            file_matches: 0,
++            hint_matches: 0,
++            hint_total: 4,
++        };
++        let partial = LineInput {
++            hint_matches: 2,
++            ..without
++        };
++        assert!((prescore_line(&partial, &w) - prescore_line(&without, &w) - 1.0).abs() < 1e-12);
++
++        let defensive_overcount = LineInput {
++            hint_matches: 99,
++            ..without
++        };
++        assert_eq!(explain_line(&defensive_overcount, &w).hint, w.hint);
+     }
+ 
+     /// The breakdown is the score: components must sum to the total, and the total must equal
+@@ -770,11 +820,13 @@
+             line: "export function foo() {}",
+             query: "foo",
+             file_matches: 7,
++            hint_matches: 1,
++            hint_total: 2,
+         };
+         let b = explain_line(&inp, &w);
+-        assert!((b.definition + b.path + b.word + b.tf - b.total).abs() < 1e-12);
++        assert!((b.definition + b.path + b.word + b.tf + b.hint - b.total).abs() < 1e-12);
+         assert!((b.total - score_line(&inp, &w)).abs() < 1e-12);
+-        assert!(b.definition > 0.0 && b.path > 0.0 && b.tf > 0.0 && b.word > 0.0);
++        assert!(b.definition > 0.0 && b.path > 0.0 && b.tf > 0.0 && b.word > 0.0 && b.hint > 0.0);
+     }
+ 
+     /// Found by review, reproduced from the command line: a non-ASCII query whose first occurrence
+@@ -817,6 +869,8 @@
+             line: "export const thing = 1",
+             query: "thing",
+             file_matches: 1,
++            hint_matches: 1,
++            hint_total: 1,
+         };
+         let full = Weights::default();
+         let no_def = Weights {
+@@ -824,5 +878,13 @@
+             ..Weights::default()
+         };
+         assert!(score_line(&base, &full) > score_line(&base, &no_def));
++        let no_hint = Weights {
++            hint: 0.0,
++            ..Weights::default()
++        };
++        assert_eq!(
++            score_line(&base, &full) - score_line(&base, &no_hint),
++            full.hint
++        );
+     }
+ }
+--- a/hay/tests/cli.rs
++++ b/hay/tests/cli.rs
+@@ -413,7 +413,7 @@
+     let first = stdout.lines().next().unwrap();
+     assert!(
+         predicate::str::is_match(
+-            r"^ *[0-9.+-]+ \[def [+-][0-9.]+ path [+-][0-9.]+ word [+-][0-9.]+ tf [+-][0-9.]+\]  "
++            r"^ *[0-9.+-]+ \[def [+-][0-9.]+ path [+-][0-9.]+ word [+-][0-9.]+ tf [+-][0-9.]+ hint [+-][0-9.]+\]  "
+         )
+         .unwrap()
+         .eval(first),
+@@ -429,10 +429,165 @@
+     assert!(
+         mention.contains("[def +0.0"),
+         "mention must not score as a definition: {mention}"
++    );
++    assert!(
++        stdout.lines().all(|line| line.contains("hint +0.00")),
++        "explain must account for the inactive hint signal:\n{stdout}"
++    );
++}
++
++#[test]
++fn hints_rerank_only_primary_matches_and_are_ablatable() {
++    let d = tempfile::Builder::new()
++        .prefix("hint-rank")
++        .tempdir()
++        .unwrap();
++    fs::create_dir_all(d.path().join("src")).unwrap();
++    write(d.path(), "src/a.rs", "handle(timeout) generic\n");
++    write(d.path(), "src/z.rs", "handle(timeout) refund\n");
++    write(
++        d.path(),
++        "src/refund-only.rs",
++        "refund without the primary query\n",
++    );
++
++    let run = |extra: &[&str]| -> String {
++        let mut args = vec!["--no-diversify", "-F"];
++        args.extend_from_slice(extra);
++        args.extend(["timeout", "."]);
++        let out = hay().args(args).current_dir(d.path()).assert().success();
++        normalize(&String::from_utf8(out.get_output().stdout.clone()).unwrap())
++    };
++
++    let baseline = run(&[]);
++    assert!(baseline.lines().next().unwrap().contains("src/a.rs"));
++
++    let hinted = run(&["--hint", "refund"]);
++    assert!(hinted.lines().next().unwrap().contains("src/z.rs"));
++    assert!(
++        !hinted.contains("refund-only.rs"),
++        "hint-only file leaked into matches"
+     );
++
++    let ablated = run(&["--hint", "refund", "--no-hint"]);
++    assert_eq!(ablated, baseline, "--no-hint must restore baseline ranking");
++
++    let sorted = |output: &str| {
++        let mut lines: Vec<String> = output.lines().map(str::to_string).collect();
++        lines.sort_unstable();
++        lines
++    };
++    assert_eq!(
++        sorted(&baseline),
++        sorted(&hinted),
++        "hints may reorder but never add or remove primary matches"
++    );
+ }
+ 
+ #[test]
++fn hints_are_literal_and_follow_the_primary_case_rule() {
++    let d = tempfile::Builder::new()
++        .prefix("hint-literal")
++        .tempdir()
++        .unwrap();
++    fs::create_dir_all(d.path().join("src")).unwrap();
++    write(d.path(), "src/a.rs", "handle(timeout) generic\n");
++    write(d.path(), "src/b.rs", "handle(timeout) refundXYZ\n");
++    write(d.path(), "src/z.rs", "handle(timeout) REFUND.*\n");
++
++    let first = |args: &[&str]| -> String {
++        let out = hay().args(args).current_dir(d.path()).assert().success();
++        normalize(&String::from_utf8(out.get_output().stdout.clone()).unwrap())
++            .lines()
++            .next()
++            .unwrap()
++            .to_string()
++    };
++    assert!(
++        first(&["--no-diversify", "--hint", "refund.*", "-F", "timeout", "."]).contains("src/a.rs"),
++        "case-sensitive literal must match neither refundXYZ nor REFUND.*"
++    );
++    assert!(
++        first(&[
++            "--no-diversify",
++            "-i",
++            "--hint",
++            "refund.*",
++            "-F",
++            "timeout",
++            ".",
++        ])
++        .contains("src/z.rs"),
++        "-i must apply to the literal hint without treating .* as regex"
++    );
++}
++
++#[test]
++fn files_with_matches_can_rank_on_a_path_hint() {
++    let d = tempfile::Builder::new()
++        .prefix("hint-files")
++        .tempdir()
++        .unwrap();
++    fs::create_dir_all(d.path().join("src/refund")).unwrap();
++    write(d.path(), "src/a.rs", "handle(timeout)\n");
++    write(d.path(), "src/refund/z.rs", "handle(timeout)\n");
++
++    let out = hay()
++        .args(["-l", "--hint", "refund", "-F", "timeout", "."])
++        .current_dir(d.path())
++        .assert()
++        .success();
++    let stdout = normalize(&String::from_utf8(out.get_output().stdout.clone()).unwrap());
++    assert!(
++        stdout.lines().next().unwrap().contains("src/refund/z.rs"),
++        "path hint should rank the hinted file first: {stdout}"
++    );
++}
++
++#[test]
++fn hint_is_rejected_in_every_unranked_mode() {
++    let d = fixture("hint-unranked");
++    for mode in ["--stream", "-c", "--count-matches", "-o", "-v"] {
++        hay()
++            .args(["--hint", "auth", mode, "-F", "validateSession", "."])
++            .current_dir(d.path())
++            .assert()
++            .code(2)
++            .stderr(predicate::str::contains("do not rank"));
++    }
++}
++
++#[test]
++fn duplicate_hints_do_not_amplify_the_explained_score() {
++    let d = tempfile::Builder::new()
++        .prefix("hint-duplicates")
++        .tempdir()
++        .unwrap();
++    write(d.path(), "a.txt", "timeout refund\n");
++
++    let explain = |args: &[&str]| -> String {
++        let out = hay().args(args).current_dir(d.path()).assert().success();
++        String::from_utf8(out.get_output().stdout.clone()).unwrap()
++    };
++    let once = explain(&["--explain", "--hint", "refund", "-F", "timeout", "."]);
++    let twice = explain(&[
++        "--explain",
++        "--hint",
++        "refund",
++        "--hint",
++        "refund",
++        "-F",
++        "timeout",
++        ".",
++    ]);
++    assert_eq!(once, twice, "a duplicate hint must not amplify its score");
++    assert!(
++        once.contains("hint +2.00"),
++        "full coverage should score 2.0: {once}"
++    );
++}
++
++#[test]
+ fn a_non_ascii_query_does_not_crash_the_ranker() {
+     // Found in review and reproduced here first: scanning a line for a multibyte query advanced
+     // one BYTE past a rejected occurrence, so `hay -F -e 'éé'` over `let x = aéé` sliced inside a
+--- a/hay/differential-test.sh
++++ b/hay/differential-test.sh
+@@ -103,6 +103,34 @@
+   compare_stream "$repo" stream-broad -i -F -e e
+ done
+ 
++# `--hint` is ranking-only, so only hay receives it. The primary matcher and walker stay
++# byte-for-byte identical; sorting both outputs proves the optional signal changed no match.
++compare_hint() {
++  local repo=$1 label=$2 hint=$3
++  shift 3
++  local a b
++  a=$(cd "$repo" && rg "${RG_BASE[@]}" -n "$@" . 2>/dev/null | sed 's|^\./||' | sort)
++  b=$(cd "$repo" && "$HAY" "${HAY_BASE[@]}" --hint "$hint" -n "$@" . 2>/dev/null | sed 's|^\./||' | sort)
++  if [ "$a" = "$b" ]; then
++    pass=$((pass+1))
++  else
++    fail=$((fail+1))
++    echo "DIFFERS  $(basename "$repo")  $label  rg=$(printf '%s' "$a" | grep -c .) hay=$(printf '%s' "$b" | grep -c .)"
++    diff <(printf '%s\n' "$a") <(printf '%s\n' "$b") | head -5
++  fi
++}
++
++for repo in "${REPOS[@]}"; do
++  [ -d "$repo" ] || continue
++  compare_hint "$repo" hint-literal 'auth.*' -i -F -e config
++  # Case-sensitive: the hint follows the primary case rule, so this also covers a hint that only
++  # matches under -i and must not leak into the case-sensitive match set.
++  compare_hint "$repo" hint-case-sensitive Config -F -e config
++  # A path-shaped hint scores display paths, and -l ranks files; neither may add or drop a file.
++  compare_hint "$repo" hint-path-files-only src -l -i -F -e config
++  compare_hint "$repo" hint-word -w -i -F -e fn
++done
++
+ # Exercise `--no-ignore` on a bounded fixture. A real repository can legitimately exceed hay's
+ # candidate cap under this flag, which would test truncation rather than traversal parity.
+ fixture=$(mktemp -d "${TMPDIR:-/tmp}/hay-differential.XXXXXX") || exit 2

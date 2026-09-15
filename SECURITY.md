@@ -58,10 +58,16 @@ in both tools (measured: 367 MB for `hay`, 368 MB for ripgrep, on the same patte
 `grep-hygiene.ts`) reads your local coding-agent transcripts. Those contain real search terms,
 real file paths, and real project names from whatever you have worked on.
 
-- Transcript-derived output and paired-query dumps only go beneath a real `corpus/` directory,
-  which is gitignored. Directories are 0700, files are 0600, and traversal or symlinked parents are
+- Transcript-derived output and paired-query dumps only go beneath the real, gitignored
+  `corpus/` directory of this checkout. It is anchored to the tool's own location rather than the
+  shell's working directory, so running a tool from another repository cannot write private data
+  into a tree whose ignore rules nobody checked. Directories are 0700, files are 0600, and traversal or symlinked parents are
   rejected. Files are replaced atomically so an existing hard link is not truncated. There is no
   override for writing private pairs elsewhere.
+- Private task hints (used only to reproduce the deleted `--hint` measurement) come only from
+  messages a human typed. Subagent prompts, skill bodies,
+  compaction summaries, task notifications, and captured command output share the transcript's
+  user-message shape and are refused explicitly, each with a planted selftest row.
 - Use `path=label` to anonymise repository identity and `--redact-names` to pseudonymise
   identifiers before sharing any aggregate report.
 - The tools warn on stderr when a report would quote a security-sensitive identifier. Do not
@@ -92,9 +98,57 @@ measurement kit's sole runtime dependency is the locked, audited `tar` parser us
 archive boundary. CI runs
 Rust and Bun vulnerability audits, GitHub Actions are pinned by full commit SHA, and Dependabot
 proposes Cargo, Bun, and Actions updates weekly. Release archives have SHA-256 checksums and
-GitHub artifact attestations bound to the tag workflow. Verify both before installing:
+GitHub artifact attestations bound to the release workflow, protected `main`, and the exact
+source commit. For releases produced by the 0.3.1+ policy, verify both before installing:
 
 ```bash
 shasum -a 256 -c hay-vX.Y.Z-<target>.tar.gz.sha256
-gh attestation verify hay-vX.Y.Z-<target>.tar.gz -R mneves75/hay
+source_sha="$(gh api repos/mneves75/hay/git/ref/tags/vX.Y.Z --jq .object.sha)"
+gh attestation verify hay-vX.Y.Z-<target>.tar.gz -R mneves75/hay \
+  --signer-workflow mneves75/hay/.github/workflows/release.yml \
+  --source-ref refs/heads/main --source-digest "$source_sha"
 ```
+
+Releases through 0.3.x used a tag-triggered workflow and therefore attest `refs/tags/vX.Y.Z`;
+that historical statement describes their provenance but does not provide the 0.3.1+ rollback
+protection.
+
+### Release control plane
+
+Releases are cut from `main` only, by two separate acts:
+
+1. The maintainer creates a **lightweight** tag `vX.Y.Z` or `vX.Y.Z-betaN` at a `main` commit
+   whose push CI succeeded, and whose `hay/Cargo.toml` version is `X.Y.Z`.
+2. The maintainer dispatches `release.yml` **from `main`** with that tag as input.
+
+The workflow is loaded from `main`, never from the tag, so a tag aimed at older history cannot
+run an older copy of the policy. `release-policy.sh verify` requires the dispatch ref to be
+`refs/heads/main`, the dispatch SHA to still be contained in `origin/main`, a successful completed
+push CI run for that exact SHA, the tag's base version to match Cargo metadata, and the tag to be a
+lightweight tag naming exactly the dispatch SHA. The build checks out that SHA and refuses an
+archive whose binary reports another version. The draft job attests the archives from
+`refs/heads/main`, verifies that attestation with the exact source digest, re-checks that the tag
+still names the built commit, refuses a pre-existing draft holding any asset this run did not
+build, and only then uploads to a **draft**. Publishing the draft is a separate explicit act, and
+immutable releases are enabled, so a published release's assets and tag cannot change afterwards.
+
+The in-workflow attestation check verifies a statement the same job just signed, so it catches a
+misconfigured signer identity, not substituted bytes. Provenance is established where it matters,
+by the consumer: `brew-formula.sh` and the verification command above check the downloaded bytes
+against the workflow, `refs/heads/main`, and the tag's source digest.
+
+Repository controls, configured through the GitHub API and read back when they change (the release
+journal in `memory/` records each readback). Nothing in the workflow re-reads them; they are
+defence in depth behind the checks above, not inputs to them:
+
+- `main` branch ruleset: deletion and non-fast-forward updates are blocked.
+- `v*` tag ruleset: creation, update, and deletion are blocked for everyone except the repository
+  admin role, so no workflow token can create or move a release tag.
+- `release` environment: deployments are admitted from `main` only. `draft-release` is the only
+  job granted `contents: write`; every other job, and the workflow default, is read-only.
+
+Threat model, stated plainly: this is a single-maintainer repository, and a compromised admin
+account can change any of these controls. They exist to make an accidental or workflow-originated
+release impossible and every real release traceable, not to defend against the admin.
+`release-policy.sh --selftest` fails if the workflow regains a tag trigger, drops the verifier,
+the tag re-check, or the environment gate, or grants contents write to any other job.

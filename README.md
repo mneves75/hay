@@ -99,11 +99,12 @@ MRR across all twelve repositories: **0.184 to 0.375**. Median rank of the answe
 answer appears in the top ten results **34–62%** of the time — in *every* repo, clean or filthy.
 
 This is the result that undoes the project's premise. If retrieval is roughly equally poor
-regardless of hygiene, the constraint is the retriever, not the corpus. Published work agrees: a
-tree-sitter knowledge graph exposed over MCP reports [~10× fewer tokens and 2.1× fewer tool
-calls](https://anthonywest.co.uk/research/code-intelligence-indexing-2026-openai) across 31
-repositories. Adding priors buys an order of magnitude; tidying the repo buys what we could not
-detect at n=12.
+regardless of hygiene, the constraint is the retriever, not the corpus. Complementary work points
+to a different retrieval layer: a Tree-sitter knowledge graph exposed over MCP reports
+[10× fewer tokens and 2.1× fewer tool calls](https://arxiv.org/abs/2603.27277) across 31
+repositories, while giving up some answer quality (83% against the file explorer's 92%). That is a
+structural-query preprint, not a direct test of `hay`; it supports the multimodal boundary below,
+not the stronger claim that any one retriever wins everywhere.
 
 There is a popular framing that inside every codebase are two wolves — *grep is bad* or *your
 codebase is bad* — and you must pick one. On this evidence the first wolf is much larger than the
@@ -138,15 +139,15 @@ hay classify_path            # same flags, same path:line:text output, different
 
 ### One tool, and the row that is honestly still someone else's
 
-The 2026 consensus on code search for agents is that there is no single grep replacement — there
-are [three modalities](https://zzet.org/gortex/grep-replacement-for-ai-agents/): lexical
+A useful 2026 synthesis argues that there is no single grep replacement for agents and separates
+[three modalities](https://zzet.org/gortex/grep-replacement-for-ai-agents/): lexical
 (ripgrep, BM25), structural (ast-grep, tree-sitter), and graph (LSP, code property graphs). That
 argument is right, and the honest response is not to dispute it but to ask which rows of the table
 below were the tool's own fault. Three were, and they are closed. One is not.
 
-The base layer is settled in lexical's favour for this workload: the CoREB benchmark reports that
-short keyword queries — the shape agents actually emit — collapse nearly every semantic model
-tested to near-zero nDCG@10.
+[CoREB](https://arxiv.org/abs/2605.04615) strengthens the case for lexical retrieval on this
+specific workload: it reports that short keyword queries — the shape agents actually emit —
+collapse nearly every semantic model tested to near-zero nDCG@10.
 
 Every number below is from committed evidence in this repository. The timings are one machine, one
 corpus (the Linux kernel, warm cache):
@@ -155,17 +156,17 @@ corpus (the Linux kernel, warm cache):
 |---|---|---|
 | "where is this defined?" | **hay** | median rank of the declaring file is **1** on all four public corpora; ripgrep's is 1 to 5 |
 | an agent's first search, then opening a file | **hay** | answer inside the first ten results **44.9% → 77.1%** on 951 real agent searches |
-| counting, inverting, extracting (`-c`, `-v`, `-o`) | **hay** | they used to exit 2 saying "use `rg`". They run unranked now, byte-identical to ripgrep, held there by 31 differential cases |
+| counting, inverting, extracting (`-c`, `-v`, `-o`) | **hay** | they used to exit 2 saying "use `rg`". They run unranked now, byte-identical to ripgrep, held there by 32 differential cases |
 | the first hit as fast as possible (`… \| head`) | **hay `--stream`** | ~2.3 s against ripgrep's ~1.6 s on a 95k-file tree — no longer a reason to leave, still not a win |
 | a very broad pattern, exhaustively | **hay `--stream`** | streaming has no candidate cap, so nothing is dropped and nothing exits 2 |
 | the complete result set, in a stable order | **hay** | ~2.5 s against `rg --sort path`'s ~8.6 s for the identical match set |
 | searching documentation and prose | **`rg --sort path`** | hay is detectably **worse** on 3 of 5 doc corpora (−0.07 to −0.19 MRR). A signal that fixes this was built, measured and deleted — see below |
-| structural queries — "every call with three arguments" | **`ast-grep`** | that needs a parser. hay is four lexical priors and a layout rule, and always will be |
+| structural queries — "every call with three arguments" | **`ast-grep`** | that needs a parser. hay is four lexical priors and a layout rule — not a parser |
 
-So: `hay` is now the only tool you need to **find things by name**, which is most of what an agent
-does. It is not the only tool you need, and the last two rows say who else you want and why. The
-project has no plan to grow a parser or an index — `DESIGN-hay.md` ruled both out on day one,
-because funded products already occupy that ground.
+So: `hay` now covers the lexical **find-things-by-name** layer, including its exhaustive and
+unranked variants. It is not the only search tool an agent needs, and the last two rows say who
+else you want and why. The project has no plan to grow a parser or an index — `DESIGN-hay.md`
+ruled both out on day one, because funded products already occupy that ground.
 
 **The prose row has a fix that did not ship, and that is the interesting part.** A markdown heading
 declares the section about a term as `function foo` declares `foo`. Implemented, it reversed the
@@ -205,6 +206,27 @@ forty-one. Nothing is re-scored, the sequence of distinct files is unchanged, an
 answer-in-top-10 rate moved 18.8 points on its own. The second change is a `word` signal that
 was written into the design document before any Rust existed and never implemented: a match that
 is a whole identifier beats one buried inside a longer name.
+
+**Task hints passed the public benchmark and failed the private one, so they did not ship.**
+`--hint <literal>` let an agent add task vocabulary — repeatable, capped at eight, opt-in, never
+adding a match — and scored up to +2.0 for covering it. Its ship rule was written before either
+measurement ([issue 14](docs/method/issues/14-task-aware-ranking-hints.md),
+[issue 15](docs/method/issues/15-private-hint-confirmation.md)): pass the public SWE-Explore
+comparison, then show no contradiction in one private confirmation. Public, 412 complete pairs: MRR
+**0.2150 → 0.2336** (clustered 95% CI [0.0063, 0.0325], Fisher p=0.0044), nDCG@10
+**0.1501 → 0.1633**. Private, 494 complete pairs across 11 repositories: MRR **0.3819 → 0.3799**
+(−0.0020 [−0.0041, +0.0005]), nDCG@10 **0.4159 → 0.4148** (−0.0011 [−0.0045, +0.0004]). Neither
+private interval excludes zero — the rule does not ask it to — and both point estimates are
+negative, which the rule defines as failure. Deleted.
+
+Two instrument defects are the more useful part. The first private run grouped nested working
+directories as separate repositories. The second was worse and nearly shipped a false confirmation:
+the harvester took "the user's latest message" as task context, and in real transcripts that shape
+is also worn by subagent prompts the parent agent wrote, skill bodies, background-task results,
+command output and compaction summaries — 2,200+ rows of assistant-authored or injected text read as
+the human's task. That run had returned non-contradictory. It was withdrawn in writing before the
+corrected corpus existed, and the rerun, which could only remove a pass, removed it. The measured
+binary is one `git apply` away: [`evidence/ablations/hint-signal.patch`](evidence/ablations/).
 
 **nDCG@10 is there because MRR only looks at the first hit.** These judgments are not
 single-positive: **57% of the 2,508 corpus entries name more than one answer file**, mean 2.27,
@@ -509,8 +531,9 @@ history is kept deliberately: it is more useful to anyone picking this up than t
 - [DOCER](https://arxiv.org/abs/2212.01479) — detects outdated *code-element references* in
   documentation across 3,000+ projects. Document-level authority is explicitly out of its scope,
   and remains the one genuinely unoccupied gap found in this survey.
-- [Code-graph indexing for agents](https://anthonywest.co.uk/research/code-intelligence-indexing-2026-openai)
-  — the ~10× result that makes the retriever, not the repo, the place to spend effort.
+- [Codebase-Memory](https://arxiv.org/abs/2603.27277) — a Tree-sitter graph preprint reporting the
+  token/tool-call tradeoff above; useful evidence for a separate structural layer, not a lexical
+  ranking result.
 - Agent exclusion conventions (`.cursorignore`, `.aiexclude`, `.codeiumignore`) are
   [fragmented and non-standard](https://cursor.com/docs/reference/ignore-file); `.agentignore` is a
   proposal. Cursor states plainly they are not security boundaries.

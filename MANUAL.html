@@ -133,6 +133,7 @@ button.linkish{
   text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:2px;padding:0
 }
 footer{border-top:1px solid var(--rule);margin-top:3rem;padding-top:1.25rem;color:var(--ink-faint);font-size:.8rem}
+footer code{color:var(--ink-soft)}
 @supports (animation-timeline: view()){
   @media (prefers-reduced-motion: no-preference){
     section[id] > *{animation:rise linear both;animation-timeline:view();animation-range:entry 0% entry 40%}
@@ -195,10 +196,10 @@ release workflow built, whose checksums entered the formula only after their bui
 attestations verified:</p>
 <div class="codewrap"><pre tabindex="0"><code>brew install mneves75/tap/hay</code></pre><button class="copy" type="button">copy</button></div>
 <p>Or build from source — one line, or inspect first (Rust edition 2024, MSRV 1.88):</p>
-<div class="codewrap"><pre tabindex="0"><code>curl -fsSL https://raw.githubusercontent.com/mneves75/hay/v0.3.0/install.sh | HAY_REF=v0.3.0 bash
+<div class="codewrap"><pre tabindex="0"><code>curl -fsSL https://raw.githubusercontent.com/mneves75/hay/v0.3.1/install.sh | HAY_REF=v0.3.1 bash
 
 # inspect-first form:
-git clone --depth 1 --branch v0.3.0 https://github.com/mneves75/hay.git &amp;&amp; cd hay &amp;&amp; HAY_REF=v0.3.0 ./install.sh</code></pre><button class="copy" type="button">copy</button></div>
+git clone --depth 1 --branch v0.3.1 https://github.com/mneves75/hay.git &amp;&amp; cd hay &amp;&amp; HAY_REF=v0.3.1 ./install.sh</code></pre><button class="copy" type="button">copy</button></div>
 <p>The script gates on the toolchain version, clones, builds release, installs via
 <code>cargo install</code>, and smoke-tests the installed binary. Set
 <code>CARGO_INSTALL_ROOT</code> to choose its destination; the script passes that root to Cargo
@@ -301,10 +302,12 @@ hay --no-path        validateSession .
 hay --no-word        validateSession .
 hay --no-tf          validateSession .
 hay --no-diversify   validateSession .</code></pre><button class="copy" type="button">copy</button></div>
-<p>Four <em>other</em> signals were built, measured and deleted: exact-case matching, a comment
-penalty, binary whole-word matching, a filename match, and (in 0.3.0) a markdown-heading signal
+<p>Other signals were built, measured and deleted: exact-case matching, a comment
+penalty, binary whole-word matching, a filename match, (in 0.3.0) a markdown-heading signal
 that reversed hay's documentation deficit and still did not ship, because the benchmark that liked
-it defines its ground truth as the thing the signal detects.</p>
+it defines its ground truth as the thing the signal detects, and (in 0.3.1) opt-in
+<code>--hint</code> task context, which helped on the public benchmark and then failed its
+pre-registered private confirmation.</p>
 <p>This is also how several published claims here were proven: the definition signal’s value on C
 was established by turning it off and watching the kernel score collapse to ripgrep’s.</p>
 </section>
@@ -358,14 +361,17 @@ all work as you expect.</p>
 </details>
 
 <details class="flaggroup">
-<summary>Deliberately absent</summary>
-<div class="body"><p>Three ripgrep staples are refused — loudly, not silently — because ranking and
-the flag are mutually meaningless. Each refusal says why and names the ripgrep equivalent:</p>
+<summary>Unranked compatibility modes</summary>
+<div class="body"><p>These modes have nothing to rank, so they use ripgrep’s parallel traversal,
+per-file <code>-m</code>, output contract, and unlimited match stream. Their order is deliberately
+not deterministic:</p>
 <table>
 <tbody>
-<tr><th scope="row"><code>-v</code></th><td>Inverting the match leaves nothing to rank: every non-matching line would score identically. Use <code>rg -v</code>.</td></tr>
-<tr><th scope="row"><code>-c</code></th><td>hay ranks lines, it does not count them. Use <code>rg -c</code>.</td></tr>
-<tr><th scope="row"><code>-o</code></th><td>Only-matching prints substrings, not lines — no line, nothing to rank. Use <code>rg -o</code>.</td></tr>
+<tr><th scope="row"><code>-v, --invert-match</code></th><td>Print lines that do not match.</td></tr>
+<tr><th scope="row"><code>-c, --count</code></th><td>Count matching lines per file.</td></tr>
+<tr><th scope="row"><code>--count-matches</code></th><td>Count matches per file.</td></tr>
+<tr><th scope="row"><code>-o, --only-matching</code></th><td>Print each matched substring.</td></tr>
+<tr><th scope="row"><code>--stream</code></th><td>Print the complete result stream with no 20,000-candidate cap.</td></tr>
 </tbody>
 </table></div>
 </details>
@@ -429,7 +435,7 @@ weights are optimal.</p>
 <table>
 <thead><tr><th scope="col">difference</th><th scope="col">why</th></tr></thead>
 <tbody>
-<tr><th scope="row">Rank-ordered results</th><td>The entire product. Path order is shelf order; agents need answer order.</td></tr>
+<tr><th scope="row">Rank-ordered results</th><td>The entire product. Traversal order is shelf order; agents need answer order.</td></tr>
 <tr><th scope="row"><code>-m</code> bounds total results, not matches-per-file</th><td>An agent wants “the twenty best lines”, not “twenty per file”.</td></tr>
 <tr><th scope="row"><code>--json</code> emits only <code>match</code>/<code>context</code></th><td><code>begin</code>/<code>end</code>/<code>summary</code> assume a file-scoped stream; rank order interleaves files.</td></tr>
 <tr><th scope="row"><code>-l</code> wins over <code>--json</code></th><td>Plain paths beat a bare <code>begin</code> with no <code>end</code>.</td></tr>
@@ -495,7 +501,7 @@ Use `hay` instead of `rg` for concept and symbol searches:
 - always `-F` when searching identifiers (they are literals, not regexes)
 - exit 0 = results ranked best-first; 1 = no match; 2 = INCOMPLETE — read stderr,
   then narrow (add -g/-t) rather than trusting the output wholesale
-- need exhaustive lists or match counts? fall back to `rg`
+- need every match? use `hay --stream`; counts, inversion, and `-o` also run unranked
 - structured: `hay --json -F "sym" . | jq 'select(.type=="match")'</code></pre><button class="copy" type="button">copy</button></div>
 
 <table>
@@ -520,8 +526,8 @@ line to a default:</p>
 
     hay -F -m 10 "&lt;symbol&gt;" .
 
-Use `rg` only when the task needs every match, an exact count, `-v`, or
-path-ordered output — and say so when you switch.</code></pre><button class="copy" type="button">copy</button></div>
+Use `hay --stream` for every match. Use `rg --sort path` only when stable path
+order or an unsupported ripgrep flag is the actual requirement.</code></pre><button class="copy" type="button">copy</button></div>
 <ul>
 <li><strong>Claude Code</strong> — put the rule in <code>CLAUDE.md</code> (or keep it in
 <code>AGENTS.md</code> and add a <code>CLAUDE.md</code> containing just <code>@AGENTS.md</code> —
@@ -531,8 +537,8 @@ Code's built-in <code>Grep</code> tool is ripgrep internally and cannot be rewir
 therefore say "prefer running <code>hay</code> in the shell over the Grep tool for concept
 searches", which Claude honors.</li>
 <li><strong>Codex CLI</strong> — the same rule in the repo's <code>AGENTS.md</code> holds per project;
-for every project, put it in <code>~/.codex/AGENTS.md</code>. State the <code>rg</code> fallback
-explicitly or Codex will treat hay as a synonym and lose the exhaustiveness distinction.</li>
+for every project, put it in <code>~/.codex/AGENTS.md</code>. State the <code>--stream</code> rule
+explicitly so a broad exhaustive search does not accidentally use the ranked page.</li>
 <li><strong>pi</strong> — the repo <code>AGENTS.md</code> is read natively; nothing else needed.</li>
 <li><strong>Aider</strong> — a <code>CONVENTIONS.md</code> file is inert on its own: load it with
 <code>aider --read CONVENTIONS.md</code>, or persist it in <code>.aider.conf.yml</code> as
@@ -546,13 +552,12 @@ and check the transcript ran <code>hay</code>. A default that was never observed
 claim, not a configuration.</li>
 </ul>
 <div class="callout warn">
-<p><strong>Do not shim or alias <code>rg</code> → <code>hay</code>.</strong> It is tempting and it is
-wrong twice over. Agents and editor tooling call <code>rg</code> expecting exact ripgrep semantics —
-file-grouped order, <code>-v</code>/<code>-c</code>/<code>-o</code>, <code>begin</code>/<code>end</code>
-JSON events — and hay deliberately declines or reshapes all of those. And a shim converts every
-exhaustive search (renames, security sweeps, error-string hunts) into a ranked, capped one
-without telling anyone — exactly the quiet wrong answer this tool's exit codes exist to prevent.
-The default belongs in instructions, where the agent knows which tool it chose and why.</p>
+<p><strong>Do not shim or alias <code>rg</code> → <code>hay</code>.</strong> Agents and editor tooling
+still expect ripgrep’s full flag surface, file-scoped JSON events, and per-file ranked-mode
+<code>-m</code> semantics. hay answers its documented overlap — including unranked
+<code>-v</code>/<code>-c</code>/<code>-o</code> and exhaustive <code>--stream</code> — but an alias
+would hide the remaining deliberate differences. The default belongs in instructions, where the
+agent knows which mode it chose and why.</p>
 </div>
 
 <h3>Find the definition, read it</h3>
@@ -567,15 +572,14 @@ hay --json -F "$symbol" "$root" \
 <h3>Context without reordering surprises</h3>
 <div class="codewrap"><pre tabindex="0"><code>hay -C 3 -m 10 -F "$symbol" "$root"   # blocks stay grouped, gaps show as --</code></pre><button class="copy" type="button">copy</button></div>
 <h3>Honesty check on a big tree</h3>
-<div class="codewrap"><pre tabindex="0"><code>hay -m 0 -F "$symbol" "$root" 2&gt;err.log || true
-grep -q "ranked the .* strongest" err.log &amp;&amp; echo "truncated — switch to rg for exhaustiveness"</code></pre><button class="copy" type="button">copy</button></div>
+<div class="codewrap"><pre tabindex="0"><code>hay --stream -F "$symbol" "$root"   # exhaustive, unranked, no candidate cap</code></pre><button class="copy" type="button">copy</button></div>
 <h3>Install on an agent's machine</h3>
 <div class="codewrap"><pre tabindex="0"><code>brew install mneves75/tap/hay   # macOS and Linux
 
 # or from source:
-curl -fsSL https://raw.githubusercontent.com/mneves75/hay/v0.3.0/install.sh | HAY_REF=v0.3.0 bash   # inspect first!
+curl -fsSL https://raw.githubusercontent.com/mneves75/hay/v0.3.1/install.sh | HAY_REF=v0.3.1 bash   # inspect first!
 # inspect-first form:
-git clone --depth 1 --branch v0.3.0 https://github.com/mneves75/hay.git &amp;&amp; cd hay &amp;&amp; HAY_REF=v0.3.0 ./install.sh</code></pre><button class="copy" type="button">copy</button></div>
+git clone --depth 1 --branch v0.3.1 https://github.com/mneves75/hay.git &amp;&amp; cd hay &amp;&amp; HAY_REF=v0.3.1 ./install.sh</code></pre><button class="copy" type="button">copy</button></div>
 </section>
 
 <!-- ─────────────────────────────── faq ─────────────────────────────── -->
@@ -588,9 +592,10 @@ chart there — ratios, not absolutes, survive machine noise.</p>
 in agent transcripts, tests are rarely the answer to “where is X defined”. Overriding is a
 one-flag matter (<code>--no-path</code>), and the ablation switches exist precisely so you never
 have to trust the prior.</p>
-<p><strong>Can I use it as a drop-in in scripts?</strong> Yes, wherever scripts consume
-<code>path:line:text</code> and tolerate rank order plus the three declined flags above. Where
-scripts need exhaustiveness guarantees, keep <code>rg</code>.</p>
+<p><strong>Can I use it as a drop-in in scripts?</strong> Yes, where scripts consume the documented
+<code>path:line:text</code> or JSON contract and tolerate rank order. Use <code>--stream</code> for
+exhaustiveness; keep <code>rg --sort path</code> when stable path order or unsupported ripgrep
+flags are part of the contract.</p>
 <p><strong>Does the ranking ever change which lines match?</strong> Never. That is invariant #1,
 policed by a differential test against ripgrep on every change to walking, matching, or output.</p>
 <p><strong>Where do the numbers on the website come from?</strong> <code>BENCHMARK.md</code> /
