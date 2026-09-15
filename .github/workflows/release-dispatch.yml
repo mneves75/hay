@@ -24,6 +24,13 @@ permissions:
 env:
   CARGO_TERM_COLOR: always
 
+# Every step reads inputs through environment variables written as "$NAME", which only bash expands:
+# Windows runners default to PowerShell, where "$TARGET" is an empty PowerShell variable. The
+# v0.3.1-beta1 dispatch failed exactly that way ("target was empty") before this default existed.
+defaults:
+  run:
+    shell: bash
+
 concurrency:
   group: release-${{ inputs.tag }}
   cancel-in-progress: false

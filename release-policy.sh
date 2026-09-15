@@ -264,6 +264,9 @@ selftest() {
     echo "selftest: tag-triggered release reintroduced" >&2
     exit 1
   fi
+  awk '/^defaults:$/ { d = 1; next } d && /^  run:$/ { r = 1; next } r && /^    shell: bash$/ { ok = 1 }
+       /^[a-z]/ && !/^defaults:$/ { d = 0; r = 0 } END { exit !ok }' "$workflow" ||
+    { echo "selftest: workflow-wide bash default missing; \"\$VAR\" is empty under PowerShell" >&2; exit 1; }
   grep -Eq '^  verify-release:$' "$workflow" ||
     { echo "selftest: verify-release job missing" >&2; exit 1; }
   grep -Fq 'needs: verify-release' "$workflow" ||
