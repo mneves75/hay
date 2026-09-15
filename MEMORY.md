@@ -205,8 +205,17 @@ destination is public. Use `=label` for repo identity and `--redact-names` for i
   A three-way review workflow found 20 real defects in the first two commits, including a `-o -v`
   that printed nothing and exited 0.
 
-- **v0.3.1 — `--hint` deleted by its own pre-registered rule; release chain simplified**
-  (2026-09-15). Public SWE-Explore +0.0187 MRR [+0.0063, +0.0325]; corrected private one-shot
+- **v0.3.1 RELEASED — `--hint` deleted by its own pre-registered rule; release chain simplified**
+  (2026-09-15). `v0.3.1-beta2` (published prerelease) and `v0.3.1` (latest) both at `77a2895`, built
+  by `release-dispatch.yml` runs 34942632584 / 34942962030; all five archives checksum- and
+  attestation-verified (signer `release-dispatch.yml`, `refs/heads/main`, source digest) before
+  publishing, with wrong-digest and old-signer negative controls. Immutable releases enabled. Tap
+  `a0bcdae`, `brew upgrade` 0.3.0 → 0.3.1 smoke-tested, `brew audit --strict` clean. gh-pages
+  `4dcde7a` live-verified. `v0.3.1-beta1` tag exists with no release: its Windows build failed on a
+  PowerShell `$TARGET` regression, fixed by a workflow-wide bash default. The old `release.yml`
+  identity is DISABLED behind an inert stub — deleting the file re-armed historical tag-triggered
+  copies (negative test ran the old workflow; cancelled, no draft). Main CI now also pins patched
+  `fast-uri`/`js-yaml` in the film subproject. Public SWE-Explore +0.0187 MRR [+0.0063, +0.0325]; corrected private one-shot
   −0.0020 [−0.0041, +0.0005] and nDCG@10 −0.0011, 494 pairs / 11 repos → contradictory → deleted.
   The first private run was void: the harvester read subagent prompts, skill bodies, task
   notifications, command output and compaction summaries as "the user's task" (2,200+ rows share
