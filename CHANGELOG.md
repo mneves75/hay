@@ -84,6 +84,9 @@ the failed signal forced. Ranking, weights and the failed ship gate are unchange
   substitutions.
 - `SECURITY.md` documents the scoped attestation verification command, the release control plane
   and its threat model.
+- The benchmark film's build-only dependency tree pins patched `fast-uri` (3.1.7) and `js-yaml`
+  (4.3.2), both reached only through Remotion's bundler and studio; `pnpm audit --audit-level high`
+  had started failing on advisories published after 0.3.0.
 
 ## [0.3.0] — 2026-08-28
 

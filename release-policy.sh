@@ -29,8 +29,9 @@ package_version_from_manifest() {
     die "could not resolve the hay package version"
   version="${package_id##*#}"
   version="${version##*@}"
-  [ -n "$version" ] && [ "$version" != "$package_id" ] ||
+  if [ -z "$version" ] || [ "$version" = "$package_id" ]; then
     die "cargo returned an unrecognized package ID"
+  fi
   printf '%s\n' "$version"
 }
 

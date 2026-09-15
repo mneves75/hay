@@ -1,5 +1,10 @@
 # Remotion 4.0.515 still pins typescript-eslint 8.21; the current release supports ESLint 10.
 overrides:
   typescript-eslint: 8.67.0
+  # GHSA-5jgf-p345-68v8, GHSA-f65p-4m7j-42xc and siblings: fast-uri <3.1.6, reached only through
+  # Remotion's webpack/ajv bundler chain. Drop once Remotion's lockfile resolves a patched version.
+  fast-uri: 3.1.7
+  # GHSA-2883-xcg3-v3hh: js-yaml <4.3.2, reached only through Remotion Studio's SVGR loader.
+  js-yaml: 4.3.2
 allowBuilds:
   esbuild: true
