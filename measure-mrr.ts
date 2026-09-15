@@ -1323,10 +1323,12 @@ if (import.meta.main) {
       try {
         const git = (cwd: string, ...args: string[]) =>
           spawnSync("git", ["-C", cwd, "-c", "user.name=t", "-c", "user.email=t@t", ...args], { encoding: "utf8" });
+        // Empty commits with the same message, identity and second hash identically, so each
+        // repository's root message names it: otherwise "unrelated" histories could share a root.
         const commitTwice = (repo: string) => {
           mkdirSync(repo);
           git(repo, "init", "--quiet");
-          git(repo, "commit", "--quiet", "--allow-empty", "-m", "root");
+          git(repo, "commit", "--quiet", "--allow-empty", "-m", `root of ${basename(repo)}`);
           git(repo, "commit", "--quiet", "--allow-empty", "-m", "second");
         };
         const origin = join(cloneRoot, "origin");
@@ -1345,6 +1347,7 @@ if (import.meta.main) {
         eq(repositoryRelation(shallow, ownRoots, origin), "unknown", "a shallow clone's identity is unknown, not other");
         const stranger = join(cloneRoot, "stranger");
         commitTwice(stranger);
+        eq(rootCommits(stranger).some((commit) => ownRoots.has(commit)), false, "the stranger's root is its own");
         eq(repositoryRelation(stranger, ownRoots, origin), "other", "an unrelated repository is kept");
       } finally {
         rmSync(cloneRoot, { recursive: true, force: true });
