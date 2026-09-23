@@ -35,8 +35,10 @@ cargo test --manifest-path hay/Cargo.toml          # unit + tests/cli.rs contrac
 cargo clippy --manifest-path hay/Cargo.toml --all-targets -- -D warnings
 cargo fmt --manifest-path hay/Cargo.toml --check
 ./hay/differential-test.sh                          # exact match set under normalized traversal
-                                                    # 32 cases; 7 are flag COMBINATIONS, where
-                                                    # every unranked-mode defect actually lived
+                                                    # 42 cases; 7 are flag COMBINATIONS, where
+                                                    # every unranked-mode defect actually lived,
+                                                    # and 10 use a PATH other than `.` or stdin,
+                                                    # where most of 0.3.2's eight divergences lived
 bun measure-mrr.ts --selftest                       # each TS tool has a selftest
 bun measure-mrr.ts --min-queries 60 --compare       # paired A/B with bootstrap intervals
 ./benchmark-corpora.sh                              # clone missing corpora, run, render, clean up
@@ -67,7 +69,9 @@ a line scored.
    grouping, not deduplication. A fix that reorders is worse than the bug it replaces.
 3. **The pre-registered ship gate does not move.** Median MRR >= 0.50 and answer-in-top-10 >= 80%,
    fixed in `DESIGN-hay.md` before implementation. It still fails — 0.4437 / 0.7849 as of v0.2.0,
-   up from 0.3810 / 0.5916 — and an oracle ranking any answer file first scores 1.00 on this
+   up from 0.3810 / 0.5916; 0.4328 / 0.7721 on the re-harvested, repo-rooted corpus of
+   2026-09-23, where 0.3.1 and 0.3.2 score identically, so the drop is the corpus, not the binary —
+   and an oracle ranking any answer file first scores 1.00 on this
    corpus, so the corpus is not the reason. Failing a gate you wrote down is the point of writing
    it down first; the temptation to stratify it around the queries that fail arrives *after* you
    have seen which ones fail, which is why the answer is no.

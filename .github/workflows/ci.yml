@@ -5,6 +5,11 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+  # The audits below only see an advisory published after the last push if something reruns
+  # them. Dependabot cannot do it for the root: its bun updater rejects bun.lock lockfileVersion 2
+  # (every weekly job since 2026-09-17 failed with "supports up to 1"), so it opens no security PRs.
+  schedule:
+    - cron: "17 6 * * 1"
 
 # Least privilege: nothing here writes to the repository.
 permissions:
@@ -12,7 +17,8 @@ permissions:
 
 # A superseded push should not keep burning runners.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  # The event is part of the key so a scheduled run on main cannot cancel a push run, or vice versa.
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 env:

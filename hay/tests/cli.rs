@@ -487,3 +487,160 @@ fn results_are_interleaved_by_file_and_the_flag_turns_it_off() {
         files(&["-l", "--no-diversify", "-F", "session", "."])
     );
 }
+
+#[test]
+fn piped_stdin_is_the_input_when_no_path_is_given() {
+    // ripgrep's rule. hay searched the working directory instead, so `cmd | hay x` answered a
+    // different question and exited 1 — "searched fine, found nothing".
+    let d = fixture("stdin");
+    assert_cmd::Command::cargo_bin("hay")
+        .unwrap()
+        .arg("zzz")
+        .current_dir(d.path())
+        .write_stdin("zzz piped\nnot this\n")
+        .assert()
+        .success()
+        .stdout("<stdin>:1:zzz piped\n");
+    assert_cmd::Command::cargo_bin("hay")
+        .unwrap()
+        .args(["zzz", "-"])
+        .current_dir(d.path())
+        .write_stdin("no match here\n")
+        .assert()
+        .code(1);
+}
+
+#[test]
+fn a_binary_file_named_on_the_command_line_reports_its_match() {
+    // A walked file is abandoned at its first NUL; a named one is searched with NUL converted,
+    // as ripgrep does. Quitting there too made hay exit 1 on a file ripgrep reports as matching.
+    let d = tempfile::tempdir().unwrap();
+    fs::write(d.path().join("bin.dat"), b"foo before nul\n\0\nfoo after\n").unwrap();
+    hay()
+        .args(["foo", "bin.dat"])
+        .current_dir(d.path())
+        .assert()
+        .success()
+        .stdout("bin.dat: binary file matches (found \"\\0\" byte around offset 15)\n");
+    hay()
+        .args(["-c", "foo", "bin.dat"])
+        .current_dir(d.path())
+        .assert()
+        .success()
+        .stdout("bin.dat:2\n");
+}
+
+#[test]
+fn invert_with_max_count_stops_at_the_cap() {
+    // `-m` is the searcher's cap. Returning false from the sink under `-v` let grep-searcher
+    // resume after the next matching line, so `-v -m 1` printed two lines.
+    let d = tempfile::tempdir().unwrap();
+    fs::write(d.path().join("c.txt"), "a1\nfoo\na3\n").unwrap();
+    hay()
+        .args(["-v", "-m", "1", "foo", "c.txt"])
+        .current_dir(d.path())
+        .assert()
+        .success()
+        .stdout("c.txt:1:a1\n");
+}
+
+#[cfg(unix)]
+#[test]
+fn a_pattern_that_is_not_utf8_is_an_error_not_a_panic() {
+    // `std::env::args` panicked (exit 101) on such an argument: neither "no match" nor "error".
+    use std::os::unix::ffi::OsStrExt;
+    hay()
+        .arg(std::ffi::OsStr::from_bytes(b"\xff"))
+        .arg(".")
+        .assert()
+        .code(2)
+        .stderr(predicate::str::contains("PATTERN must be valid UTF-8"));
+}
+
+#[test]
+fn vcs_metadata_is_excluded_at_any_depth_unless_a_glob_asks_for_it() {
+    // The exclusion covers a nested checkout's `.git` (the differential harness gives ripgrep
+    // `-g '!.git/'`), yet stays a default an explicit include glob can override, as SECURITY.md
+    // promises: pruning `.git` as a directory made `--hidden -g '.git/**'` return nothing.
+    let d = tempfile::tempdir().unwrap();
+    for rel in [".git", "n/.git", "src"] {
+        fs::create_dir_all(d.path().join(rel)).unwrap();
+    }
+    write(d.path(), ".git/config", "foo top\n");
+    write(d.path(), "n/.git/config", "foo nested\n");
+    write(d.path(), "src/a.rs", "foo src\n");
+    let files = |args: &[&str]| -> String {
+        let out = hay().args(args).current_dir(d.path()).assert().success();
+        normalize(&String::from_utf8(out.get_output().stdout.clone()).unwrap())
+    };
+    assert_eq!(files(&["--hidden", "-l", "foo", "."]), "./src/a.rs\n");
+    assert_eq!(
+        files(&["--hidden", "-g", ".git/**", "-l", "foo", "."]),
+        "./.git/config\n"
+    );
+}
+
+#[test]
+fn json_context_in_a_named_binary_file_counts_lines_as_the_searcher_does() {
+    // The searcher numbers a named file with NUL converted to a line break; re-reading context
+    // by `\n` alone then printed the wrong lines after the NUL, and the NUL as a line's content.
+    let d = tempfile::tempdir().unwrap();
+    fs::write(
+        d.path().join("b.dat"),
+        b"a0\nfoo before\n\0\nctx x\nfoo after\nctx y\n",
+    )
+    .unwrap();
+    let out = hay()
+        .args(["--json", "-C1", "foo", "b.dat"])
+        .current_dir(d.path())
+        .assert()
+        .success();
+    let mut got: Vec<(u64, String)> = String::from_utf8(out.get_output().stdout.clone())
+        .unwrap()
+        .lines()
+        .map(|l| {
+            let v: serde_json::Value = serde_json::from_str(l).unwrap();
+            (
+                v["data"]["line_number"].as_u64().unwrap(),
+                v["data"]["lines"]["text"].as_str().unwrap().to_string(),
+            )
+        })
+        .collect();
+    got.sort();
+    let want: Vec<(u64, String)> = [
+        (1, "a0\n"),
+        (2, "foo before\n"),
+        (3, "\n"),
+        (5, "ctx x\n"),
+        (6, "foo after\n"),
+        (7, "ctx y\n"),
+    ]
+    .iter()
+    .map(|&(n, t)| (n, t.to_string()))
+    .collect();
+    assert_eq!(got, want);
+}
+
+// Linux only: macOS (APFS) refuses to create a file whose name is not UTF-8.
+#[cfg(target_os = "linux")]
+#[test]
+fn a_filename_that_is_not_utf8_is_printed_as_ripgrep_prints_it() {
+    use std::os::unix::ffi::OsStrExt;
+    let d = tempfile::tempdir().unwrap();
+    let name = std::ffi::OsStr::from_bytes(b"caf\xe9.txt");
+    fs::write(d.path().join(name), "foo\n").unwrap();
+    let out = hay()
+        .args(["-l", "foo", "."])
+        .current_dir(d.path())
+        .assert()
+        .success();
+    assert_eq!(out.get_output().stdout, b"./caf\xe9.txt\n");
+    // And as PATH, which `args_os` now accepts: the printed name must be the file's name.
+    let out = hay()
+        .arg("foo")
+        .arg(name)
+        .current_dir(d.path())
+        .assert()
+        .success();
+    assert_eq!(out.get_output().stdout, b"caf\xe9.txt:1:foo\n");
+}

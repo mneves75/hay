@@ -198,9 +198,18 @@ jobs:
             # --clobber replaces same-named files but keeps every other one, so a draft carrying an
             # asset this run did not build would publish bytes nobody attested. Refuse instead.
             RELEASE_TAG="$TAG" DIST_DIR=dist bash ./release-policy.sh check-draft-assets
+            # A refreshed beta draft may predate the prerelease rule below, or have been edited by
+            # hand; mark it here too so no path to publishing a beta leaves it eligible for Latest.
+            case "$TAG" in
+              *-beta*) gh release edit "$TAG" -R "$GITHUB_REPOSITORY" --prerelease ;;
+            esac
             gh release upload "$TAG" -R "$GITHUB_REPOSITORY" --clobber dist/*
           else
-            gh release create "$TAG" -R "$GITHUB_REPOSITORY" --draft --verify-tag \
+            # A beta is created as a prerelease so publishing it can never make it Latest, which
+            # is what the formula's livecheck and install.sh's default resolve.
+            prerelease=()
+            case "$TAG" in *-beta*) prerelease=(--prerelease) ;; esac
+            gh release create "$TAG" -R "$GITHUB_REPOSITORY" --draft --verify-tag "${prerelease[@]}" \
               --title "hay ${TAG#v}" --notes "Draft — fill from CHANGELOG.md before publishing." \
               dist/*
           fi

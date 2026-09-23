@@ -189,7 +189,8 @@ checksum_of_verified_asset() {
   # commit, from lending its provenance to these bytes.
   gh attestation verify "$workdir/$asset" -R "$REPO_SLUG" \
     --signer-workflow "${REPO_SLUG}/.github/workflows/release-dispatch.yml" \
-    --source-ref refs/heads/main --source-digest "$source_digest" >/dev/null 2>&1 ||
+    --source-ref refs/heads/main --source-digest "$source_digest" \
+    --deny-self-hosted-runners >/dev/null 2>&1 ||
     { echo "brew-formula: provenance attestation failed for $asset" >&2; return 2; }
   printf '%s\n' "$sum"
 }

@@ -156,7 +156,7 @@ corpus (the Linux kernel, warm cache):
 |---|---|---|
 | "where is this defined?" | **hay** | median rank of the declaring file is **1** on all four public corpora; ripgrep's is 1 to 5 |
 | an agent's first search, then opening a file | **hay** | answer inside the first ten results **44.9% → 77.1%** on 951 real agent searches |
-| counting, inverting, extracting (`-c`, `-v`, `-o`) | **hay** | they used to exit 2 saying "use `rg`". They run unranked now, byte-identical to ripgrep, held there by 32 differential cases |
+| counting, inverting, extracting (`-c`, `-v`, `-o`) | **hay** | they used to exit 2 saying "use `rg`". They run unranked now, byte-identical to ripgrep, held there by 42 differential cases |
 | the first hit as fast as possible (`… \| head`) | **hay `--stream`** | ~2.3 s against ripgrep's ~1.6 s on a 95k-file tree — no longer a reason to leave, still not a win |
 | a very broad pattern, exhaustively | **hay `--stream`** | streaming has no candidate cap, so nothing is dropped and nothing exits 2 |
 | the complete result set, in a stable order | **hay** | ~2.5 s against `rg --sort path`'s ~8.6 s for the identical match set |
@@ -265,7 +265,9 @@ agent opened next, not what defines the thing; on those queries the two goals di
 0.3810 and 59.2% at 0.1.4. The gate — median MRR across repositories ≥ 0.50, answer in the top 10
 ≥ 80% — was written into [DESIGN-hay.md](DESIGN-hay.md) before a line of Rust existed, precisely
 so it could not be moved afterwards. It has not been moved, and the second criterion is now
-missing by 1.5 points.
+missing by 1.5 points. (Re-measured on 2026-09-23 over the re-harvested corpus, now rooted at
+each repository: 0.4328 and 77.2% for both 0.3.1 and 0.3.2, identical on all 934 paired queries.
+The corpus changed, not the ranking; the published pair above stays the like-for-like record.)
 
 **And the excuse is not available.** An oracle that ranks any answer file first scores **1.00** on
 this corpus: every judged answer file is reachable in the results of both retrievers, so nothing

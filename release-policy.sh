@@ -42,6 +42,16 @@ release_tag_matches_package_version() {
   [ "$tag_version" = "$package_version" ]
 }
 
+# A beta stages a version that has not shipped yet. Once the stable tag exists, a later beta of the
+# same version would build a different commit that also reports itself as that stable version.
+beta_allowed_given_stable_count() {
+  local tag="$1" count="$2"
+  case "$count" in
+    ''|*[!0-9]*) return 2 ;;
+  esac
+  [[ "$tag" != *-beta* ]] || [ "$count" -eq 0 ]
+}
+
 require_successful_ci_count() {
   local count="$1"
   case "$count" in
@@ -89,7 +99,7 @@ check_draft_assets() {
   assets="$(gh release view "$tag" -R "$repository" --json assets -q '.assets[].name')" ||
     die "could not list the assets of draft $tag"
   built="$(find "$dist" -maxdepth 1 -type f -exec basename {} \; | LC_ALL=C sort)"
-  foreign="$(comm -13 <(printf '%s\n' "$built") <(printf '%s\n' "$assets" | LC_ALL=C sort) | sed '/^$/d')"
+  foreign="$(LC_ALL=C comm -13 <(printf '%s\n' "$built") <(printf '%s\n' "$assets" | LC_ALL=C sort) | sed '/^$/d')"
   [ -z "$foreign" ] || die "draft $tag holds assets this run did not build: $(printf '%s' "$foreign" | tr '\n' ' ')"
   echo "release-policy: every asset on draft $tag was built by this run"
 }
@@ -97,12 +107,21 @@ check_draft_assets() {
 verify_release() {
   local tag="${RELEASE_TAG:-}" repository="${GITHUB_REPOSITORY:-}"
   local source_ref="${GITHUB_REF:-}" source_sha="${GITHUB_SHA:-}" ci_count package_version
+  local stable_count
 
   valid_release_tag "$tag" || die "invalid release tag '$tag'"
   package_version="$(package_version_from_manifest)"
   release_tag_matches_package_version "$tag" "$package_version" ||
     die "release tag $tag does not match hay package version $package_version"
   [ -n "$repository" ] || die "GITHUB_REPOSITORY is required"
+  if [[ "$tag" == *-beta* ]]; then
+    # matching-refs is a PREFIX match (v0.3.1 also matches v0.3.10), so the jq keeps the exact ref.
+    stable_count="$(gh api "repos/${repository}/git/matching-refs/tags/${tag%%-beta*}" \
+      --jq "map(select(.ref == \"refs/tags/${tag%%-beta*}\")) | length")" ||
+      die "could not check whether ${tag%%-beta*} is already released"
+    beta_allowed_given_stable_count "$tag" "$stable_count" ||
+      die "${tag%%-beta*} is already tagged; bump the version instead of staging a beta of it"
+  fi
   [ "$source_ref" = refs/heads/main ] || die "release must be dispatched from refs/heads/main"
   valid_commit_sha "$source_sha" || die "GITHUB_SHA must be a lowercase 40-character commit SHA"
 
@@ -177,6 +196,13 @@ selftest() {
     fi
   done
 
+  beta_allowed_given_stable_count v1.2.3-beta1 0 ||
+    { echo "selftest: beta of an unreleased version rejected" >&2; exit 1; }
+  beta_allowed_given_stable_count v1.2.3 1 ||
+    { echo "selftest: stable tag rejected by the beta rule" >&2; exit 1; }
+  if beta_allowed_given_stable_count v1.2.3-beta2 1 || beta_allowed_given_stable_count v1.2.3-beta2 ""; then
+    echo "selftest: beta of an already-tagged version accepted" >&2; exit 1
+  fi
   require_existing_tag_matches commit "$good_sha" "$good_sha" ||
     { echo "selftest: matching lightweight tag rejected" >&2; exit 1; }
   if require_existing_tag_matches tag "$good_sha" "$good_sha" ||
@@ -277,6 +303,8 @@ selftest() {
     { echo "selftest: draft does not re-check the tag before publishing assets" >&2; exit 1; }
   grep -Fq './release-policy.sh check-draft-assets' "$workflow" ||
     { echo "selftest: draft refresh no longer refuses foreign assets" >&2; exit 1; }
+  [ "$(grep -c -- '--prerelease' "$workflow")" -ge 2 ] ||
+    { echo "selftest: beta drafts are not marked prerelease on both create and refresh" >&2; exit 1; }
   grep -Fq -- '--json isDraft -q .isDraft' "$workflow" ||
     { echo "selftest: published release overwrite guard missing" >&2; exit 1; }
   grep -Fq "release tag \$tag does not match hay package version \$package_version" "$0" ||

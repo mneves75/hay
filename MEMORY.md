@@ -221,7 +221,7 @@ destination is public. Use `=label` for repo identity and `--redact-names` for i
   notifications, command output and compaction summaries as "the user's task" (2,200+ rows share
   the user-message shape). `evidence/ablations/hint-signal.patch` rebuilds the measured binary; the
   instrument stays and refuses a binary without the flag. Release chain: owner chose no GitHub App —
-  maintainer creates a lightweight tag at a CI-green main SHA, dispatches `release.yml` from main,
+  maintainer creates a lightweight tag at a CI-green main SHA, dispatches `release-dispatch.yml` from main,
   policy requires tag == dispatch SHA; only env-gated `draft-release` has contents write. Rulesets
   `release-tags` (v* admin-only) and `main` (no deletion/force push) plus a main-only `release`
   environment were created 2026-09-15 and read back. Ships context-window coalescing, traversal-order

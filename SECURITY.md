@@ -9,9 +9,12 @@ issue for anything exploitable or include secrets, private paths, or personal da
 
 **`hay`** reads the filesystem and nothing else. No network, no daemon, no index, no state written
 anywhere. By default it honours `.gitignore` and skips hidden files, so `.env` and friends are not
-read unless you explicitly pass `--hidden --no-ignore`. Symlinks are never followed — there is no
-`-L` — so a symlink cannot be used to read outside the search tree. Binary content is suppressed at
-the first NUL rather than printed.
+read unless you explicitly pass `--hidden --no-ignore`. Symlinks met during traversal are never
+followed — there is no `-L` — so a symlink inside the tree cannot be used to read outside it. A
+symlink given as PATH itself is followed, as ripgrep follows it: the caller chose that root. In a
+walked file, binary content stops the search at the first NUL; a file named as PATH, or stdin,
+prints ripgrep's `binary file matches` line in place of its lines after the NUL, while `-c`, `-l`
+and `--json` read it to the end with NUL treated as a line break, exactly as ripgrep does.
 
 VCS metadata (`.git/`, `.hg/`, `.svn/`, `.jj/`) is excluded by default and stays excluded under
 `--hidden` and `--no-ignore`, which is where ripgrep would expose it. It is **not** excluded against

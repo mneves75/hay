@@ -196,17 +196,17 @@ release workflow built, whose checksums entered the formula only after their bui
 attestations verified:</p>
 <div class="codewrap"><pre tabindex="0"><code>brew install mneves75/tap/hay</code></pre><button class="copy" type="button">copy</button></div>
 <p>Or build from source — one line, or inspect first (Rust edition 2024, MSRV 1.88):</p>
-<div class="codewrap"><pre tabindex="0"><code>curl -fsSL https://raw.githubusercontent.com/mneves75/hay/v0.3.1/install.sh | HAY_REF=v0.3.1 bash
+<div class="codewrap"><pre tabindex="0"><code>curl -fsSL https://raw.githubusercontent.com/mneves75/hay/v0.3.2/install.sh | HAY_REF=v0.3.2 bash
 
 # inspect-first form:
-git clone --depth 1 --branch v0.3.1 https://github.com/mneves75/hay.git &amp;&amp; cd hay &amp;&amp; HAY_REF=v0.3.1 ./install.sh</code></pre><button class="copy" type="button">copy</button></div>
+git clone --depth 1 --branch v0.3.2 https://github.com/mneves75/hay.git &amp;&amp; cd hay &amp;&amp; HAY_REF=v0.3.2 ./install.sh</code></pre><button class="copy" type="button">copy</button></div>
 <p>The script gates on the toolchain version, clones, builds release, installs via
 <code>cargo install</code>, and smoke-tests the installed binary. Set
 <code>CARGO_INSTALL_ROOT</code> to choose its destination; the script passes that root to Cargo
 and verifies the same path. Then search exactly like you would with ripgrep:</p>
 <div class="codewrap"><pre tabindex="0"><code>hay validateSession src/          # ranked results, best first
 hay -t ts -w fetchUser            # TypeScript only, whole words
-hay -C 3 -m 20 'parseConfig'      # context, capped result count</code></pre><button class="copy" type="button">copy</button></div>
+hay -C 3 -m 20 'parseConfig' .    # context, capped result count</code></pre><button class="copy" type="button">copy</button></div>
 <p>The deal hay offers is narrow and honest: each complete search returns the exact match set
 from an equivalently configured ripgrep invocation, verified continuously by a differential test
 that normalizes traversal inputs on both sides — but <strong>ordered by likelihood of being the
@@ -293,6 +293,15 @@ ripgrep's 1.1 s; the parallel walk brings that to 2.3 s. Every mode that ranks i
 ripgrep treats it as <em>print nothing</em>. hay's meaning is the documented one and the
 measurement kit depends on it, so it stays — stated here rather than discovered.</p>
 </div>
+<p>With no PATH, a pipe or redirected file on stdin is the input, as in ripgrep, and <code>-</code>
+names it explicitly — so from a script or a subprocess whose stdin may be an open pipe, always
+pass a PATH (<code>hay pattern .</code>), exactly as ripgrep advises. stdin is always streamed in input order: a stream cannot be reopened for
+context after ranking. A binary file named as PATH is searched with NUL treated as a line break —
+line output prints <code>binary file matches</code> for it, as ripgrep's does, while
+<code>-c</code>, <code>-l</code> and <code>--json</code> read to the end. Binary files found by
+walking a directory are skipped at the first NUL.</p>
+<div class="codewrap"><pre tabindex="0"><code>git diff | hay -F TODO        # searches the diff, not the working directory
+hay -c foo build/app.bin      # counts matches in a binary you named</code></pre><button class="copy" type="button">copy</button></div>
 
 <h3>Turning signals off</h3>
 <p>Each signal has an ablation switch, because a contribution you cannot switch off is a belief,
@@ -577,9 +586,9 @@ hay --json -F "$symbol" "$root" \
 <div class="codewrap"><pre tabindex="0"><code>brew install mneves75/tap/hay   # macOS and Linux
 
 # or from source:
-curl -fsSL https://raw.githubusercontent.com/mneves75/hay/v0.3.1/install.sh | HAY_REF=v0.3.1 bash   # inspect first!
+curl -fsSL https://raw.githubusercontent.com/mneves75/hay/v0.3.2/install.sh | HAY_REF=v0.3.2 bash   # inspect first!
 # inspect-first form:
-git clone --depth 1 --branch v0.3.1 https://github.com/mneves75/hay.git &amp;&amp; cd hay &amp;&amp; HAY_REF=v0.3.1 ./install.sh</code></pre><button class="copy" type="button">copy</button></div>
+git clone --depth 1 --branch v0.3.2 https://github.com/mneves75/hay.git &amp;&amp; cd hay &amp;&amp; HAY_REF=v0.3.2 ./install.sh</code></pre><button class="copy" type="button">copy</button></div>
 </section>
 
 <!-- ─────────────────────────────── faq ─────────────────────────────── -->

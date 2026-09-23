@@ -225,6 +225,14 @@ the first few lines are usually enough. Use plain `rg` when you need every match
 
 Works the same for Claude Code, Codex, Cursor, or anything else that shells out to a terminal.
 
+**Pass a PATH from scripts and subprocesses** — `hay pattern .`, not `hay pattern`. Since 0.3.2,
+hay follows ripgrep's rule: with no PATH, a pipe on stdin is the input. A harness that starts
+commands with an open pipe as stdin therefore makes a PATH-less `hay` (or `rg`) wait on, or
+search, that pipe instead of the working directory — the hazard ripgrep documents in
+[#2582](https://github.com/BurntSushi/ripgrep/issues/2582) and
+[#2806](https://github.com/BurntSushi/ripgrep/issues/2806). An explicit PATH removes the guess;
+so does giving the child `/dev/null` as stdin.
+
 ### When *not* to use it
 
 - **You want every match, in file order** — use `rg`. `hay` shows the best 50 by default.
@@ -401,9 +409,16 @@ aggregates-only and safe to commit — that is why `evidence/` contains that one
 
 `-c`, `--count-matches`, `-v`, `-o` and `--stream` have nothing to order, so they behave exactly
 as the corresponding ripgrep invocation does: ripgrep's parallel traversal, ripgrep's output,
-ripgrep's per-file `-m`, and no candidate cap. `differential-test.sh` holds them there with 32
-cases, seven of which are flag COMBINATIONS — every defect these modes shipped with lived in a
-pair of flags that single-flag cases could not reach.
+ripgrep's per-file `-m`, and no candidate cap. `differential-test.sh` holds them there with 42
+cases. Seven are flag COMBINATIONS — every defect these modes shipped with lived in a pair of
+flags that single-flag cases could not reach — and ten pass a PATH other than `.`, or stdin: a
+subdirectory with `-g`, a binary file named as PATH, `-v -m`, `-A -m`, a Latin-1 file, a nested
+checkout's `.git`. Every case before 0.3.2 passed `.`, which is how most of 0.3.2's eight divergences outlived it.
+
+With no PATH, a pipe or redirected file on stdin is searched, as ripgrep does, and `-` names it
+explicitly; stdin is always streamed, since it cannot be reopened for context after ranking. A
+binary file named as PATH is searched with NUL treated as a line break: line output prints
+`binary file matches` for it, as ripgrep's does, while `-c`, `-l` and `--json` read to the end.
 
 They are the only modes whose output order is not deterministic, because that order is ripgrep's.
 Sorting the walk instead was measured at 8.0 s to the first line of a kernel search against

@@ -8,7 +8,8 @@
 # Usage: ./differential-test.sh <repo>...   (defaults to the repo containing this script)
 set -uo pipefail
 
-HAY="$(cd "$(dirname "$0")" && pwd)/target/release/hay"
+# HAY can be overridden so an older binary can be run as the failing control for a new case.
+HAY="${HAY:-$(cd "$(dirname "$0")" && pwd)/target/release/hay}"
 [ -x "$HAY" ] || { echo "build first: cargo build --release" >&2; exit 2; }
 
 QUERIES=(config auth handler validate client error session request update create)
@@ -129,5 +130,49 @@ else
   echo "DIFFERS  stream-context"
   diff <(printf '%s\n' "$a") <(printf '%s\n' "$b") | head -8
 fi
+# PATHS OTHER THAN `.` and inputs other than a walked directory. Every case above passes `.`, and
+# that is exactly why four divergences survived until 0.3.2: `-g` was rooted at PATH rather than
+# the working directory, a binary file named on the command line exited 1 (ripgrep converts NUL
+# there instead of quitting), `-v -m` and `-A -m` stopped from the sink rather than the searcher,
+# and piped stdin was ignored. `-H` because ripgrep omits the path for a single-file PATH and hay
+# never does; LC_ALL=C because a Latin-1 line is not text in the caller's locale.
+paths=$(mktemp -d "${TMPDIR:-/tmp}/hay-paths.XXXXXX") || exit 2
+trap 'rm -r "$fixture" "$ctx" "$paths"' EXIT
+mkdir -p "$paths/sub/src" "$paths/src" "$paths/nested/.git"
+printf 'foo in sub\n' > "$paths/sub/src/b.rs"
+printf 'foo at top\n' > "$paths/src/a.rs"
+printf 'foo in a nested checkout\n' > "$paths/nested/.git/config"
+printf 'foo before nul\n\0\nfoo after\n' > "$paths/bin.dat"
+printf 'a1\nfoo\na3\na4\nfoo\nfoo\na7\na8\na9\nfoo\n' > "$paths/ctx.txt"
+printf 'caf\351 foo\n' > "$paths/latin1.txt"
+compare_path() {
+  local label=$1 mode=$2 path=$3
+  shift 3
+  local a b
+  a=$(cd "$paths" && rg "${RG_BASE[@]}" -H -n "$@" "$path" 2>&1 | LC_ALL=C sed 's|^\./||' | LC_ALL=C sort)
+  b=$(cd "$paths" && "$HAY" "${HAY_BASE[@]}" ${mode:+"$mode"} -n "$@" "$path" 2>&1 | LC_ALL=C sed 's|^\./||' | LC_ALL=C sort)
+  if [ "$a" = "$b" ]; then
+    pass=$((pass+1))
+  else
+    fail=$((fail+1))
+    echo "DIFFERS  paths  $label"
+    diff <(printf '%s\n' "$a") <(printf '%s\n' "$b") | head -6
+  fi
+}
+compare_path glob-rooted-at-cwd '' sub -g 'src/*.rs' -F -e foo
+compare_path negated-glob-rooted-at-cwd '' sub -g '!src/*.rs' -F -e foo
+compare_path nested-vcs-dir '' . -F -e foo
+compare_path binary-named-file '' bin.dat -F -e foo
+compare_path binary-named-file-count '' bin.dat -c -F -e foo
+compare_path binary-named-file-invert '' bin.dat -v -F -e foo
+compare_path invert-max-count '' ctx.txt -v -m 1 -F -e foo
+compare_path context-max-count --stream ctx.txt -A1 -m 1 -F -e foo
+compare_path latin1-bytes '' latin1.txt -F -e foo
+a=$(printf 'zzz piped\nnot this\n' | rg --no-config -H -n zzz 2>&1)
+b=$(printf 'zzz piped\nnot this\n' | "$HAY" zzz 2>&1)
+if [ "$a" = "$b" ]; then pass=$((pass+1)); else
+  fail=$((fail+1)); echo "DIFFERS  stdin"; diff <(printf '%s\n' "$a") <(printf '%s\n' "$b") | head -4
+fi
+
 echo "identical: $pass   differing: $fail"
 [ "$fail" -eq 0 ]

@@ -129,7 +129,7 @@ cargo_install "$dir/hay" "$install_root"
 
 installed="$bin_dir/hay"
 if [ -x "$installed" ]; then
-  echo "==> installed: $($installed --version)"
+  echo "==> installed: $("$installed" --version)"
   if "$installed" -F 'name = "hay"' "$dir/hay/Cargo.toml" >/dev/null 2>&1; then
     echo "==> smoke test: newly installed binary searches successfully."
   else

@@ -104,11 +104,6 @@ export type RepoScore = {
   worst: { query: string; rank: number | null; results: number }[];
 };
 
-/**
- * Rank of the first result line that lands in a file the agent actually opened.
- * Streams and stops early: the answer is usually near the front, and reading every result for
- * every query would dominate the runtime.
- */
 /** Which retriever is under test. `rg` is the baseline; `hay` is the ranked one. */
 export type Retriever = "rg" | "hay";
 const HAY_BIN = new URL("./hay/target/release/hay", import.meta.url).pathname;
@@ -174,8 +169,10 @@ export function retrieverArgv(
     // directory, `rg --hidden` returns it and `hay` returns nothing. Every other filtering flag
     // below already has an exact counterpart inside hay — `--no-ignore-dot` matches `.ignore(false)`,
     // `--no-ignore-global` matches `.git_global(false)`, `--no-ignore-exclude` matches
-    // `.git_exclude(false)`, `-g '!.git/'` matches hay's built-in VCS exclusion — so `--hidden`
-    // was the single remaining asymmetry, and it is the one this file's own comment forbids.
+    // `.git_exclude(false)`, and the four `-g '!<vcs>/'` globs match hay's built-in VCS pruning at any
+    // depth — so `--hidden` was the single remaining asymmetry, and it is the one this file's own
+    // comment forbids. (Until 0.3.2 only `.git` had its glob here while hay also pruned `.hg`,
+    // `.svn` and `.jj`: an asymmetry in any measured repository holding one of those.)
     // Global flags describe a whole ablation run. Per-call flags describe one treatment arm
     // (for example repeatable task hints) and must not mutate module state between paired calls.
     return [
@@ -184,7 +181,8 @@ export function retrieverArgv(
     ];
   }
   return ["rg", "--no-config", "--no-ignore-dot", "--no-ignore-global", "--no-ignore-exclude",
-          "--hidden", "-g", "!.git/", "--sort", "path", "-i", "-F", "-n", "-e", query, "."];
+          "--hidden", "-g", "!.git/", "-g", "!.hg/", "-g", "!.svn/", "-g", "!.jj/",
+          "--sort", "path", "-i", "-F", "-n", "-e", query, "."];
 }
 
 /**
@@ -327,6 +325,11 @@ export class ResultScan {
   }
 }
 
+/**
+ * Rank of the first result line that lands in a file the agent actually opened.
+ * Streams and stops early: the answer is usually near the front, and reading every result for
+ * every query would dominate the runtime.
+ */
 export async function rankOfAnswer(
   repo: string,
   query: string,
@@ -422,15 +425,6 @@ async function mapPool<T, R>(xs: T[], limit: number, f: (x: T) => Promise<R>): P
   return out;
 }
 
-/**
- * Keep only answer files that actually contain the query.
- *
- * The raw behavioural signal is too loose: measured on one repo, 57% of files an agent opened
- * after a search did not contain the searched term at all, so they could never appear in that
- * query's results and were silently scored as "unreachable". A file that does not contain the
- * term cannot have been reached by matching it — whatever led the agent there, it was not this
- * search. Queries left with no valid answer have no usable judgment and are dropped, not scored.
- */
 export function safeAnswerPath(
   repo: string,
   rel: string,
@@ -459,6 +453,15 @@ export function safeAnswerPath(
   return { absolute, resultPath };
 }
 
+/**
+ * Keep only answer files that actually contain the query.
+ *
+ * The raw behavioural signal is too loose: measured on one repo, 57% of files an agent opened
+ * after a search did not contain the searched term at all, so they could never appear in that
+ * query's results and were silently scored as "unreachable". A file that does not contain the
+ * term cannot have been reached by matching it — whatever led the agent there, it was not this
+ * search. Queries left with no valid answer have no usable judgment and are dropped, not scored.
+ */
 async function validAnswers(repo: string, e: CorpusEntry): Promise<Set<string>> {
   const ok = new Set<string>();
   const needle = e.query.toLowerCase();

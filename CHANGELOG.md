@@ -6,6 +6,79 @@ history lives in git and `memory/`.
 
 ## [Unreleased]
 
+## [0.3.2] — 2026-09-23
+
+**Eight places where hay answered a different question than ripgrep, now fixed.** No ranking
+signal or weight changed. Every one of these was a quiet wrong answer, and `differential-test.sh`
+could not see any of them because all 32 of its cases passed PATH `.` to a walked directory. It now
+has 42; the ten new cases each fail on the 0.3.1 binary.
+
+### Fixed
+
+- **Piped stdin was ignored.** `cmd | hay x` searched the working directory instead and usually
+  exited 1. With no PATH, a pipe or redirected file on stdin is now the input — ripgrep's rule,
+  from ripgrep's own `grep-cli` crate — and `-` names stdin explicitly. stdin is streamed in input
+  order, because it cannot be reopened for context after ranking. This inherits ripgrep's known
+  hazard too: a harness that gives commands an open pipe as stdin makes a PATH-less search wait on
+  that pipe, so scripts and agents should pass a PATH (`hay pattern .`). HOWTO says so.
+- **A binary file named as PATH exited 1.** ripgrep searches a named file with NUL treated as a line
+  break and quits at NUL only in files it finds by walking. hay quit everywhere, so `hay foo
+  file.bin` reported "no match" where ripgrep reports one. Named files and stdin now follow
+  ripgrep's printer exactly: line output stops at the first match after the NUL and prints
+  `binary file matches (found "\0" byte around offset N)`, while `-c`, `-l` and `--json` read on.
+  Context re-read for such a file counts lines the way the searcher numbered them, NUL included,
+  so `--json -C` reports ripgrep's context lines rather than neighbours one line off.
+- **`-g` was rooted at PATH instead of the working directory.** `hay -g 'src/*.rs' foo sub` matched
+  `sub/src/b.rs`, which ripgrep does not, and the negated glob dropped it — wrong in both
+  directions.
+- **`-v -m N` printed more than N lines, and `-m` dropped trailing context** in the unranked modes.
+  The cap stopped the search from the sink, which grep-searcher treats as "resume after the next
+  match" under `-v` and which ends the search before the after-context ripgrep prints. `-m` is now
+  the searcher's own `max_matches`, which is what ripgrep uses.
+- **Lines that are not UTF-8 were printed lossily.** A Latin-1 `é` came out as U+FFFD, so the line
+  shown was not the line in the file. Text output now carries the file's bytes, as ripgrep's does;
+  `--json` already did.
+- **An argument that is not UTF-8 panicked** with exit 101, which is neither "no match" nor
+  "error". A non-UTF-8 PATTERN now exits 2 as ripgrep does, and a non-UTF-8 PATH is searched.
+- **A file name that is not UTF-8 was printed lossily**, so the output named a file that does not
+  exist. Text output prints the name's own bytes and `--json` reports it as base64 `bytes`, as
+  ripgrep does; `-l` no longer merges two such names that decode alike.
+- **A nested checkout's `.git` was searched under `--hidden`.** The VCS exclusion was anchored at
+  PATH, so it covered only the top-level `.git`, while every harness gives ripgrep `-g '!.git/'`,
+  which covers any depth. It now covers any depth and still yields to an explicit include glob, so
+  `--hidden -g '.git/**'` searches `.git` exactly as ripgrep does.
+
+### Release chain
+
+- A beta draft is created as a prerelease, and marked again whenever the draft is refreshed, so
+  publishing it can never make it Latest — which is what the formula's livecheck resolves. It had
+  been marked by hand.
+- `release-policy.sh verify` refuses a beta of a version that is already tagged: a later
+  `v0.3.1-beta3` would have built a different commit that also reports itself as 0.3.1.
+- `brew-formula.sh` verifies attestations with `--deny-self-hosted-runners`, as the workflow does.
+- The draft foreign-asset check runs `comm` in the C locale its inputs were sorted in.
+- CI also runs weekly, so the dependency audits see advisories published after the last push.
+  Dependabot cannot do it for the root: its bun updater rejects `bun.lock` lockfileVersion 2, and
+  every weekly job since 2026-09-17 has failed with "supports up to 1".
+
+### Measurement
+
+- `measure-mrr.ts` gives ripgrep `-g '!.hg/' -g '!.svn/' -g '!.jj/'` as well as `!.git/`, the exact
+  counterpart of hay's VCS exclusion; only `.git` had one.
+- `swe-explore.ts` has its own frozen copy of the `qderive-v1` stop list again. It had started
+  importing the hint rule's list, so an edit there would have re-derived the published queries
+  without a version bump. The copy is byte-identical to 0.3.0's.
+- The SWE-Explore hint loop refuses a pair whose arms disagree on visibility, as `measure-mrr.ts`
+  already did, instead of scoring it.
+- **Behavioural re-measurement.** On the re-harvested private corpus (934 paired queries, 12
+  repositories), 0.3.2 and 0.3.1 give identical figures: MRR rg 0.2087 → hay 0.4286 (+0.2199,
+  95% CI [0.1917, 0.2487] clustered by repository), top-10 0.3919 → 0.7323, nDCG@10 0.3116 →
+  0.4706. The pre-registered gate still fails, at median MRR 0.4328 and top-10 0.7721 against
+  0.50 and 0.80. Those are below the published 0.4437 / 0.7849 because the corpus changed — it is
+  now rooted at each repository and was re-harvested — and not because the binary did.
+- `differential-test.sh` compares under `LC_ALL=C`. In the caller's locale `sed` rejected a Latin-1
+  line, both sides came out empty, and the case passed vacuously.
+
 ## [0.3.1] — 2026-09-15
 
 **No new ranking.** A task-context signal, `--hint`, was built, passed the public benchmark, failed

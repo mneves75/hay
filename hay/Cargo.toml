@@ -1,6 +1,6 @@
 [package]
 name = "hay"
-version = "0.3.1"
+version = "0.3.2"
 edition = "2024"
 rust-version = "1.88"
 description = "A ranked grep for coding agents: ripgrep's engine, with the priors grep lacks."
@@ -15,6 +15,8 @@ ignore = "0.4"
 grep-regex = "0.1"
 grep-searcher = "0.1"
 grep-matcher = "0.1"
+# ripgrep's own stdin heuristic (pipe, file or socket = input), rather than a hand-rolled fstat.
+grep-cli = "0.1"
 # Hand-rolled JSON escaping is where a control character in a source line silently becomes
 # unparseable output. This is the same crate ripgrep uses for `--json`.
 serde_json = "1"

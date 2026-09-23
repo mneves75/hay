@@ -44,7 +44,7 @@ import {
   ResultScan, bootstrapCI, mean, mulberry32, namesTheSameFile, randomizationP, rankOfAnswer,
   requireHintSignalBinary, setHayFlags, type Interval,
 } from "./measure-mrr.ts";
-import { HDERIVE_VERSION, IDENTIFIER_STOP, deriveHints } from "./hint-derive.ts";
+import { HDERIVE_VERSION, deriveHints } from "./hint-derive.ts";
 
 const cacheHome = process.env["XDG_CACHE_HOME"] ?? join(homedir(), ".cache");
 const CACHE = join(cacheHome, "hay", "corpora", "swe-explore");
@@ -199,6 +199,18 @@ export function instanceLanguage(goldFiles: string[]): string {
 // ── query derivation, fixed and versioned ─────────────────────────────────────
 
 /**
+ * `qderive-v1`'s own stop list. It is equal to `IDENTIFIER_STOP` in `hint-derive.ts` today and is
+ * kept as a separate frozen copy on purpose: an edit to the hint rule must not silently re-derive
+ * the published headline queries without a version bump here.
+ */
+const STOP = new Set([
+  "the", "and", "for", "with", "this", "that", "from", "not", "are", "was", "when", "where",
+  "def", "class", "function", "return", "import", "true", "false", "none", "null", "self",
+  "python", "error", "line", "file", "files", "code", "test", "tests", "using", "used", "does",
+  "should", "would", "could", "expected", "actual", "result", "results", "issue", "bug",
+]);
+
+/**
  * Deterministic queries from issue text: backticked tokens first (the author marked them as
  * code), then identifier-shaped tokens with a case transition, underscore, or dot — the shapes
  * `harvest-queries.ts` accepts from real agents. First five, order of appearance, no tuning.
@@ -210,7 +222,7 @@ export function deriveQueries(title: string, body: string): string[] {
   const push = (raw: string) => {
     const t = raw.trim();
     const k = t.toLowerCase();
-    if (t.length < 3 || t.length > 40 || seen.has(k) || IDENTIFIER_STOP.has(k)) return;
+    if (t.length < 3 || t.length > 40 || seen.has(k) || STOP.has(k)) return;
     if (!/^[A-Za-z_][A-Za-z0-9_.]*$/.test(t)) return;
     seen.add(k);
     out.push(t);
@@ -1635,6 +1647,12 @@ if (import.meta.main) {
         const hinted = hints.length === 0
           ? baseline
           : await rankOfAnswer(root, q, gold, "hay", extraFlags);
+        // A hint only re-scores lines; it cannot change which lines are visible. Arms that
+        // disagree on that are a broken arm to refuse, not a difference to score (measure-mrr.ts
+        // has the same guard; this loop lacked it).
+        if ((baseline.scanned === 0) !== (hinted.scanned === 0)) {
+          throw new Error(`${inst.instance_id}: paired hay arms disagreed on whether "${q}" had any visible matches`);
+        }
         const score = (r: typeof baseline): QueryResult & { pageComplete: boolean } => ({
           rr: r.rank ? 1 / r.rank : 0,
           top10: r.rank !== null && r.rank <= 10 ? 1 : 0,

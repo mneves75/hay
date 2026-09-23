@@ -13,6 +13,7 @@
 mod score;
 
 use std::collections::HashMap;
+use std::ffi::OsString;
 use std::io::{self, BufRead, BufReader, BufWriter, Write};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
@@ -109,6 +110,12 @@ the question ranks.
 One divergence remains in those modes: `-m 0` means no limit everywhere in hay, where
 ripgrep treats it as print nothing. hay's meaning is the documented one above and the
 measurement kit depends on it, so it does not change.
+
+With no PATH, a pipe or redirected file on stdin is searched, as ripgrep does (`-` names stdin
+explicitly). stdin is streamed in input order: it cannot be reopened for context after ranking.
+A binary file named as PATH is searched with NUL treated as a line break, as ripgrep does: line
+output stops at the first match after the NUL and prints `binary file matches`, while `-c`,
+`-l` and `--json` read to the end. Binary files found by walking a directory are skipped.
 ";
 
 #[derive(Default, Debug)]
@@ -147,6 +154,10 @@ struct Opts {
     invert: bool,
     /// `-o`: print each matched substring rather than its line.
     only_matching: bool,
+    /// A PATH was typed. Without one, ripgrep searches stdin when stdin is a pipe or a file.
+    path_given: bool,
+    /// Search stdin rather than walk `path`: `-` was given, or no PATH and stdin is readable.
+    stdin: bool,
     weights: Weights,
 }
 
@@ -158,6 +169,13 @@ impl Opts {
     /// the ones where rank means something, is the only shape that removes that decision.
     fn unranked(&self) -> bool {
         self.stream || self.count_lines || self.count_matches || self.invert || self.only_matching
+    }
+
+    /// Does this invocation print matching lines, as opposed to counts, paths or JSON records?
+    /// Only ripgrep's line printer stops at the first match after binary data in an explicitly
+    /// named input and prints a `binary file matches` line instead; the others read on.
+    fn prints_lines(&self) -> bool {
+        !self.json && !self.files_only && !self.count_lines && !self.count_matches
     }
 
     /// Does a counting mode report MATCHES rather than matching lines?
@@ -179,7 +197,7 @@ impl Opts {
 /// the transcripts this project measures, and the hand-rolled parser rejected every one of them
 /// with exit 2 — the single largest drop-in gap in the tool, and a fourth hand-rolled lexer was
 /// not going to be the one that got the edge cases right.
-fn parse_args(argv: Vec<String>) -> Result<Opts, String> {
+fn parse_args(argv: Vec<OsString>) -> Result<Opts, String> {
     use lexopt::prelude::*;
 
     let mut o = Opts {
@@ -190,7 +208,7 @@ fn parse_args(argv: Vec<String>) -> Result<Opts, String> {
         weights: Weights::default(),
         ..Default::default()
     };
-    let mut positional: Vec<String> = Vec::new();
+    let mut positional: Vec<OsString> = Vec::new();
     let mut p = lexopt::Parser::from_args(argv);
 
     // `lexopt` hands back an OsString; every value hay takes is a pattern, path, glob, type name
@@ -257,10 +275,8 @@ fn parse_args(argv: Vec<String>) -> Result<Opts, String> {
             Long("count-matches") => o.count_matches = true,
             Short('v') | Long("invert-match") => o.invert = true,
             Short('o') | Long("only-matching") => o.only_matching = true,
-            Value(v) => positional.push(
-                v.into_string()
-                    .map_err(|_| "arguments must be valid UTF-8".to_string())?,
-            ),
+            // Kept as OsString: a PATH need not be UTF-8 (ripgrep searches it), a PATTERN must be.
+            Value(v) => positional.push(v),
             other => return Err(format!("unknown option {other:?}\n\n{HELP}")),
         }
     }
@@ -270,7 +286,12 @@ fn parse_args(argv: Vec<String>) -> Result<Opts, String> {
         if positional.is_empty() {
             return Err(format!("missing PATTERN\n\n{HELP}"));
         }
-        o.patterns.push(positional.remove(0));
+        o.patterns.push(
+            positional
+                .remove(0)
+                .into_string()
+                .map_err(|_| "the PATTERN must be valid UTF-8".to_string())?,
+        );
     }
     if positional.len() > 1 {
         // Taking only the first would silently drop the rest — the exact class of quiet wrong
@@ -281,7 +302,12 @@ fn parse_args(argv: Vec<String>) -> Result<Opts, String> {
         ));
     }
     if let Some(p) = positional.first() {
-        o.path = PathBuf::from(p);
+        o.path_given = true;
+        if p == "-" {
+            o.stdin = true;
+        } else {
+            o.path = PathBuf::from(p);
+        }
     }
     if o.explain && o.json {
         return Err("--explain and --json are different output formats; pick one".into());
@@ -396,18 +422,104 @@ impl Ord for Candidate {
 /// `--json` reports would have had to be invented. It also rejects invalid UTF-8, which made hay
 /// drop every match in a Latin-1 file and exit 2 on a search ripgrep answers — a direct breach of
 /// the one property hay claims. Bytes are handed through undecoded and the caller decides.
-struct LineSink<F>(F);
+struct LineSink<F> {
+    on_match: F,
+    binary: BinaryState,
+}
 
 impl<F: FnMut(u64, u64, &[u8])> Sink for LineSink<F> {
     type Error = io::Error;
 
     fn matched(&mut self, _searcher: &Searcher, m: &SinkMatch<'_>) -> Result<bool, io::Error> {
-        (self.0)(
+        if self.binary.stop_here() {
+            return Ok(false);
+        }
+        self.binary.matched = true;
+        (self.on_match)(
             m.line_number().unwrap_or(0),
             m.absolute_byte_offset(),
             m.bytes(),
         );
         Ok(true)
+    }
+
+    fn binary_data(&mut self, _searcher: &Searcher, offset: u64) -> Result<bool, io::Error> {
+        self.binary.offset = Some(offset);
+        Ok(true)
+    }
+}
+
+/// ripgrep's rule for a NUL byte: a file found by walking a directory is abandoned at the first
+/// one, but a path named on the command line — or stdin — is searched with NUL treated as a line
+/// terminator. Quitting everywhere made `hay foo file.bin` exit 1 where ripgrep reports a match.
+fn binary_detection(explicit: bool) -> BinaryDetection {
+    if explicit {
+        BinaryDetection::convert(b'\x00')
+    } else {
+        BinaryDetection::quit(b'\x00')
+    }
+}
+
+/// What ripgrep's line printer does with binary data in an explicitly named input (grep-printer
+/// `StandardSink`): lines matched before the NUL was seen print normally, the first match after it
+/// ends the search, and an input that matched at all then gets one `binary file matches` line.
+#[derive(Default)]
+struct BinaryState {
+    /// Only the line printer stops. `--json`, `-c` and `-l` read the converted input to the end.
+    stops: bool,
+    offset: Option<u64>,
+    matched: bool,
+}
+
+impl BinaryState {
+    fn new(explicit: bool, o: &Opts) -> Self {
+        Self {
+            stops: explicit && o.prints_lines(),
+            ..Self::default()
+        }
+    }
+
+    /// Called on each match: after binary data, the line printer records the match and stops.
+    fn stop_here(&mut self) -> bool {
+        let stop = self.stops && self.offset.is_some();
+        if stop {
+            self.matched = true;
+        }
+        stop
+    }
+
+    /// ripgrep's message, with the path hay always prints.
+    fn note(&self, path: &Path) -> Option<Vec<u8>> {
+        let offset = self.offset.filter(|_| self.stops && self.matched)?;
+        let mut line = path_bytes(path).into_owned();
+        line.extend_from_slice(
+            format!(": binary file matches (found \"\\0\" byte around offset {offset})\n")
+                .as_bytes(),
+        );
+        Some(line)
+    }
+}
+
+/// A path exactly as the OS spells it, for text output. The display `String` is lossy decoding:
+/// printing it named a file that does not exist whenever the real name was not UTF-8, where
+/// ripgrep prints the original bytes (review finding, 0.3.2, once `args_os` let such a PATH in).
+fn path_bytes(p: &Path) -> std::borrow::Cow<'_, [u8]> {
+    #[cfg(unix)]
+    {
+        use std::os::unix::ffi::OsStrExt;
+        std::borrow::Cow::Borrowed(p.as_os_str().as_bytes())
+    }
+    #[cfg(not(unix))]
+    {
+        std::borrow::Cow::Owned(p.to_string_lossy().into_owned().into_bytes())
+    }
+}
+
+/// ripgrep's JSON `path`: `text` when the name is UTF-8, base64 `bytes` when it is not.
+fn json_path(p: &Path) -> serde_json::Value {
+    match p.to_str() {
+        Some(t) => serde_json::json!({ "text": t }),
+        None => serde_json::json!({ "bytes": base64(&path_bytes(p)) }),
     }
 }
 
@@ -437,7 +549,7 @@ enum SearchOutcome {
 }
 
 fn main() -> ExitCode {
-    let opts = match parse_args(std::env::args().skip(1).collect()) {
+    let mut opts = match parse_args(std::env::args_os().skip(1).collect()) {
         Ok(o) => o,
         Err(msg) => {
             // Help goes to stdout and exits 0; genuine errors go to stderr and exit 2, matching
@@ -450,6 +562,13 @@ fn main() -> ExitCode {
             return ExitCode::from(2);
         }
     };
+
+    // ripgrep's heuristic, from ripgrep's own crate: with no PATH, a pipe or a redirected file on
+    // stdin is the input. Ignoring it searched the working directory instead, so `cmd | hay x`
+    // answered a different question and exited 1 — "searched fine, found nothing".
+    if !opts.path_given {
+        opts.stdin = grep_cli::is_readable_stdin();
+    }
 
     match run(&opts) {
         Ok(SearchOutcome::Found) => ExitCode::from(0),
@@ -481,13 +600,13 @@ fn run(o: &Opts) -> Result<SearchOutcome, String> {
     // A mistyped path must not look like "no matches". `ignore` walks a missing root silently,
     // so exit 0 with no output would be indistinguishable from a successful empty search — the
     // same silent-wrong-answer class this project has been bitten by repeatedly.
-    if !o.path.exists() {
+    if !o.stdin && !o.path.exists() {
         return Err(format!("{}: no such file or directory", o.path.display()));
     }
 
     // Anchor the context reader before walking. Reopening by ambient pathname after ranking lets
     // a writable tree replace a matched path with a symlink to a file outside the search root.
-    let context_root = (!o.files_only && (o.before > 0 || o.after > 0))
+    let context_root = (!o.stdin && !o.files_only && (o.before > 0 || o.after > 0))
         .then(|| ContextRoot::new(&o.path))
         .transpose()
         .map_err(|e| format!("could not anchor context root: {e}"))?;
@@ -502,6 +621,12 @@ fn run(o: &Opts) -> Result<SearchOutcome, String> {
         .word(o.word)
         .build(&build_pattern(o))
         .map_err(|e| format!("invalid pattern: {e}"))?;
+
+    // A stream cannot be reopened to read context after ranking, so stdin is answered the way
+    // ripgrep answers it: streamed, in input order.
+    if o.stdin {
+        return run_stdin(o, &matcher);
+    }
 
     let mut builder = WalkBuilder::new(&o.path);
     builder
@@ -526,8 +651,16 @@ fn run(o: &Opts) -> Result<SearchOutcome, String> {
     }
     // VCS metadata is never the answer to a concept query. ripgrep only avoids it because the
     // directories are hidden, so `--hidden` re-exposes megabytes of packfiles and hook samples.
-    let mut ob = ignore::overrides::OverrideBuilder::new(&o.path);
-    for vcs in ["!.git/**", "!.hg/**", "!.svn/**", "!.jj/**"] {
+    // ripgrep roots `-g` at the working directory, not at PATH. Rooting it at PATH made
+    // `-g 'src/*.rs' foo sub` match `sub/src/b.rs`, which ripgrep does not, and made the negated
+    // form drop it: wrong in both directions, and exit 1 hid the second.
+    let cwd = std::env::current_dir().map_err(|e| format!("working directory: {e}"))?;
+    let mut ob = ignore::overrides::OverrideBuilder::new(cwd);
+    // Unanchored and file-level, so it holds at any depth and under any root — the differential
+    // harness gives ripgrep `-g '!.git/'`, and the old `!.git/**` anchored at PATH missed a nested
+    // checkout's `.git`. Deliberately NOT a directory prune: added first, these lose to a later
+    // user glob, so `--hidden -g '.git/**'` still searches `.git` exactly as ripgrep does.
+    for vcs in ["!**/.git/**", "!**/.hg/**", "!**/.svn/**", "!**/.jj/**"] {
         ob.add(vcs)
             .map_err(|e| format!("internal glob {vcs}: {e}"))?;
     }
@@ -546,6 +679,7 @@ fn run(o: &Opts) -> Result<SearchOutcome, String> {
     // — draining only after `walker.run()` returns would block every producer and deadlock.
     let errors = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
     let (tx, rx) = mpsc::sync_channel::<Hit>(4096);
+    let binary_notes = std::sync::Arc::new(Mutex::new(Vec::<Vec<u8>>::new()));
     let weights = Weights { ..o.weights };
     let consumer = std::thread::spawn(move || {
         let mut per_file: HashMap<String, usize> = HashMap::new();
@@ -582,13 +716,11 @@ fn run(o: &Opts) -> Result<SearchOutcome, String> {
     walker.run(|| {
         let tx = tx.clone();
         let matcher = matcher.clone();
-        // Match ripgrep's default: stop at the first NUL. Without this, hay searched files rg
-        // reports as "binary file matches" and printed raw binary bytes into agent-parsed output.
-        let mut searcher = SearcherBuilder::new()
-            .line_number(true)
-            .binary_detection(BinaryDetection::quit(b'\x00'))
-            .build();
+        // Binary detection is set per entry (see `binary_detection`). Without it, hay searched
+        // files rg skips as binary and printed raw bytes into agent-parsed output.
+        let mut searcher = SearcherBuilder::new().line_number(true).build();
         let errors = errors.clone();
+        let binary_notes = binary_notes.clone();
         Box::new(move |entry| {
             let entry = match entry {
                 Ok(e) => e,
@@ -606,10 +738,11 @@ fn run(o: &Opts) -> Result<SearchOutcome, String> {
             // `src/` prefix the path classifier ranks on.
             let display = entry.path().to_string_lossy().into_owned();
             let fs_path = entry.path().to_path_buf();
-            let searched = searcher.search_path(
-                &matcher,
-                entry.path(),
-                LineSink(|lnum, offset, line: &[u8]| {
+            let explicit = entry.depth() == 0;
+            searcher.set_binary_detection(binary_detection(explicit));
+            let mut sink = LineSink {
+                binary: BinaryState::new(explicit, o),
+                on_match: |lnum, offset, line: &[u8]| {
                     let terminated = line.ends_with(b"\n");
                     let bytes = line.strip_suffix(b"\n").unwrap_or(line);
                     // The span is taken on the original bytes, which is what the searcher matched.
@@ -635,8 +768,15 @@ fn run(o: &Opts) -> Result<SearchOutcome, String> {
                         terminated,
                         span,
                     });
-                }),
-            );
+                },
+            };
+            let searched = searcher.search_path(&matcher, entry.path(), &mut sink);
+            if let Some(note) = sink.binary.note(entry.path()) {
+                binary_notes
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner())
+                    .push(note);
+            }
             if let Err(e) = searched {
                 eprintln!("hay: {}: {e}", entry.path().display());
                 errors.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
@@ -648,12 +788,17 @@ fn run(o: &Opts) -> Result<SearchOutcome, String> {
 
     let (per_file, heap, total) = consumer.join().map_err(|_| "ranking thread panicked")?;
     let error_count = errors.load(std::sync::atomic::Ordering::Relaxed);
+    let binary_notes = std::mem::take(
+        &mut *binary_notes
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()),
+    );
     // Checked before the empty-result path: a search that read nothing because every path was
     // unreadable must exit 2, not 1. Exit 1 would tell the caller "searched fine, found nothing".
-    if error_count > 0 && total == 0 {
+    if error_count > 0 && total == 0 && binary_notes.is_empty() {
         return Err(format!("{error_count} path(s) could not be read"));
     }
-    if total == 0 {
+    if total == 0 && binary_notes.is_empty() {
         return Ok(SearchOutcome::NotFound);
     }
     let truncated = total > MAX_CANDIDATES;
@@ -718,6 +863,10 @@ Narrow the pattern for an exhaustive result."
         emit_lines(&mut w, &page, &ctx, &matcher, o)
     }
     .map_err(|e| e.to_string())?;
+    // After the ranked lines, as ripgrep prints it after the lines that preceded the NUL.
+    for note in &binary_notes {
+        w.write_all(note).map_err(|e| e.to_string())?;
+    }
 
     w.flush().map_err(|e| e.to_string())?;
     if error_count > 0 {
@@ -810,13 +959,7 @@ fn run_unranked<M: Matcher + Clone + Send>(
         // closure would give every thread its own counters.
         let (found, errors, broken_pipe, out) = (&found, &errors, &broken_pipe, &out);
         let (next_ticket, last_writer) = (&next_ticket, &last_writer);
-        let mut searcher = SearcherBuilder::new()
-            .line_number(true)
-            .binary_detection(BinaryDetection::quit(b'\x00'))
-            .invert_match(o.invert)
-            .before_context(if context_wanted { o.before } else { 0 })
-            .after_context(if context_wanted { o.after } else { 0 })
-            .build();
+        let mut searcher = stream_searcher(o);
         Box::new(move |entry| {
             if broken_pipe.load(Ordering::Relaxed) {
                 return ignore::WalkState::Quit;
@@ -833,6 +976,8 @@ fn run_unranked<M: Matcher + Clone + Send>(
                 return ignore::WalkState::Continue;
             }
             let display = entry.path().to_string_lossy().into_owned();
+            let explicit = entry.depth() == 0;
+            searcher.set_binary_detection(binary_detection(explicit));
             // Searched into a per-file buffer and written under one lock: workers must not
             // interleave halfway through a file's context block, which would hand a consumer a
             // `--` separated group whose lines came from two different files.
@@ -851,15 +996,7 @@ fn run_unranked<M: Matcher + Clone + Send>(
                 fs_path: entry.path().to_path_buf(),
                 lines: 0,
                 matches: 0,
-                printed: 0,
-                // ripgrep's `-m` is a per-file cap. hay's documented divergence — `-m` bounding
-                // total results — belongs to the ranked page an agent reads; an unranked mode is
-                // ripgrep's job and takes ripgrep's meaning.
-                limit: if o.max_count_set && o.max_count > 0 {
-                    o.max_count
-                } else {
-                    usize::MAX
-                },
+                binary: BinaryState::new(explicit, o),
             };
             if let Err(e) = searcher.search_path(&matcher, entry.path(), &mut sink) {
                 // A flush inside the sink can hit a closed pipe — `| head` is how this normally
@@ -873,21 +1010,13 @@ fn run_unranked<M: Matcher + Clone + Send>(
                 errors.fetch_add(1, Ordering::Relaxed);
                 return ignore::WalkState::Continue;
             }
-            if sink.lines == 0 {
-                return ignore::WalkState::Continue;
-            }
-            found.store(true, Ordering::Relaxed);
-            if counting {
-                let n = if o.counts_matches() {
-                    sink.matches
-                } else {
-                    sink.lines
-                };
-                sink.buf.clear();
-                let _ = writeln!(&mut sink.buf, "{}", count_line(&display, n, o));
-            }
-            match sink.flush_block() {
-                Ok(()) => ignore::WalkState::Continue,
+            match sink.finish() {
+                Ok(matched) => {
+                    if matched {
+                        found.store(true, Ordering::Relaxed);
+                    }
+                    ignore::WalkState::Continue
+                }
                 Err(e) if e.kind() == io::ErrorKind::BrokenPipe => {
                     broken_pipe.store(true, Ordering::Relaxed);
                     ignore::WalkState::Quit
@@ -942,8 +1071,64 @@ struct StreamSink<'a, M: Matcher> {
     fs_path: PathBuf,
     lines: u64,
     matches: u64,
-    printed: usize,
-    limit: usize,
+    binary: BinaryState,
+}
+
+/// The searcher for the unranked modes, minus binary detection, which depends on the input.
+///
+/// ripgrep's `-m` is a per-file cap, and it is the SEARCHER's `max_matches`, not a sink that
+/// returns `false`. Stopping from the sink broke two ways: under `-v` grep-searcher resumes after
+/// the next matching line instead of stopping, so `-v -m 1` printed two lines; and stopping at
+/// once dropped the after-context ripgrep prints for the last counted match. hay's documented
+/// divergence — `-m` bounding total results — belongs to the ranked page an agent reads; an
+/// unranked mode is ripgrep's job and takes ripgrep's meaning.
+fn stream_searcher(o: &Opts) -> Searcher {
+    let context_wanted = !o.files_only && !o.count_lines && !o.count_matches;
+    SearcherBuilder::new()
+        .line_number(true)
+        .invert_match(o.invert)
+        .before_context(if context_wanted { o.before } else { 0 })
+        .after_context(if context_wanted { o.after } else { 0 })
+        .max_matches((o.max_count_set && o.max_count > 0).then_some(o.max_count as u64))
+        .build()
+}
+
+/// Search stdin, which ripgrep treats as an explicitly named input: NUL converted, never walked.
+fn run_stdin<M: Matcher + Clone + Send>(o: &Opts, matcher: &M) -> Result<SearchOutcome, String> {
+    let out = Mutex::new(BufWriter::new(io::stdout()));
+    let last_writer = AtomicUsize::new(0);
+    let mut searcher = stream_searcher(o);
+    searcher.set_binary_detection(binary_detection(true));
+    let mut sink = StreamSink {
+        buf: Vec::new(),
+        out: &out,
+        last_writer: &last_writer,
+        ticket: 1,
+        separate_blocks: false,
+        o,
+        matcher,
+        path: "<stdin>",
+        fs_path: PathBuf::from("<stdin>"),
+        lines: 0,
+        matches: 0,
+        binary: BinaryState::new(true, o),
+    };
+    let result = searcher
+        .search_reader(matcher, io::stdin().lock(), &mut sink)
+        .and_then(|()| sink.finish())
+        .and_then(|matched| {
+            out.lock()
+                .map_err(|_| io::Error::other("output lock poisoned"))?
+                .flush()
+                .map(|()| matched)
+        });
+    match result {
+        Ok(true) => Ok(SearchOutcome::Found),
+        Ok(false) => Ok(SearchOutcome::NotFound),
+        // `| head` closing the pipe is how a stream normally ends, as in the walk.
+        Err(e) if e.kind() == io::ErrorKind::BrokenPipe => Ok(SearchOutcome::Found),
+        Err(e) => Err(format!("<stdin>: {e}")),
+    }
 }
 
 /// Flush threshold for one file's buffered output.
@@ -952,12 +1137,16 @@ const FLUSH_BYTES: usize = 1 << 20;
 /// A `-c` / `--count-matches` line. Under `--json` the path is a JSON string: a path containing a
 /// newline would otherwise split one record into two, letting a filename forge a line in a stream
 /// a consumer parses.
-fn count_line(path: &str, n: u64, o: &Opts) -> String {
-    if o.json {
-        format!("{}:{n}", serde_json::Value::String(path.to_string()))
+fn count_line(path: &Path, n: u64, o: &Opts) -> Vec<u8> {
+    let mut line = if o.json {
+        serde_json::Value::String(path.to_string_lossy().into_owned())
+            .to_string()
+            .into_bytes()
     } else {
-        format!("{path}:{n}")
-    }
+        path_bytes(path).into_owned()
+    };
+    line.extend_from_slice(format!(":{n}\n").as_bytes());
+    line
 }
 
 impl<M: Matcher> StreamSink<'_, M> {
@@ -978,6 +1167,29 @@ impl<M: Matcher> StreamSink<'_, M> {
         w.write_all(&self.buf)?;
         self.buf.clear();
         Ok(())
+    }
+
+    /// Close out one searched input: the binary note, or the count line in a counting mode, then
+    /// the final flush. Returns whether the input matched.
+    fn finish(&mut self) -> io::Result<bool> {
+        if let Some(note) = self.binary.note(&self.fs_path) {
+            self.buf.extend_from_slice(&note);
+        }
+        if self.lines == 0 {
+            return Ok(false);
+        }
+        if self.o.count_lines || self.o.count_matches {
+            let n = if self.o.counts_matches() {
+                self.matches
+            } else {
+                self.lines
+            };
+            self.buf.clear();
+            let line = count_line(&self.fs_path, n, self.o);
+            self.buf.extend_from_slice(&line);
+        }
+        self.flush_block()?;
+        Ok(true)
     }
 
     /// Flush once the buffer passes the bound, so memory does not follow the caller's pattern.
@@ -1030,6 +1242,10 @@ impl<M: Matcher> Sink for StreamSink<'_, M> {
 
     fn matched(&mut self, _searcher: &Searcher, m: &SinkMatch<'_>) -> Result<bool, io::Error> {
         self.lines += 1;
+        if self.binary.stop_here() {
+            return Ok(false);
+        }
+        self.binary.matched = true;
         let line_no = m.line_number().unwrap_or(0);
         let bytes = m.bytes();
         let body = bytes.strip_suffix(b"\n").unwrap_or(bytes);
@@ -1045,9 +1261,7 @@ impl<M: Matcher> Sink for StreamSink<'_, M> {
                     .map_err(|_| io::Error::other("matcher failed while counting"))?;
                 self.matches += n;
             }
-            // `-m` caps the LINES counted, so `rg -c -m 1` reports 1. Counting past the cap
-            // inflates the very number the caller asked to bound.
-            return Ok((self.lines as usize) < self.limit);
+            return Ok(true);
         }
 
         if self.o.files_only {
@@ -1058,9 +1272,9 @@ impl<M: Matcher> Sink for StreamSink<'_, M> {
                     serde_json::Value::String(self.path.to_string())
                 )?;
             } else {
-                writeln!(self.buf, "{}", self.path)?;
+                self.buf.extend_from_slice(&path_bytes(&self.fs_path));
+                self.buf.push(b'\n');
             }
-            self.printed += 1;
             return Ok(false); // one line per file is the whole answer
         }
 
@@ -1081,28 +1295,33 @@ impl<M: Matcher> Sink for StreamSink<'_, M> {
                 let hit = self.hit(line_no, m.absolute_byte_offset(), &body[start..end]);
                 emit_match(&mut self.buf, NO_SCORE, &hit, self.matcher, self.o)?;
             }
-            // ONE line of the budget however many substrings it held: ripgrep's `-m` caps matching
-            // lines, and charging per span truncated a line that matched several times.
-            self.printed += 1;
             self.maybe_flush()?;
-            return Ok(self.printed < self.limit);
+            return Ok(true);
         }
 
         let hit = self.hit(line_no, m.absolute_byte_offset(), bytes);
         emit_match(&mut self.buf, NO_SCORE, &hit, self.matcher, self.o)?;
-        self.printed += 1;
         self.maybe_flush()?;
-        Ok(self.printed < self.limit)
+        Ok(true)
+    }
+
+    fn binary_data(&mut self, _searcher: &Searcher, offset: u64) -> Result<bool, io::Error> {
+        self.binary.offset = Some(offset);
+        Ok(true)
     }
 
     fn context(&mut self, _searcher: &Searcher, c: &SinkContext<'_>) -> Result<bool, io::Error> {
+        // ripgrep's line printer prints no context after binary data either.
+        if self.binary.stops && self.binary.offset.is_some() {
+            return Ok(false);
+        }
         let line = ContextLine {
             offset: c.absolute_byte_offset(),
             bytes: c.bytes().to_vec(),
         };
         emit_context(
             &mut self.buf,
-            self.path,
+            &self.fs_path,
             c.line_number().unwrap_or(0),
             &line,
             self.o,
@@ -1128,7 +1347,7 @@ fn emit_files(
     let mut seen = std::collections::HashSet::new();
     let mut n = 0;
     for (_, h) in scored {
-        if !seen.insert(h.path.as_str()) {
+        if !seen.insert(h.fs_path.as_path()) {
             continue;
         }
         // Plain paths, except under `--json` where the path is a JSON string. hay's JSON contract
@@ -1138,7 +1357,8 @@ fn emit_files(
         if o.json {
             writeln!(w, "{}", serde_json::Value::String(h.path.clone()))?;
         } else {
-            writeln!(w, "{}", h.path)?;
+            w.write_all(&path_bytes(&h.fs_path))?;
+            w.write_all(b"\n")?;
         }
         n += 1;
         if n >= limit {
@@ -1151,11 +1371,15 @@ fn emit_files(
 struct ContextRoot {
     dir: Dir,
     base: PathBuf,
+    /// PATH is a file, so every hit is from that one explicitly named file, which the searcher
+    /// numbered with NUL converted to a line break. The re-read must count lines the same way.
+    named_file: bool,
 }
 
 impl ContextRoot {
     fn new(search_path: &Path) -> io::Result<Self> {
-        let base = if search_path.is_dir() {
+        let named_file = !search_path.is_dir();
+        let base = if !named_file {
             search_path.to_path_buf()
         } else {
             search_path
@@ -1166,7 +1390,11 @@ impl ContextRoot {
         };
         let dir = Dir::open_ambient_dir(&base, ambient_authority())
             .map_err(|e| io::Error::new(e.kind(), format!("{}: {e}", base.display())))?;
-        Ok(Self { dir, base })
+        Ok(Self {
+            dir,
+            base,
+            named_file,
+        })
     }
 
     fn open(&self, path: &Path) -> io::Result<cap_std::fs::File> {
@@ -1242,6 +1470,43 @@ fn merge_windows(mut ranges: Vec<(u64, u64)>) -> Vec<(u64, u64)> {
     merged
 }
 
+/// One line into `buf`, terminator included. With `nul_ends_line`, a NUL also ends the line and
+/// is reported as `\n`: ripgrep's `convert` binary mode for an explicitly named file, which is how
+/// the searcher numbered its hits. Splitting on `\n` alone printed the wrong lines as context after
+/// the first NUL of a named binary file, and the NUL itself as a line's content.
+fn read_line(
+    reader: &mut impl BufRead,
+    buf: &mut Vec<u8>,
+    nul_ends_line: bool,
+) -> io::Result<usize> {
+    if !nul_ends_line {
+        return reader.read_until(b'\n', buf);
+    }
+    let mut read = 0;
+    loop {
+        let available = reader.fill_buf()?;
+        if available.is_empty() {
+            return Ok(read);
+        }
+        match available.iter().position(|&b| b == b'\n' || b == 0) {
+            Some(i) => {
+                buf.extend_from_slice(&available[..=i]);
+                reader.consume(i + 1);
+                if let Some(last) = buf.last_mut() {
+                    *last = b'\n';
+                }
+                return Ok(read + i + 1);
+            }
+            None => {
+                let len = available.len();
+                buf.extend_from_slice(available);
+                reader.consume(len);
+                read += len;
+            }
+        }
+    }
+}
+
 fn read_context(
     page: &[(ScoreBreakdown, &Hit)],
     before: usize,
@@ -1278,8 +1543,7 @@ fn read_context(
         loop {
             buf.clear();
             let line_offset = offset;
-            let read = reader
-                .read_until(b'\n', &mut buf)
+            let read = read_line(&mut reader, &mut buf, root.named_file)
                 .map_err(|e| io::Error::new(e.kind(), format!("{}: {e}", path.display())))?;
             if read == 0 {
                 break;
@@ -1375,7 +1639,7 @@ fn emit_lines(
             if is_match {
                 emit_match(w, *s, h, matcher, o)?;
             } else if let Some(line) = ctx.lines.get(&(h.fs_path.clone(), n)) {
-                emit_context(w, &h.path, n, line, o)?;
+                emit_context(w, &h.fs_path, n, line, o)?;
             }
             last_written = Some((&h.path, n));
         }
@@ -1423,7 +1687,7 @@ fn emit_match(
             serde_json::json!({
                 "type": "match",
                 "data": {
-                    "path": {"text": h.path},
+                    "path": json_path(&h.fs_path),
                     "lines": lines,
                     "line_number": h.line_no,
                     "absolute_offset": h.offset,
@@ -1435,16 +1699,22 @@ fn emit_match(
     if o.explain {
         // Per-signal, not just a total: error analysis needs to know WHICH signal put a line
         // where it is. Format is pinned by a contract test in tests/cli.rs.
-        writeln!(
+        write!(
             w,
-            "{:>7.2} [def {:+.1} path {:+.1} word {:+.1} tf {:+.2}]  {}:{}:{}",
-            s.total, s.definition, s.path, s.word, s.tf, h.path, h.line_no, h.text
-        )
-    } else if o.line_numbers {
-        writeln!(w, "{}:{}:{}", h.path, h.line_no, h.text)
-    } else {
-        writeln!(w, "{}:{}", h.path, h.text)
+            "{:>7.2} [def {:+.1} path {:+.1} word {:+.1} tf {:+.2}]  ",
+            s.total, s.definition, s.path, s.word, s.tf
+        )?;
     }
+    w.write_all(&path_bytes(&h.fs_path))?;
+    if o.explain || o.line_numbers {
+        write!(w, ":{}:", h.line_no)?;
+    } else {
+        w.write_all(b":")?;
+    }
+    // The file's bytes, as ripgrep prints them. The lossy decoding is for scoring: printing it
+    // turned a Latin-1 `é` into U+FFFD, so the line shown was not the line in the file.
+    w.write_all(h.raw.as_deref().unwrap_or(h.text.as_bytes()))?;
+    w.write_all(b"\n")
 }
 
 /// ripgrep's `lines` field: decoded text when the bytes are UTF-8, base64 `bytes` when they are
@@ -1458,7 +1728,7 @@ fn json_line(bytes: &[u8]) -> serde_json::Value {
 
 fn emit_context(
     w: &mut impl Write,
-    path: &str,
+    path: &Path,
     line_no: u64,
     line: &ContextLine,
     o: &Opts,
@@ -1470,7 +1740,7 @@ fn emit_context(
             serde_json::json!({
                 "type": "context",
                 "data": {
-                    "path": {"text": path},
+                    "path": json_path(path),
                     "lines": json_line(&line.bytes),
                     "line_number": line_no,
                     "absolute_offset": line.offset,
@@ -1482,14 +1752,17 @@ fn emit_context(
     // Stored with its terminator so JSON can report the file's exact bytes; stripped here because
     // `writeln!` adds one.
     let bytes = line.bytes.as_slice();
-    let text = String::from_utf8_lossy(bytes.strip_suffix(b"\n").unwrap_or(bytes));
     // ripgrep's separator convention: `:` introduces a match line, `-` a context line, so a
     // consumer can tell them apart without tracking state.
+    w.write_all(&path_bytes(path))?;
     if o.line_numbers || o.explain {
-        writeln!(w, "{path}-{line_no}-{text}")
+        write!(w, "-{line_no}-")?;
     } else {
-        writeln!(w, "{path}-{text}")
+        w.write_all(b"-")?;
     }
+    // Raw bytes, like a match line: see `emit_match`.
+    w.write_all(bytes.strip_suffix(b"\n").unwrap_or(bytes))?;
+    w.write_all(b"\n")
 }
 
 /// Escape a literal so it can be handed to the regex engine (`-F`).
@@ -1509,7 +1782,7 @@ mod tests {
     use super::*;
 
     fn opts(argv: &[&str]) -> Opts {
-        parse_args(argv.iter().map(|s| s.to_string()).collect()).unwrap()
+        parse_args(argv.iter().map(OsString::from).collect()).unwrap()
     }
 
     #[test]
@@ -1661,7 +1934,7 @@ mod tests {
             vec!["-o", "x"],
             vec!["--stream", "x"],
         ] {
-            let o = parse_args(argv.iter().map(|s| s.to_string()).collect())
+            let o = parse_args(argv.iter().map(OsString::from).collect())
                 .unwrap_or_else(|e| panic!("{argv:?} should parse: {e}"));
             assert!(o.unranked(), "{argv:?} must select the unranked path");
         }
@@ -2042,6 +2315,22 @@ mod tests {
             ],
         );
         assert_eq!(out, "a.txt:1:only\na.txt-2-second\n");
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn a_path_that_is_not_utf8_is_printed_as_its_own_bytes() {
+        use std::os::unix::ffi::OsStrExt;
+        let p = Path::new(std::ffi::OsStr::from_bytes(b"caf\xe9.txt"));
+        assert_eq!(&*path_bytes(p), b"caf\xe9.txt");
+        assert_eq!(
+            json_path(p),
+            serde_json::json!({ "bytes": base64(b"caf\xe9.txt") })
+        );
+        assert_eq!(
+            json_path(Path::new("a.rs")),
+            serde_json::json!({ "text": "a.rs" })
+        );
     }
 
     #[test]
