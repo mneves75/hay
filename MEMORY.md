@@ -193,6 +193,11 @@ moved (identical). Pin the corpus to a fixed checkout before comparing anything.
 destination is public. Use `=label` for repo identity and `--redact-names` for identifiers.
 `corpus/` is gitignored — it contains real queries and paths.
 
+**A parity suite that only ever passes `.` cannot see PATH bugs** (2026-09-23). All 32
+differential cases searched `.` as a walked directory, so stdin, a named binary file, `-g` under a
+subdirectory PATH, and nested `.git` were never compared — eight divergences shipped through a
+green gate. The ten new cases each fail on 0.3.1. When a gate is green, ask what it never varies.
+
 ## Current state
 
 - **v0.3.0 — every valid ripgrep invocation now has an answer** (2026-08-28). `-c`,
@@ -204,6 +209,14 @@ destination is public. Use `=label` for repo identity and `--redact-names` for i
   documentation deficit outright, and was deleted for circularity ([[13-heading-signal]]).
   A three-way review workflow found 20 real defects in the first two commits, including a `-o -v`
   that printed nothing and exited 0.
+
+- **v0.3.2 RELEASED — eight ripgrep divergences fixed; ranking unchanged** (2026-09-23).
+  `v0.3.2-beta1` (prerelease, marked by the workflow itself) and `v0.3.2` (latest) both at
+  `360856b`; runs 35835060950 / 35835419844; all five archives checksum- and attestation-verified
+  with wrong-digest and old-signer controls. Tap `58a2c78`, `brew audit --strict` clean; gh-pages
+  `3f89119`. Differential 42 cases (10 PATH/stdin, all failing on 0.3.1). Behavioural gate on the
+  re-harvested corpus 0.4328 / 0.7721 FAIL, identical for 0.3.1 — the corpus moved, not the binary.
+  See [[2026-09-23]].
 
 - **v0.3.1 RELEASED — `--hint` deleted by its own pre-registered rule; release chain simplified**
   (2026-09-15). `v0.3.1-beta2` (published prerelease) and `v0.3.1` (latest) both at `77a2895`, built

@@ -175,12 +175,22 @@ EOF
 # sha256. Both checks are load-bearing: the checksum proves the bytes match the release's own
 # manifest, the attestation proves that manifest came from the authorized main build rather than from
 # someone with write access to the release page.
+#
+# Fetched from the public download URL — the exact URL the formula records and Homebrew fetches —
+# rather than through the release-listing API. On 2026-09-23 the by-tag endpoint that
+# `gh release download` reads listed NO assets for the published v0.3.2 for over half an hour,
+# while the assets endpoint, GraphQL and this URL all served all ten.
+fetch_asset() {
+  curl -fsSL --proto '=https' --tlsv1.2 --retry 3 -o "$2" "$1"
+}
+
 checksum_of_verified_asset() {
   local tag="$1" target="$2" workdir="$3" source_digest="$4"
-  local asset="hay-${tag}-${target}.tar.gz"
-  gh release download "$tag" -R "$REPO_SLUG" -p "$asset" -p "$asset.sha256" \
-    -D "$workdir" --clobber >&2 ||
-    { echo "brew-formula: could not download $asset and its checksum" >&2; return 2; }
+  local asset="hay-${tag}-${target}.tar.gz" file
+  for file in "$asset" "$asset.sha256"; do
+    fetch_asset "https://github.com/${REPO_SLUG}/releases/download/${tag}/${file}" "$workdir/$file" ||
+      { echo "brew-formula: could not download $file" >&2; return 2; }
+  done
   local sum
   sum="$(checksum_from_manifest "$workdir/$asset.sha256" "$workdir/$asset" "$asset")" ||
     return 2
@@ -301,12 +311,13 @@ selftest() {
   # A checksum failure occurs inside command substitution in production. Bash disables errexit
   # there, so this control must exercise the whole wrapper rather than only the parser.
   gh() { return 0; }
+  fetch_asset() { return 0; }
   if checksum_of_verified_asset v9.9.9 "$MAC_ARM_TARGET" "$tmp" "$good_sha" \
     >/dev/null 2>&1; then
     echo "selftest: wrapper swallowed an invalid checksum manifest" >&2
     exit 1
   fi
-  unset -f gh
+  unset -f gh fetch_asset
   rm -r "$tmp"
 
   echo "brew-formula selftest ok"
@@ -323,6 +334,7 @@ main() {
   fi
 
   need gh "https://cli.github.com"
+  need curl "https://curl.se"
   need shasum "coreutils/perl"
   need awk "POSIX awk"
 
