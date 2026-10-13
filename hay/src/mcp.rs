@@ -268,6 +268,31 @@ impl HayMcp {
         }
     }
 
+    async fn run_job(
+        &self,
+        context: RequestContext<RoleServer>,
+        job: impl FnOnce(Arc<Vec<PathBuf>>, Arc<AtomicBool>) -> serde_json::Value + Send + 'static,
+    ) -> CallToolResult {
+        let permit = match self.permits.clone().try_acquire_owned() {
+            Ok(permit) => permit,
+            Err(_) => {
+                return result(failure(
+                    "search service is busy; retry after the current search",
+                ));
+            }
+        };
+        let watch = CancelWatch::new(context);
+        let signal = watch.signal.clone();
+        let roots = self.roots.clone();
+        let payload = tokio::task::spawn_blocking(move || {
+            let _permit = permit;
+            job(roots, signal)
+        })
+        .await
+        .unwrap_or_else(failure);
+        result(payload)
+    }
+
     #[tool(
         description = "Search live content with hay's matcher/ranking. No query rewriting. complete describes the search; page_truncated describes the requested page. Registered roots are search scopes, not an OS sandbox."
     )]
@@ -276,24 +301,11 @@ impl HayMcp {
         Parameters(request): Parameters<GrepRequest>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, ErrorData> {
-        let permit = match self.permits.clone().try_acquire_owned() {
-            Ok(p) => p,
-            Err(_) => {
-                return Ok(result(failure(
-                    "search service is busy; retry after the current search",
-                )));
-            }
-        };
-        let watch = CancelWatch::new(context);
-        let signal = watch.signal.clone();
-        let roots = self.roots.clone();
-        let payload = tokio::task::spawn_blocking(move || {
-            let _permit = permit;
-            grep_payload(request, &roots, signal).unwrap_or_else(failure)
-        })
-        .await
-        .unwrap_or_else(failure);
-        Ok(result(payload))
+        Ok(self
+            .run_job(context, move |roots, signal| {
+                grep_payload(request, &roots, signal).unwrap_or_else(failure)
+            })
+            .await)
     }
 
     #[tool(
@@ -304,52 +316,39 @@ impl HayMcp {
         Parameters(request): Parameters<FindRequest>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, ErrorData> {
-        let permit = match self.permits.clone().try_acquire_owned() {
-            Ok(p) => p,
-            Err(_) => {
-                return Ok(result(failure(
-                    "search service is busy; retry after the current search",
-                )));
-            }
-        };
-        let watch = CancelWatch::new(context);
-        let signal = watch.signal.clone();
-        let roots = self.roots.clone();
-        let payload = tokio::task::spawn_blocking(move || {
-            let _permit = permit;
-            let search = || {
-                checked_request(&request, request.limit)?;
-                if request.query.len() > 4096
-                    || request.globs.len() + request.types.len() + request.types_not.len() > 128
-                {
-                    return Err("filename request exceeds budget".into());
-                }
-                let root = root_in_scope(&request.root, &roots)?;
-                let found = crate::finder::find_cancellable(
-                    &crate::finder::FindRequest {
-                        query: request.query,
-                        root,
-                        globs: request.globs,
-                        types: request.types,
-                        types_not: request.types_not,
-                        hidden: request.hidden,
-                        no_ignore: request.no_ignore,
-                        ignore_case: request.ignore_case,
-                        exact: request.exact,
-                        limit: request.limit,
-                        size: request.size,
-                        mtime: request.mtime,
-                        git: request.git,
-                    },
-                    Some(signal),
-                )?;
-                Ok::<_, String>(crate::find_json(&found))
-            };
-            search().unwrap_or_else(failure)
-        })
-        .await
-        .unwrap_or_else(failure);
-        Ok(result(payload))
+        Ok(self
+            .run_job(context, move |roots, signal| {
+                let search = || {
+                    checked_request(&request, request.limit)?;
+                    if request.query.len() > 4096
+                        || request.globs.len() + request.types.len() + request.types_not.len() > 128
+                    {
+                        return Err("filename request exceeds budget".into());
+                    }
+                    let root = root_in_scope(&request.root, &roots)?;
+                    let found = crate::finder::find_cancellable(
+                        &crate::finder::FindRequest {
+                            query: request.query,
+                            root,
+                            globs: request.globs,
+                            types: request.types,
+                            types_not: request.types_not,
+                            hidden: request.hidden,
+                            no_ignore: request.no_ignore,
+                            ignore_case: request.ignore_case,
+                            exact: request.exact,
+                            limit: request.limit,
+                            size: request.size,
+                            mtime: request.mtime,
+                            git: request.git,
+                        },
+                        Some(signal),
+                    )?;
+                    Ok::<_, String>(crate::find_json(&found))
+                };
+                search().unwrap_or_else(failure)
+            })
+            .await)
     }
 
     #[tool(
@@ -366,49 +365,37 @@ impl HayMcp {
         if let Err(error) = checked_request(&request, 1) {
             return Ok(result(failure(error)));
         }
-        let permit = match self.permits.clone().try_acquire_owned() {
-            Ok(p) => p,
-            Err(_) => {
-                return Ok(result(failure(
-                    "search service is busy; retry after the current search",
-                )));
-            }
-        };
-        let watch = CancelWatch::new(context);
-        let signal = watch.signal.clone();
-        let roots = self.roots.clone();
-        let payload = tokio::task::spawn_blocking(move || {
-            let _permit = permit;
-            let mut results = Vec::new();
-            let mut bytes = 0usize;
-            for query in request.queries {
-                if signal.load(Ordering::Relaxed) {
-                    results.push(failure("search cancelled"));
-                    continue;
+        Ok(self
+            .run_job(context, move |roots, signal| {
+                let mut results = Vec::new();
+                let mut bytes = 0usize;
+                for query in request.queries {
+                    if signal.load(Ordering::Relaxed) {
+                        results.push(failure("search cancelled"));
+                        continue;
+                    }
+                    if bytes >= RESPONSE_BYTES - 8192 {
+                        results.push(failure(
+                            "batch response byte budget exceeded; query not searched",
+                        ));
+                        continue;
+                    }
+                    let response =
+                        grep_payload(query, &roots, signal.clone()).unwrap_or_else(failure);
+                    let size = serde_json::to_vec(&response).map_or(RESPONSE_BYTES, |r| r.len());
+                    if bytes.saturating_add(size) > RESPONSE_BYTES - 8192 {
+                        results.push(failure(
+                            "batch response byte budget exceeded; query incomplete",
+                        ));
+                        bytes = RESPONSE_BYTES;
+                    } else {
+                        bytes += size;
+                        results.push(response);
+                    }
                 }
-                if bytes >= RESPONSE_BYTES - 8192 {
-                    results.push(failure(
-                        "batch response byte budget exceeded; query not searched",
-                    ));
-                    continue;
-                }
-                let response = grep_payload(query, &roots, signal.clone()).unwrap_or_else(failure);
-                let size = serde_json::to_vec(&response).map_or(RESPONSE_BYTES, |r| r.len());
-                if bytes.saturating_add(size) > RESPONSE_BYTES - 8192 {
-                    results.push(failure(
-                        "batch response byte budget exceeded; query incomplete",
-                    ));
-                    bytes = RESPONSE_BYTES;
-                } else {
-                    bytes += size;
-                    results.push(response);
-                }
-            }
-            serde_json::json!({"results":results})
-        })
-        .await
-        .unwrap_or_else(failure);
-        Ok(result(payload))
+                serde_json::json!({"results":results})
+            })
+            .await)
     }
 }
 

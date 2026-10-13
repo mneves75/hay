@@ -1,6 +1,59 @@
 use assert_cmd::prelude::*;
 use std::{fs, process::Command};
 
+#[cfg(target_os = "macos")]
+#[test]
+fn git_filters_honor_macos_precomposed_paths() {
+    let d = tempfile::tempdir().unwrap();
+    let root = d.path().join("re\u{301}po");
+    fs::create_dir(&root).unwrap();
+    for args in [
+        vec!["init", "-q"],
+        vec!["config", "core.precomposeUnicode", "true"],
+    ] {
+        Command::new("git")
+            .args(args)
+            .current_dir(&root)
+            .assert()
+            .success();
+    }
+    fs::write(root.join("cafe\u{301}.txt"), "").unwrap();
+    Command::new("git")
+        .args(["add", "."])
+        .current_dir(&root)
+        .assert()
+        .success();
+    for state in ["tracked", "staged"] {
+        let response = json(&root, &["--find", "café", "--git", state, "."], 0);
+        assert_eq!(response["total"], 1, "{response}");
+    }
+    let response = json(&root, &["--find", "café", "--git", "untracked", "."], 1);
+    assert_eq!(response["total"], 0);
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn git_filters_preserve_distinct_unicode_byte_paths() {
+    let d = tempfile::tempdir().unwrap();
+    Command::new("git")
+        .args(["init", "-q"])
+        .current_dir(d.path())
+        .assert()
+        .success();
+    fs::write(d.path().join("café.txt"), "").unwrap();
+    fs::write(d.path().join("cafe\u{301}.txt"), "").unwrap();
+    Command::new("git")
+        .args(["add", "café.txt"])
+        .current_dir(d.path())
+        .assert()
+        .success();
+    let tracked = json(d.path(), &["--find", "café", "--git", "tracked", "."], 0);
+    let untracked = json(d.path(), &["--find", "café", "--git", "untracked", "."], 0);
+    assert_eq!(tracked["total"], 1);
+    assert_eq!(untracked["total"], 1);
+    assert_ne!(tracked["hits"][0]["path"], untracked["hits"][0]["path"]);
+}
+
 #[test]
 fn git_filters_use_repository_paths_when_searching_a_subdirectory() {
     let d = tempfile::tempdir().unwrap();
@@ -401,4 +454,15 @@ fn invalid_utf8_names_are_discovered_without_changing_their_bytes() {
     let result = json(d.path(), &["--find", "name", "."], 0);
     assert_eq!(result["total"], 1);
     assert!(result["hits"][0]["path"]["bytes"].is_string());
+    fs::write(d.path().join("name-\u{fffd}.rs"), "").unwrap();
+    let exact = json(
+        d.path(),
+        &["--find", "name-\u{fffd}.rs", "--exact-name", "."],
+        0,
+    );
+    assert_eq!(
+        exact["total"], 1,
+        "lossy display cannot forge an exact name"
+    );
+    assert!(exact["hits"][0]["path"]["text"].is_string());
 }

@@ -11,7 +11,9 @@ failed the numerical latency gate; no new speed result is claimed.
 Independent advisory review also found a real nested-Git path bug, canonical-root ambiguity,
 unbounded stdio lines, and cancellation that could release capacity before blocking work stopped.
 The implementation fixes these and adds real CLI/MCP regressions. Private ranking weights and
-the pre-registered retrieval gate stay unchanged. Final independent acceptance is recorded
+the pre-registered retrieval gate stay unchanged. Final review additionally caught invalid-ignore
+completeness and macOS Git Unicode keys; both received real red/green regressions. MCP job ownership
+was consolidated after the Standards duplication observation. Final independent acceptance is recorded
 separately in [evidence.md](evidence.md).
 
 ## First principles and primary advice
@@ -39,6 +41,8 @@ anchor a capability. [Tokio documents](https://docs.rs/tokio/latest/tokio/task/f
 that started blocking jobs cannot simply be aborted; cancellation must preserve ownership and
 honest accounting until work stops. [Git's `--full-name`](https://git-scm.com/docs/git-ls-files)
 is necessary when combining nested-root `ls-files` paths with repository-root status paths.
+Git's [precomposeUnicode policy](https://git-scm.com/docs/git-config#Documentation/git-config.txt-coreprecomposeUnicode)
+explains the macOS composed/decomposed key correction; it is not applied universally to Linux paths.
 
 Research consulted the primary sources above and the pinned upstream code. The advisor used a
 fresh read-only GPT-6 Astra context; it challenged the proposal and inspected the implementation.

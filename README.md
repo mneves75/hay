@@ -142,7 +142,8 @@ and walk with the priors ripgrep deliberately lacks: every complete search retur
 the matches from the corresponding normalized `rg` invocation, reordered so the likely
 declaration comes first and so the first page is ten files rather than ten lines of one file.
 Above 20,000 candidates it exits 2 and identifies the incomplete
-prescore-retained set on stderr. No index, no daemon, no state — you type `hay` instead of `rg`.
+prescore-retained set on stderr. Ordinary invocation has no index, daemon or persistent state.
+`--mcp` explicitly starts the optional stdio service; `--find` discovers live filenames.
 Every flag, output format, traversal difference, and exit code is documented in the
 [manual](https://mneves75.github.io/hay/MANUAL.html) — an offline, self-contained page with
 search.
@@ -180,8 +181,9 @@ corpus (the Linux kernel, warm cache):
 
 So: `hay` now covers the lexical **find-things-by-name** layer, including its exhaustive and
 unranked variants. It is not the only search tool an agent needs, and the last two rows say who
-else you want and why. The project has no plan to grow a parser or an index — `DESIGN-hay.md`
-ruled both out on day one, because funded products already occupy that ground.
+else you want and why. A parser remains out of scope. An index was ruled out in the original
+design; the fsearch transfer reconsidered it and removed an inventory-only prototype with no
+search consumer. Any future cache must satisfy the same completeness and performance gates.
 
 **The prose row has a fix that did not ship, and that is the interesting part.** A markdown heading
 declares the section about a term as `function foo` declares `foo`. Implemented, it reversed the

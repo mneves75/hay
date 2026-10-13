@@ -829,6 +829,10 @@ fn run_to(
                     return ignore::WalkState::Continue;
                 }
             };
+            if let Some(error) = entry.error() {
+                eprintln!("hay: {error}");
+                errors.fetch_add(1, Ordering::Relaxed);
+            }
             if !entry.file_type().is_some_and(|t| t.is_file()) {
                 return ignore::WalkState::Continue;
             }
@@ -1114,6 +1118,10 @@ fn run_unranked<M: Matcher + Clone + Send>(
                     return ignore::WalkState::Continue;
                 }
             };
+            if let Some(error) = entry.error() {
+                eprintln!("hay: {error}");
+                errors.fetch_add(1, Ordering::Relaxed);
+            }
             if !entry.file_type().is_some_and(|t| t.is_file()) {
                 return ignore::WalkState::Continue;
             }

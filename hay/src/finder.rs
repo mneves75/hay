@@ -332,6 +332,9 @@ pub(crate) fn find_cancellable(
             continue;
         }
         let raw_name = entry.file_name().to_str();
+        if request.exact && raw_name.is_none() {
+            continue; // A UTF-8 query cannot exactly name an invalid-UTF-8 basename.
+        }
         // Invalid UTF-8 paths remain discoverable by a Unicode query matching their valid
         // prefix; ranking is deterministic on the original path, not this display conversion.
         let name = normalized(
@@ -447,6 +450,8 @@ impl GitFlags {
 struct GitState {
     root: PathBuf,
     paths: std::collections::HashMap<PathBuf, GitFlags>,
+    #[cfg(target_os = "macos")]
+    precompose_unicode: bool,
 }
 impl GitState {
     fn read(root: &std::path::Path) -> Result<Self, String> {
@@ -464,16 +469,26 @@ impl GitState {
         let mut state = Self {
             root,
             paths: Default::default(),
+            #[cfg(target_os = "macos")]
+            precompose_unicode: git_output(
+                dir,
+                &[
+                    "config",
+                    "--bool",
+                    "--default=false",
+                    "--get",
+                    "core.precomposeUnicode",
+                ],
+            )?
+            .strip_suffix(b"\n")
+            .is_some_and(|value| value == b"true"),
         };
         for name in git_output(dir, &["ls-files", "--full-name", "-z"])?
             .split(|b| *b == 0)
             .filter(|p| !p.is_empty())
         {
-            state
-                .paths
-                .entry(PathBuf::from(bytes_os(name)?))
-                .or_default()
-                .tracked = true;
+            let key = state.key(&PathBuf::from(bytes_os(name)?));
+            state.paths.entry(key).or_default().tracked = true;
         }
         // Explicit files are emitted even for ignored directories; no lossy pathname parsing.
         let status = git_output(
@@ -493,10 +508,8 @@ impl GitState {
             }
             let x = row[0];
             let y = row[1];
-            let flag = state
-                .paths
-                .entry(PathBuf::from(bytes_os(&row[3..])?))
-                .or_default();
+            let key = state.key(&PathBuf::from(bytes_os(&row[3..])?));
+            let flag = state.paths.entry(key).or_default();
             if x == b'!' && y == b'!' {
                 flag.ignored = true;
             } else if x != b'?' {
@@ -511,13 +524,25 @@ impl GitState {
         }
         Ok(state)
     }
+    fn key(&self, path: &std::path::Path) -> PathBuf {
+        // Git on macOS can precompose names that the filesystem returns decomposed.
+        // Match that configured policy only there: Linux may hold both byte spellings.
+        #[cfg(target_os = "macos")]
+        if self.precompose_unicode
+            && let Some(text) = path.to_str()
+        {
+            return PathBuf::from(text.nfc().collect::<String>());
+        }
+        path.to_path_buf()
+    }
     fn flags(&self, path: &std::path::Path) -> Result<&GitFlags, String> {
         let absolute =
             std::fs::canonicalize(path).map_err(|e| format!("{}: {e}", path.display()))?;
         let relative = absolute
             .strip_prefix(&self.root)
             .map_err(|_| "file outside Git repository")?;
-        if let Some(flags) = self.paths.get(relative) {
+        let relative = self.key(relative);
+        if let Some(flags) = self.paths.get(&relative) {
             return Ok(flags);
         }
         // Porcelain represents ignored directories as one row with a trailing slash.

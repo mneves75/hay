@@ -9,7 +9,7 @@ Each gate was run as its own command; exit codes below are its own, not a follow
 
 | Gate | Result / exit |
 |---|---|
-| `cargo test --locked --manifest-path hay/Cargo.toml` | PASS / 0: 44 unit, 23 content CLI, 12 filename CLI, 5 actual MCP tests |
+| `cargo test --locked --manifest-path hay/Cargo.toml` | PASS / 0: 44 unit, 23 content CLI, 13 filename CLI, 7 actual MCP tests (87 on macOS) |
 | `cargo clippy --locked --manifest-path hay/Cargo.toml --all-targets -- -D warnings` | PASS / 0 |
 | `cargo fmt --manifest-path hay/Cargo.toml --check` | PASS / 0 |
 | `cargo build --locked --release --manifest-path hay/Cargo.toml` | PASS / 0; Rust 1.99.0 |
@@ -56,7 +56,8 @@ whose ground truth favors hay's existing purpose. It does not validate the new f
 contextual relevance, task completion or speed. No arithmetic relative-improvement claim.
 
 Baseline SHA-256: `7c6b2f2bb6874a07c0f120ed393970fe597adedb8650ddb8e6e6e875fea20ecc`.
-Candidate SHA-256: `6a055c4b3a7e64b6dae2daff07ba13c46668c0509aebffa945953f816eab7e07`.
+Initial candidate SHA-256: `6a055c4b3a7e64b6dae2daff07ba13c46668c0509aebffa945953f816eab7e07`.
+Corrected candidate SHA-256: `b60a64bfa56088dd9c5c59d6327447913ee5941585cd0bc52d94da4916f14f49`.
 The installed baseline may use another compiler; no timings were compared or attributed.
 
 ## Manual and advisory evidence
@@ -70,15 +71,21 @@ confinement claims, Git path bases, resource bounds and blocking-job cancellatio
 The source inventory/research/alternatives and resulting corrections are in [review.md](review.md).
 
 `cccc` 1.8.0, original config/exclusions, `--no-cache --min 0`, all nine Rust source files:
-exit 0, 9/9 analyzed, 0 parse-error files, empty stderr; 311 functions, cognitive maximum 30,
+exit 0, 9/9 analyzed, 0 parse-error files, empty stderr; 315 functions after correction, cognitive maximum 30,
 p95 9. Metrics are review navigation, not acceptance. Dependency mapping was partial because
 macros/conditional Rust edges and one pre-existing video import are unresolved; no zero-coverage claim.
 
 ## Independent finishing gates
 
-Standards/Spec reviews and source-blind `mneves-verify`: pending. Their outcomes and any corrections
-will be appended before final delivery. The independent verifier must use a fresh different-model
-context, real binary/protocol and positive controls; builder claims do not substitute for proof.
+Initial Standards/Spec reviews found two P2 correctness defects and one nonblocking duplication
+judgment. Both defects were independently reproduced against the initial binary; verification
+returned FAIL. Corrections include ignore-error propagation, configured macOS Git Unicode keys,
+Linux byte-key preservation and a shared MCP job lifecycle. See [code-review.md](code-review.md).
+
+Final corrected-source review and a new full source-blind `mneves-verify` context are pending.
+The initial verifier accidentally saw reviewer summaries through agent listing and disclosed that
+two probe ideas came from those reports; it reproduced outcomes without opening source. Final
+verification uses another fresh context without access to those reports or builder notes.
 
 ## Unverified / not shipped
 

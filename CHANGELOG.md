@@ -27,6 +27,16 @@ history lives in git and `memory/`.
 - MCP reports resource failures as incomplete tool errors rather than quiet partial success.
   Global CLI help/version/type-list keep their original early-exit precedence.
 
+### Fixed during independent review
+
+- Nonfatal ignore-file parsing errors now make content searches incomplete, including MCP and
+  streaming CLI output, instead of silently claiming that visibility rules succeeded.
+- Filename Git filters honor macOS `core.precomposeUnicode` when Git and the filesystem emit
+  different Unicode spellings. Linux retains distinct byte paths; exact Unicode queries cannot
+  match invalid-byte names through lossy display conversion.
+- MCP shares one internal job lifecycle so busy admission, cancellation and blocking-job permit
+  ownership cannot drift across its three handlers.
+
 This is a source version bump, not a published release. Tags, attested archives and the
 Homebrew formula still follow the existing protected release workflow.
 

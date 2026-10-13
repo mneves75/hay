@@ -232,6 +232,67 @@ fn registered_scopes_reject_static_outside_paths() {
     client.finish();
 }
 
+#[test]
+fn an_invalid_ignore_rule_is_incomplete_in_both_live_tools() {
+    let d = repository();
+    fs::write(d.path().join(".gitignore"), "[z-a]\n").unwrap();
+    fs::write(d.path().join("control.rs"), "fn positive_control() {}\n").unwrap();
+    let mut client = Client::start(d.path());
+    for (name, arguments) in [
+        (
+            "grep",
+            serde_json::json!({"root":d.path(),"pattern":"positive_control"}),
+        ),
+        (
+            "find_files",
+            serde_json::json!({"root":d.path(),"query":"control"}),
+        ),
+    ] {
+        let payload = client.call(name, arguments);
+        assert_eq!(payload["complete"], false, "{name}: {payload}");
+    }
+    client.finish();
+    Command::cargo_bin("hay")
+        .unwrap()
+        .args(["positive_control"])
+        .arg(d.path())
+        .assert()
+        .code(2);
+    Command::cargo_bin("hay")
+        .unwrap()
+        .args(["--stream", "positive_control"])
+        .arg(d.path())
+        .assert()
+        .code(2);
+}
+
+#[cfg(target_os = "macos")]
+#[test]
+fn mcp_git_filters_honor_precomposed_filesystem_names() {
+    let d = repository();
+    Command::new("git")
+        .args(["config", "core.precomposeUnicode", "true"])
+        .current_dir(d.path())
+        .assert()
+        .success();
+    fs::write(d.path().join("cafe\u{301}.txt"), "").unwrap();
+    Command::new("git")
+        .args(["add", "."])
+        .current_dir(d.path())
+        .assert()
+        .success();
+    let mut client = Client::start(d.path());
+    for (git, expected) in [("tracked", 1), ("staged", 1), ("untracked", 0)] {
+        let reply = client.call(
+            "find_files",
+            serde_json::json!({"root":d.path(),"query":"café","git":git}),
+        );
+        assert_eq!(reply["complete"], true);
+        assert_eq!(reply["total"], expected, "{reply}");
+    }
+    client.finish();
+}
+
 fn repository() -> tempfile::TempDir {
     let d = tempfile::tempdir().unwrap();
     Command::new("git")

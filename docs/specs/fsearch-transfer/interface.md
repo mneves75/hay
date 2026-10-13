@@ -49,6 +49,10 @@ when needed). Spaces and newlines are read through Git's NUL-delimited format. L
 and repository subdirectories are supported. Filenames can change during any live traversal;
 there is no transactionally consistent filesystem snapshot.
 
+On macOS, Git status keys honor `core.precomposeUnicode`; composed Git names and decomposed
+filesystem spellings refer to the same status. Linux pathname bytes are kept distinct. Exact
+UTF-8 filename queries never match a lossy replacement-character rendering of an invalid-byte name.
+
 Content-only flags such as `-F`, `-w`, `-C`, `--stream`, `--explain` are rejected in filename mode.
 `--find=-name .` treats a leading-dash query literally. Ordinary content patterns named `find`
 or `mcp` remain ordinary patterns; `-e --find` and `-- --mcp` are literal content patterns.
