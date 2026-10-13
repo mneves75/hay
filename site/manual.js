@@ -23,29 +23,27 @@ const copyText = async (text) => {
   if (!copied) throw new Error("clipboard unavailable");
 };
 for (const b of document.querySelectorAll(".copy")) {
+  const code = b.previousElementSibling?.querySelector("code");
+  if (!code) continue;
+  const feedback = document.createElement("p");
+  feedback.className = "copy-feedback";
+  feedback.setAttribute("role", "status");
+  feedback.setAttribute("aria-live", "polite");
+  b.parentElement.append(feedback);
   b.hidden = false;
   b.setAttribute("aria-label", "Copy command to clipboard");
-  b.setAttribute("aria-live", "polite");
-  let reset;
   b.addEventListener("click", async () => {
-    clearTimeout(reset);
-    const code = b.previousElementSibling?.querySelector("code");
+    if (b.disabled) return;
+    b.disabled = true;
+    feedback.textContent = "Copying…";
     try {
-      if (!code) throw new Error("copy source missing");
       await copyText(code.textContent ?? "");
-      b.textContent = "Copied";
-      b.setAttribute("aria-label", "Command copied");
-      b.dataset.done = "";
+      feedback.textContent = "Command copied.";
     } catch {
-      b.textContent = "Select command manually";
-      b.setAttribute("aria-label", "Copy failed. Select the command manually.");
-      delete b.dataset.done;
+      feedback.textContent = "Could not copy. Select the command and copy it manually.";
+    } finally {
+      b.disabled = false;
     }
-    reset = setTimeout(() => {
-      delete b.dataset.done;
-      b.textContent = "Copy command";
-      b.setAttribute("aria-label", "Copy command to clipboard");
-    }, 1800);
   });
 }
 
@@ -67,11 +65,12 @@ q.addEventListener("input", () => {
     if (needle && hit) hits++;
     // strip previous marks, then mark the first occurrence per heading-ish element
     for (const m of s.querySelectorAll("mark")) m.replaceWith(...m.childNodes);
+    s.normalize();
     if (needle && hit && hits <= 50) {
       const walker = document.createTreeWalker(s, NodeFilter.SHOW_TEXT);
       const targets = [];
       for (let n; (n = walker.nextNode());) {
-        if (n.parentElement.closest("pre, button")) continue;
+        if (n.parentElement.closest("button, .copy-feedback")) continue;
         const i = n.data.toLowerCase().indexOf(needle);
         if (i >= 0) targets.push([n, i]);
       }
