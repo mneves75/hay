@@ -1,6 +1,6 @@
 [package]
 name = "hay"
-version = "0.3.2"
+version = "0.4.0"
 edition = "2024"
 rust-version = "1.88"
 description = "A ranked grep for coding agents: ripgrep's engine, with the priors grep lacks."
@@ -21,6 +21,11 @@ grep-cli = "0.1"
 # unparseable output. This is the same crate ripgrep uses for `--json`.
 serde_json = "1"
 lexopt = "0.3"
+unicode-normalization = "0.1"
+serde = { version = "1", features = ["derive"] }
+rmcp = { version = "3.5.1", default-features = false, features = ["server", "macros", "transport-io"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "io-std"] }
+schemars = "1"
 # Context is reopened after ranking; capability-scoped paths prevent symlink/traversal escape.
 # `cap-std` is maintained by the Bytecode Alliance and supports the project's MSRV.
 cap-std = "4.0.3"

@@ -7,10 +7,13 @@ issue for anything exploitable or include secrets, private paths, or personal da
 
 ## What each tool touches
 
-**`hay`** reads the filesystem and nothing else. No network, no daemon, no index, no state written
-anywhere. By default it honours `.gitignore` and skips hidden files, so `.env` and friends are not
+**`hay`** reads the filesystem. No network listener, persistent index or search history is written.
+Ordinary CLI invocation has no daemon; `--mcp` explicitly starts a stdio service managed by its
+client. Git filename filters and MCP repository registration run Git read commands with optional
+locks disabled. By default it honours `.gitignore` and skips hidden files, so `.env` and friends are not
 read unless you explicitly pass `--hidden --no-ignore`. Symlinks met during traversal are never
-followed — there is no `-L` — so a symlink inside the tree cannot be used to read outside it. A
+followed — there is no `-L`. This is traversal policy, not a sandbox against a hostile process
+replacing paths between discovery and opening. A
 symlink given as PATH itself is followed, as ripgrep follows it: the caller chose that root. In a
 walked file, binary content stops the search at the first NUL; a file named as PATH, or stdin,
 prints ripgrep's `binary file matches` line in place of its lines after the NUL, while `-c`, `-l`
@@ -93,10 +96,27 @@ smoke-tests the binary at Cargo's actual install path, so an older `hay` on `PAT
 success. Prefer a versioned script URL and matching `HAY_REF`; inspect any downloaded installer
 before running it.
 
+## Optional MCP scope and limits
+
+`--mcp --root REPO` is stdio only, explicitly started, with exactly three read-only search tools.
+Registered roots and requested directories are canonicalized; static outside roots are rejected.
+Roots are a search-scope policy, not OS isolation against hostile concurrent path replacement.
+Matching opens ambient filesystem paths; use OS isolation for untrusted clients or trees.
+
+Frames, arguments, structured grep buffers/candidates/context/submatches and payloads have
+explicit limits; a budget failure is incomplete, never a complete empty answer. These are
+separate budgets, not an RSS ceiling. Git metadata, traversal errors and SDK in-flight frames
+still consume memory proportional to their inputs. One owned blocking-job permit prevents
+cancellation from admitting replacement work before the old job actually stops. Cancellation
+checks file/match boundaries; it does not interrupt an OS read or Git command. See the
+[complete interface contract](docs/specs/fsearch-transfer/interface.md).
+
 ## Supply chain
 
 `hay` depends on ripgrep's own crates (`ignore`, `grep-regex`, `grep-searcher`, `grep-matcher`),
-`serde_json`, and the Bytecode Alliance's `cap-std` for capability-scoped context reads. The
+`lexopt`, `serde_json`, and the Bytecode Alliance's `cap-std` for capability-scoped context reads.
+Optional interfaces additionally use `unicode-normalization`, `serde`, `schemars`, the official
+`rmcp` SDK and Tokio. Dependencies are locked; no unsafe native watcher/walker was copied. The
 measurement kit's sole runtime dependency is the locked, audited `tar` parser used at the untrusted
 archive boundary. CI runs
 Rust and Bun vulnerability audits, GitHub Actions are pinned by full commit SHA, and Dependabot

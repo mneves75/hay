@@ -1,5 +1,13 @@
 # `hay` — a ranked grep for coding agents
 
+**Source 0.4.0:** opt-in live filename discovery and stdio MCP use the existing content engine
+and shared visibility policy. No index/watcher/history, new weights or speed claim ships. The
+[fsearch transfer review](docs/specs/fsearch-transfer/review.md) records the complete mechanism
+inventory, removed prototype, two alternatives and five-year maintenance review. The
+[retained spec](docs/specs/fsearch-transfer/spec.md) and [acceptance record](docs/specs/fsearch-transfer/evidence.md)
+separate implemented behavior from unrun research/performance gates. Historical results below
+remain historical; the private retrieval gate still fails and was not retuned.
+
 **Historical design and results.** The first section preserves the pre-implementation plan; the
 measured result and review history follow it.
 

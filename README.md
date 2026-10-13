@@ -10,6 +10,27 @@ ship gate — by 1.5 points on one of its two criteria, against 20 points at 0.1
 [manual](https://mneves75.github.io/hay/MANUAL.html) for the command surface and
 [HOWTO.md](HOWTO.md) for setup.
 
+Source version **0.4.0** adds opt-in live filename discovery and a manually started stdio MCP
+server. Ordinary content ranking is unchanged. There is no persistent index, watcher, search
+history or new speed claim. The supported Homebrew release remains 0.3.2 until the existing
+attested release process publishes a new version.
+
+The [website](https://mneves75.github.io/hay/) presents a complete illustrative search,
+source-only capabilities, installation choices and dated evidence. Its editorial design and
+delivery plan live in [plan 004](plans/004-editorial-landing.md) and
+[plan 005](plans/005-website-delivery.md). Website tags are separate from binary releases;
+`site-v0.4.0` never implies an installable 0.4.0 Homebrew archive.
+
+```bash
+hay --find sesison .                 # live filename search, including an adjacent typo
+hay --find session --exact-name .    # exact filename, after NFC normalization
+hay --mcp --root /absolute/repo      # stdio: grep, find_files, multi_grep
+```
+
+See [the interface contract](docs/specs/fsearch-transfer/interface.md) for filters, JSON and MCP
+configuration, and [the source review](docs/specs/fsearch-transfer/review.md) for every upstream
+mechanism considered, the alternatives, and the index prototype that was removed.
+
 ```bash
 brew install mneves75/tap/hay          # macOS and Linux, prebuilt and attested
 ```
@@ -127,7 +148,8 @@ and walk with the priors ripgrep deliberately lacks: every complete search retur
 the matches from the corresponding normalized `rg` invocation, reordered so the likely
 declaration comes first and so the first page is ten files rather than ten lines of one file.
 Above 20,000 candidates it exits 2 and identifies the incomplete
-prescore-retained set on stderr. No index, no daemon, no state — you type `hay` instead of `rg`.
+prescore-retained set on stderr. Ordinary invocation has no index, daemon or persistent state.
+`--mcp` explicitly starts the optional stdio service; `--find` discovers live filenames.
 Every flag, output format, traversal difference, and exit code is documented in the
 [manual](https://mneves75.github.io/hay/MANUAL.html) — an offline, self-contained page with
 search.
@@ -165,8 +187,9 @@ corpus (the Linux kernel, warm cache):
 
 So: `hay` now covers the lexical **find-things-by-name** layer, including its exhaustive and
 unranked variants. It is not the only search tool an agent needs, and the last two rows say who
-else you want and why. The project has no plan to grow a parser or an index — `DESIGN-hay.md`
-ruled both out on day one, because funded products already occupy that ground.
+else you want and why. A parser remains out of scope. An index was ruled out in the original
+design; the fsearch transfer reconsidered it and removed an inventory-only prototype with no
+search consumer. Any future cache must satisfy the same completeness and performance gates.
 
 **The prose row has a fix that did not ship, and that is the interesting part.** A markdown heading
 declares the section about a term as `function foo` declares `foo`. Implemented, it reversed the

@@ -4,7 +4,50 @@ Versions track `hay`, the shipped binary. The measurement kit is versioned with 
 This changelog starts at 0.1.0: everything before was development under a different name, and its
 history lives in git and `memory/`.
 
-## [Unreleased]
+## [Unreleased — 0.4.0]
+
+### Added
+
+- `--find QUERY [PATH]`: live filename discovery with exact/substring/typo ordering,
+  Unicode NFC normalization, deterministic byte-path ties, bounded top-K pages, and explicit
+  size, modification-age and Git status filters. Existing glob/type/hidden/ignore rules apply.
+- `--mcp --root REPO` (repeatable): an explicitly started stdio server using the official Rust
+  MCP SDK. Exactly `grep`, `find_files`, and `multi_grep`; independent batch ordering/errors,
+  canonical registered scopes, explicit completeness versus paging, cooperative cancellation,
+  one active blocking job and byte limits for frames, arguments and structured retrieval.
+- Retained source review, interface contract, implementation plan and acceptance record in
+  `docs/specs/fsearch-transfer/`. The inventory-only watcher prototype was removed before shipping:
+  no search consumed it. No persistent index, history, proximity signal or performance gain claimed.
+
+### Changed
+
+- Redesigned the website as an accessible editorial proof sheet: complete real search output,
+  adjacent source-only capability labels, selectable/copyable install commands, dated public
+  evidence and the unchanged private failure gate. Self-hosted licensed typography and native
+  media controls keep the page useful without JavaScript or third-party runtime resources.
+- Added deterministic, explicitly allowlisted website packaging with source identity, payload
+  hashes, dependency checks and privacy/overwrite controls. Website tags use `site-v0.4.0-betaN`
+  and `site-v0.4.0`; they do not publish a binary or change the Homebrew release.
+- Extracted the existing content engine behind a thin CLI and internal adapters; ordinary
+  scoring and ranking weights remain unchanged. Filename and content search share visibility
+  policy. MCP globs are root-relative; ordinary CLI globs retain working-directory semantics.
+- MCP reports resource failures as incomplete tool errors rather than quiet partial success.
+  Global CLI help/version/type-list keep their original early-exit precedence.
+- Refreshed the existing benchmark-film dependency lock to address six current audit advisories;
+  the film source and Rust binary are unchanged. Dependency audits remain enabled.
+
+### Fixed during independent review
+
+- Nonfatal ignore-file parsing errors now make content searches incomplete, including MCP and
+  streaming CLI output, instead of silently claiming that visibility rules succeeded.
+- Filename Git filters honor macOS `core.precomposeUnicode` when Git and the filesystem emit
+  different Unicode spellings. Linux retains distinct byte paths; exact Unicode queries cannot
+  match invalid-byte names through lossy display conversion.
+- MCP shares one internal job lifecycle so busy admission, cancellation and blocking-job permit
+  ownership cannot drift across its three handlers.
+
+This is a source version bump, not a published release. Tags, attested archives and the
+Homebrew formula still follow the existing protected release workflow.
 
 ### Release chain
 

@@ -1,8 +1,9 @@
 # Use `hay` and the measurement kit
 
-Written for someone who has never opened this project. Every command below has been run on macOS
-and produced the output shown. If something differs on your machine, that is a bug in this
-document — the numbers here are not aspirational.
+Written for someone who has never opened this project. Historical measurements below are
+macOS observations, not promises for your machine. New 0.4.0 interface examples are documented
+in the [CLI/MCP contract](docs/specs/fsearch-transfer/interface.md); platform evidence belongs
+to the [acceptance record](docs/specs/fsearch-transfer/evidence.md).
 
 ---
 
@@ -38,8 +39,8 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh   # Rust
 curl -fsSL https://bun.sh/install | bash                    # Bun
 ```
 
-Bun is only needed for the measurement kit. **If you just want `hay`, you need Rust and nothing
-else** — `hay` does not shell out to ripgrep, it uses ripgrep's own libraries directly.
+Bun is only needed for the measurement kit. Content search uses ripgrep's libraries directly;
+Git status filename filters and registration of MCP repository roots additionally require Git.
 
 ---
 
@@ -51,7 +52,7 @@ cd hay
 cargo build --release --manifest-path hay/Cargo.toml
 ```
 
-First build takes about 20 seconds (it compiles ripgrep's crates). The binary lands at
+Build time depends on the toolchain and cache. The binary lands at
 `hay/target/release/hay`.
 
 Check it works:
@@ -570,3 +571,30 @@ holds above the 20,000-candidate cap, where eviction used to depend on walk orde
 **`measure-mrr.ts` gives slightly different numbers than yesterday** — expected if the measured
 repositories are live working trees. Ranks move when the corpus moves. Compare runs against a fixed
 checkout, not across a day's commits.
+
+## Website development and delivery
+
+Use Bun 1.4.0. `index.html` contains build tokens; serve a public bundle instead of the source
+checkout, which can hold private measurement data.
+
+```bash
+bun install --frozen-lockfile
+bun test site/build.test.ts
+bun run typecheck
+bash site/check-demo.sh       # needs the release hay binary and ripgrep
+bun site/build.ts --out .scratch/site-preview --phase preview --tag preview
+python3 -m http.server 8437 --bind 127.0.0.1 --directory .scratch/site-preview
+```
+
+The output must be new or empty. Preview explicitly permits and labels uncommitted inputs.
+Staging/production require a clean checkout, matching source SHA and `site-vX.Y.Z-betaN` /
+`site-vX.Y.Z` tag. Build with `--source COMMIT --phase staging --tag site-v0.4.0-beta1` or
+`--phase production --tag site-v0.4.0`. `release.json` records the exact source and every public
+payload digest; the manifest excludes itself from its hash set.
+The aggregate hashes UTF-8 `path`, NUL, lowercase per-file digest and LF for every entry,
+sorted with `localeCompare("en")`. See [the public manifest contract](site/assets/SOURCES.md).
+
+GitHub Pages publishes `gh-pages` at `/`. The beta lives at `/hay/beta/` on the same public
+publishing branch. Follow [the website delivery plan](plans/005-website-delivery.md): preserve
+all incumbent root bytes for beta, prove the served manifest and payload, then obtain the
+required exact-candidate production approval. Website tags do not release a Rust binary.

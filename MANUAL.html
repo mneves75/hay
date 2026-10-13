@@ -178,12 +178,35 @@ footer code{color:var(--ink-soft)}
 <nav class="toc" id="toc" aria-label="Manual sections">
   <a href="#start">start</a><a href="#model">mental model</a><a href="#ranking">ranking</a>
   <a href="#flags">flags</a><a href="#output">output</a><a href="#explain">explain</a>
+  <a href="#live">live interfaces</a>
   <a href="#diffs">vs ripgrep</a><a href="#exits">exit codes</a><a href="#cap">the cap</a>
   <a href="#agents">agent recipes</a><a href="#faq">faq</a><a href="#kit">the kit</a>
 </nav>
 </div>
 
 <main id="main" tabindex="-1">
+
+<section id="live">
+<h2>Optional live interfaces — source 0.4.0</h2>
+<p>The source tree adds filename discovery and a manually managed stdio MCP server. Ordinary
+content ranking is unchanged. Homebrew and the versioned installation examples still describe
+the published 0.3.2 release; these features require a build from the 0.4.0 source tree.</p>
+<div class="codewrap"><pre tabindex="0"><code>hay --find sesison -t rust .          # live names, adjacent typo allowed
+hay --find session.rs --exact-name .  # exact NFC-normalized basename
+hay --find config --size '&gt;1kb' --mtime '&lt;7d' .
+hay --find config --git modified --json .
+hay --mcp --root /absolute/repository # grep, find_files, multi_grep</code></pre><button class="copy" type="button">copy</button></div>
+<p>Filename order is exact, substring, then typo distance, with deterministic pathname-byte ties.
+The default page is 50; <code>-m 0</code> keeps all hits. Size units are powers of 1024;
+mtime filters compare age. Git filters require Git. JSON reports total hits, completeness,
+errors and page truncation separately. Exit 2 always means invalid input or incomplete work.</p>
+<p>MCP requires explicit Git repository scopes, uses the official Rust SDK and reads live files
+on each call. Its globs are root-relative; CLI globs remain working-directory-relative. It has
+one active retrieval job, cooperative cancellation and explicit frame/argument/result budgets.
+Registered scopes are not an OS sandbox against hostile concurrent filesystem mutation.</p>
+<p>No persistent index, watcher, history or speed gain is claimed. The complete contract,
+source review and acceptance record are in <code>docs/specs/fsearch-transfer/</code> in the repository.</p>
+</section>
 
 <p class="noresults"><strong>Nothing matches.</strong> Try a shorter fragment — the search looks at
 headings, flag names, and body text.</p>
