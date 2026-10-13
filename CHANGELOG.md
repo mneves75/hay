@@ -49,6 +49,13 @@ history lives in git and `memory/`.
 This is a source version bump, not a published release. Tags, attested archives and the
 Homebrew formula still follow the existing protected release workflow.
 
+### Website delivery — 2026-10-13
+
+- `site-v0.4.0-beta1` is live at `/hay/beta/`, built from CI-green main commit `f172e96`.
+  Fresh different-model acceptance verifies the actual interface, payload hashes and all seven
+  unchanged production files. Production promotion awaits exact-candidate approval; source
+  0.4.0 and supported Homebrew 0.3.2 remain distinct. See the editorial release record.
+
 ### Release chain
 
 - `brew-formula.sh` fetches each archive from its public download URL — the exact URL the formula

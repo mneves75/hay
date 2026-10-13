@@ -16,7 +16,7 @@ and a passing portable live-index acceleration experiment are missing: do not sh
 | 002: MCP/resource and Git correctness | 001 | implemented; actual CLI/MCP tests pass |
 | 003: Frozen evidence and delivery | 002 | complete: independent behavior/security acceptance PASS; all seven code/dependency CI jobs PASS; PR #16 |
 | 004: Editorial landing redesign | 003 | complete: 14 packaging tests, review corrections, seven CI jobs and fresh different-model interface acceptance PASS |
-| 005: Verified website delivery | 004 | established Pages target inspected; staging/production pending |
+| 005: Verified website delivery | 004 | main merged/CI PASS; live beta and preservation independently PASS; beta1 tag pushed; exact production approval pending |
 
 Chosen alternative: minimal live search. A bounded byte-validated result cache could save repeated
 matching CPU, but must still read every eligible file; it is not adopted without the frozen
