@@ -1,0 +1,27 @@
+{
+  "baseline_version": "0.3.2",
+  "candidate_version": "0.4.0",
+  "baseline_sha256": "7c6b2f2bb6874a07c0f120ed393970fe597adedb8650ddb8e6e6e875fea20ecc",
+  "candidate_sha256": "b60a64bfa56088dd9c5c59d6327447913ee5941585cd0bc52d94da4916f14f49",
+  "comparisons": [
+    {
+      "corpus": "ripgrep",
+      "revision": "3fce3b5bb0236da2df6d99672afb8a719642eca7",
+      "queries": 23,
+      "ordered_stdout_exit_differences": 0
+    },
+    {
+      "corpus": "openclaw",
+      "revision": "7c65d89e60495c1848ba02bc511881d247ec1e2e",
+      "queries": 30,
+      "ordered_stdout_exit_differences": 0
+    },
+    {
+      "corpus": "alamofire",
+      "revision": "0455bfb650893e86ad07ace16e5f2d36dadf46f4",
+      "queries": 29,
+      "ordered_stdout_exit_differences": 0
+    }
+  ],
+  "performance": "not measured"
+}

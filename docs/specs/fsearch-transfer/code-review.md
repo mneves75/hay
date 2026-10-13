@@ -15,8 +15,10 @@ One P3 judgment call: three handlers repeated busy admission, cancellation watch
 permit ownership. No incorrect lifecycle was demonstrated. A single internal `run_job` now
 owns those operations without changing the public API or adding another service abstraction.
 
-Disposition: both addressed. The corrected walkers count/report ignore errors; the job runner
-retains its owned permit inside the blocking closure. Final source review follows below.
+Disposition: both addressed. Final Standards review of `cbd2cc5` reports **0 unresolved standard
+breaches and 0 unresolved judgments**. It independently ran 20 filename/MCP tests and true,
+false and unset macOS Git precomposition controls. The owned permit remains inside the blocking
+closure, with the cancellation watch alive across its await. No edits or fixture leftovers.
 
 ## Spec
 
@@ -30,8 +32,12 @@ distinct composed/decomposed path control and preserves raw keys.
 No other missing accepted requirement or unrequested scope creep was found. Index/history
 absence is explicit in the corrected spec, not a shipped acceleration claim.
 
-Disposition: fixed. Final source review follows below.
+Disposition: fixed. Final Spec review of `cbd2cc5` reports **0 unresolved findings**. It independently
+ran all 43 CLI/filename/MCP tests, plus composed/decomposed roots, nested directories, ignored
+ancestors and disabled-precomposition controls; no missing accepted requirements or scope creep.
 
 Initial counts: Standards 1 demonstrated breach plus 1 nonblocking judgment; Spec 1 defect.
 The worst issue in each axis was P2. Initial actual-binary verification independently reproduced
-both defects and returned FAIL; the correction is followed by a new full behavior context.
+both defects and returned FAIL; a new full source-blind behavior context returned PASS after
+the correction. See [verification.md](verification.md) for all five criteria and the separate
+fresh security acceptance of the film dependency correction.

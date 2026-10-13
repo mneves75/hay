@@ -25,6 +25,15 @@ prototype had no retrieval consumer and was removed; this is not a measured spee
 History/proximity and acceleration remain evidence-blocked. No weights/gates changed.
 See `docs/specs/fsearch-transfer/{spec,interface,review,evidence}.md` and `plans/`.
 
+**Acceptance stays independent** (2026-10-13). Standards/Spec review exposed inherited ignore-error
+silence and macOS Git Unicode-key disagreement. Both were reproduced against the binary and
+fixed with real CLI/MCP regressions; the corrected binary passed all five criteria in a new
+source-blind Astra context. Three-platform CI also passed the search gates. The working branch
+is `feat/fsearch-transfer`, PR #16; 0.4.0 is source-only until the protected release workflow.
+The film's six current advisories were fixed with transitive patch updates; a separate fresh
+Astra security verification and all seven code/dependency CI jobs passed at `6f909be`.
+The detailed verdicts and final branch-head checks live in the acceptance record and PR.
+
 **A benchmark cannot judge a signal that detects its ground-truth rule** (2026-08-28). The docs
 track's ground truth is "the token appears in exactly one markdown file's headings"; a heading
 signal is an oracle for that rule, so its enormous win there (+0.19 to +0.45 across five corpora)
