@@ -77,10 +77,12 @@ test("actual entry point emits deterministic public facts and licensed assets", 
 
 test("different illustrative match sets fail before writing output", async () => {
   const f = await fixture();
-  await writeFile(join(f.root, "site/demo/expected-hay.txt"), "./src/auth/session.ts:1:validateSession\n");
+  const file = join(f.root, "site/demo/expected-hay.txt");
+  const original = await readFile(file, "utf8");
+  await writeFile(file, original.replace("validateSession return", "validateSession different return"));
   const result = run(f);
   assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /match set|six matches/i);
+  assert.match(result.stderr, /match set/i);
   await assert.rejects(readdir(f.publicDir), /ENOENT/);
 });
 
