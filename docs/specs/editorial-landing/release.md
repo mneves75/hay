@@ -80,7 +80,12 @@ and packaging refusal controls remain outside this source-blind acceptance; ordi
 are recorded separately. Directory enumeration is unavailable over public HTTP; exclusion
 evidence covers the specified probes. The isolated browser is closed.
 
-## Prepared production packet
+## Prepared production packet (superseded)
+
+The owner approved proceeding conditional on redoing the film first. The film revision below
+supersedes this packet; never deploy these old prepared bytes or move beta1's tag. See
+[the film storyboard](film.md) and [its verification record](film-evidence.md). A new beta count
+and exact production payload must be prepared from the revised clean, CI-green source.
 
 The production website tag would be `site-v0.4.0` at the same frozen source. Target:
 https://mneves75.github.io/hay/. The prebuilt clean production payload hash is
