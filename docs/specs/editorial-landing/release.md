@@ -1,5 +1,9 @@
 # Editorial website beta delivery
 
+The latest beta2 replaces the film. See [its completed verification and revised production
+packet](film-evidence.md). The beta1 record below is retained as history; its production packet
+is superseded. Beta1's immutable tag remains unchanged.
+
 2026-10-13. Repository: mneves75/hay. PR #16 merged with a merge commit, then the working
 checkout returned to clean `main`. Both local and remote feature branches were deleted.
 

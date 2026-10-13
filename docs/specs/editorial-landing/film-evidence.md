@@ -43,7 +43,75 @@ Its initial local run passed the format, playback, complete illustration, featur
 historical evidence, installation and public packaging checks. A poster comparison used frame
 zero rather than the documented frame 45. That finding was disproved: independent decoding
 of frame 45 matched all poster pixels exactly (SSIM 1.000000). The verifier also confirmed
-the distinct model dispatch. Final served-beta verification is required before delivery.
+the distinct model dispatch. The full, fresh served-beta reverify passed all eight criteria.
+
+Verdict: PASS
+Builder: GPT-6 / Remotion, ffmpeg, agent-browser / main builder context
+Verifier: gpt-6-astra / ffprobe, ffmpeg, isolated agent-browser, independent HTTP/hash checks / fresh source-blind context
+Different model required: yes
+Different model used: yes
+
+Criterion 1 — Complete silent MP4: PASS — Fresh live download: H.264, 1920×1080, 30 fps,
+1,080 frames, 36.000 seconds, no audio. Full decode succeeds; all frames contain visible
+variation. Opening, all scenes and final frame were independently inspected.
+
+Criterion 2 — Preserved matches and working playback: PASS — Six complete matches, four
+files; declaration fourth to first, first four settled results use distinct files. Native
+playback advanced from 0 to 1.806527 seconds.
+
+Criterion 3 — Qualified filename/MCP features: PASS — Film/page show source 0.4.0,
+`hay --find sesison .`, manually started `hay --mcp --root .`, and all three tool names;
+no persistent index/history or speed claim.
+
+Criterion 4 — Historical evidence and limitations: PASS — Four rows, sample sizes, values
+and intervals match; hay 0.3.0, 2026-08-28, definition-finding limitation, zero documentation
+wins/four regressions and private gate failing/not rerun remain visible.
+
+Criterion 5 — Installation and destination: PASS — Homebrew 0.3.2 remains distinct from
+source 0.4.0; page pins the frozen source below with `--locked`. Film ends at the public site.
+
+Criterion 6 — Presentation and accessibility: PASS — Live poster matches frame 45 exactly
+(SSIM 1.000000). Desktop/mobile renders show Archivo and the editorial palette/safe margins.
+No page overflow at 1440/390; native controls, no autoplay, keyboard disclosure and complete
+alternative work with the page's JavaScript blocked. Prior poster finding is disproved.
+
+Criterion 7 — Beta identity, integrity and containment: PASS — Live manifest identifies
+the frozen source, staging, site-v0.4.0-beta2 and dirty=false. All 13 downloaded payload hashes
+and aggregate match. Exactly those payloads plus manifest, no symlinks; source/private probes
+return 404.
+
+Criterion 8 — Production preserved: PASS — All seven live root files match the immutable
+snapshot. The legacy root is cream/ochre/serif; the earlier description as dark was inaccurate.
+
+Remaining uncertainty: Source validation is outside this source-blind acceptance; source
+review and actual-entry-point tests confirmed that correction separately. Manifest provenance
+was checked as published metadata, not independently reconstructed from source. Isolated
+browsers were closed. Production promotion is still pending exact-candidate approval.
+
+## Delivered identity
+
+- Source: `43bfb48d9a015c12b6f754d16d8007a6beb4013a`; PR #17 merged, main restored.
+- All seven final-head CI jobs passed in run `38399909365`; all seven merged-main jobs
+  passed in run `38400365662`. Pages build/deploy/status passed in run `38400891461`.
+- Publishing commit: `0d8b76bf0c3066a6dc8e3296ac3a6226c48ff569`, changing only beta paths.
+- Beta: https://mneves75.github.io/hay/beta/; website tag `site-v0.4.0-beta2` points at source.
+- [Public manifest](beta2-manifest.json), aggregate payload SHA-256:
+  `2cba9d29e65cf826511a60409c52ea59d859c2bbaee7f3f6d7f1b3dcbc19d1ed`.
+- Source 0.4.0, private film package 1.1.0, supported Homebrew 0.3.2. No Rust release cut.
+
+## Revised production packet
+
+Repository `mneves75/hay`; candidate source as above; website tag `site-v0.4.0`;
+target https://mneves75.github.io/hay/. Prepared clean production payload SHA-256:
+`0bf5604ab7ed230e61bfc219114664b5e2e70c651190d56aedbfd36dacdb7477`.
+Non-HTML assets and documents match beta2 exactly; only the phase label, tag, canonical/robots
+metadata and release.json differ. No production tag, push or promotion has happened.
+
+Risks: shared Pages publishing, public beta visibility, historical private retrieval gate
+still failed and not rerun, supported binary still 0.3.2. Recheck publishing HEAD before any
+promotion; refuse concurrent unowned changes. Roll back through a new scoped commit restoring
+the seven root files from `3f891197d8642313034f73c09ed22adea4f64a1f`, retain beta and legacy URLs,
+then verify restored hashes/UI. Never reset or force-push.
 
 The failed historical private retrieval gate remains dated and was not rerun. A CI build,
 local preview or exported MP4 alone does not prove public deployment. Production's old media

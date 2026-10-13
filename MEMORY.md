@@ -32,7 +32,10 @@ the same Archivo/white/charcoal/green design, a complete text alternative and a 
 poster. Input preparation reads only public sources and fails on mismatched matches,
 undated evidence or symlinked input. It changes no ranking weight or measurement. The new
 website candidate supersedes the previously prepared beta1 production bundle; beta1's tag
-must not move. Delivery and verification state belong in the editorial release record.
+must not move. PR #17 merged; all seven main CI jobs passed. Beta2 is live from frozen source
+`43bfb48d9a015c12b6f754d16d8007a6beb4013a`; fresh source-blind Astra verification passed all
+eight criteria, including unchanged production bytes. Exact production promotion remains
+pending for the new candidate. See `docs/specs/editorial-landing/film-evidence.md`.
 
 **Keep only a useful consumer** (2026-10-13, source 0.4.0). fsearch transfer adds opt-in live
 filename discovery and stdio MCP over the existing engine. The inventory-only index/watcher
