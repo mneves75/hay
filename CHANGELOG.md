@@ -21,6 +21,13 @@ history lives in git and `memory/`.
 
 ### Changed
 
+- Applied the approved editorial design to the manual, including shared Archivo/palette,
+  responsive contents, explicit source/Homebrew labels and packaged identity/canonical metadata.
+  Retained every section and native disclosure; search/copy enhance the readable static page.
+  Corrected search highlighting to mark the matched text, cleared filters on contents navigation,
+  and made denied copy show selectable-command recovery. Removed the obsolete runtime Cargo
+  request and legacy theme code. The approved 36-second film is unchanged.
+
 - Redesigned the website as an accessible editorial proof sheet: complete real search output,
   adjacent source-only capability labels, selectable/copyable install commands, dated public
   evidence and the unchanged private failure gate. Self-hosted licensed typography and native

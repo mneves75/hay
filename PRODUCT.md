@@ -49,7 +49,7 @@ keep that language for this redesign. The owner selected an editorial direction 
 ## Evidence on Hand
 
 README.md, DESIGN-hay.md, BENCHMARK.md, evidence/benchmark.json, docs/specs/fsearch-transfer/,
-the 18-second public benchmark film and poster, and actual CLI regressions. The public benchmark
+the 36-second editorial overview film and poster, and actual CLI regressions. The public benchmark
 was generated on 2026-08-28 with hay 0.3.0; it is historical evidence, not a fresh 0.4.0 run.
 
 ## Product Principles

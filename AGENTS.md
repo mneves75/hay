@@ -195,8 +195,10 @@ The retained spec, source inventory and acceptance evidence live in `docs/specs/
 
 ## Public website
 
-`index.html` is a template, not a file to serve directly. Read `PRODUCT.md`, `DESIGN.md` and
-`docs/specs/editorial-landing/` before visual edits. Keep complete illustrative output verified
+`index.html` and `MANUAL.html` are templates, not files to serve directly. Read `PRODUCT.md`,
+`DESIGN.md` and `docs/specs/editorial-landing/` before visual edits. Keep the manual's shared
+editorial styling, every section anchor, source/Homebrew labels, keyboard search and
+JavaScript-free reading/disclosures verified. Keep complete illustrative output verified
 with `bash site/check-demo.sh`, historical evidence dates and adjacent source/Homebrew versions.
 Build only the explicit public bundle with `bun site/build.ts --out .scratch/site-preview
 --phase preview --tag preview`; serve that directory, never the repository root.

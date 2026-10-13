@@ -574,7 +574,7 @@ checkout, not across a day's commits.
 
 ## Website development and delivery
 
-Use Bun 1.4.0. `index.html` contains build tokens; serve a public bundle instead of the source
+Use Bun 1.4.0. `index.html` and `MANUAL.html` contain build tokens; serve a public bundle instead of the source
 checkout, which can hold private measurement data.
 
 ```bash
@@ -591,6 +591,9 @@ Staging/production require a clean checkout, matching source SHA and `site-vX.Y.
 `site-vX.Y.Z` tag. Build with `--source COMMIT --phase staging --tag site-v0.4.0-beta1` or
 `--phase production --tag site-v0.4.0`. `release.json` records the exact source and every public
 payload digest; the manifest excludes itself from its hash set.
+The manual receives its own canonical URL and the same frozen source/Homebrew/phase labels.
+Both pages use the shared landing font/palette. Manual CSS and JavaScript are explicitly
+allowlisted and fingerprinted; the browser never fetches Cargo.toml for a version stamp.
 The aggregate hashes UTF-8 `path`, NUL, lowercase per-file digest and LF for every entry,
 sorted with `localeCompare("en")`. See [the public manifest contract](site/assets/SOURCES.md).
 

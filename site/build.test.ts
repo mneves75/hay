@@ -34,7 +34,9 @@ async function fixture() {
     "site/demo/expected-rg.txt": './docs/notes.md:1:validateSession & notes\n./src/auth.ts:2:export function validateSession() {}\n',
     "site/demo/expected-hay.txt": './src/auth.ts:2:export function validateSession() {}\n./docs/notes.md:1:validateSession & notes\n',
     "site/release-status.json": '{"supported_binary":"0.3.2"}',
-    "MANUAL.html": "<h1>Frozen manual</h1>",
+    "MANUAL.html": '<html><head>{{ROBOTS}}{{CANONICAL}}<link rel="stylesheet" href="site/landing.css"><link rel="stylesheet" href="site/manual.css"><script defer src="site/manual.js"></script></head><body>{{RELEASE_LABEL}} Source {{SOURCE_VERSION}} Homebrew {{HOMEBREW_VERSION}} {{SOURCE_SHA}} <h1>Frozen manual</h1></body></html>',
+    "site/manual.css": ".manual { color: var(--ink); }\n",
+    "site/manual.js": '"use strict";\n',
     "benchmark.html": "<h1>Full report</h1>",
     "BENCHMARK_FEYNMAN.html": "<h1>Method</h1>",
     "BENCHMARK_FEYNMAN.md": "# Method\n",
@@ -102,6 +104,13 @@ describe("public website packaging", () => {
     expect(html).toContain("&amp; notes");
     expect(html).toContain('<mark>validateSession</mark>');
     expect(html).not.toContain("{{");
+    const manual = await readFile(join(root, "output1/MANUAL.html"), "utf8");
+    expect(manual).not.toContain("{{");
+    expect(manual).toContain("Source 0.4.0 Homebrew 0.3.2");
+    expect(manual).toContain(sha);
+    expect(manual).toContain('href="https://mneves75.github.io/hay/beta/MANUAL.html"');
+    expect(manual).toMatch(/site\/manual\.[a-f0-9]{12}\.css/);
+    expect(manual).toMatch(/site\/manual\.[a-f0-9]{12}\.js/);
     expect(html).not.toContain("EXCLUDED_PRIVATE_SENTINEL");
     expect(Object.keys(first.files).some((path) => path.includes("corpus"))).toBe(false);
     expect(Object.keys(first.files).some((path) => path.includes(".git"))).toBe(false);
@@ -124,15 +133,30 @@ describe("public website packaging", () => {
       phase: "staging", tag: "site-v0.4.0-beta1", sourceSha: sha });
     const production = await buildSite({ sourceRoot: root, outputDir: join(root, "output-prod"),
       phase: "production", tag: "site-v0.4.0", sourceSha: sha });
-    for (const path of Object.keys(beta.files).filter((path) => path !== "index.html")) {
+    for (const path of Object.keys(beta.files).filter((path) => !["index.html", "MANUAL.html"].includes(path))) {
       expect(production.files[path]).toBe(beta.files[path]);
     }
-    const before = await readFile(join(root, "output-beta/index.html"), "utf8");
-    const after = await readFile(join(root, "output-prod/index.html"), "utf8");
-    expect(before.replace('name="robots" content="noindex, nofollow"', 'name="robots" content="index, follow"')
-      .replace("https://mneves75.github.io/hay/beta/", "https://mneves75.github.io/hay/")
-      .replaceAll("Beta preview · site-v0.4.0-beta1", "Website · site-v0.4.0"))
-      .toBe(after);
+    for (const path of ["index.html", "MANUAL.html"]) {
+      const before = await readFile(join(root, "output-beta", path), "utf8");
+      const after = await readFile(join(root, "output-prod", path), "utf8");
+      expect(before.replace('name="robots" content="noindex, nofollow"', 'name="robots" content="index, follow"')
+        .replace("https://mneves75.github.io/hay/beta/", "https://mneves75.github.io/hay/")
+        .replaceAll("Beta preview · site-v0.4.0-beta1", "Website · site-v0.4.0"))
+        .toBe(after);
+    }
+  });
+
+  test("the manual shares the editorial assets and retains every section without runtime source requests", async () => {
+    const html = await readFile(fileURLToPath(new URL("../MANUAL.html", import.meta.url)), "utf8");
+    expect(html).toContain('href="site/landing.css"');
+    expect(html).toContain('href="site/manual.css"');
+    expect(html).toContain('src="site/manual.js"');
+    expect(html).toContain("{{SOURCE_VERSION}}");
+    expect(html).toContain("{{HOMEBREW_VERSION}}");
+    expect(html).toContain('aria-label="hay home"');
+    expect(html).not.toMatch(/IBM Plex|light-dark\(|theme-toggle|fetch\("hay\/Cargo/);
+    expect([...html.matchAll(/<section id="([^"]+)"/g)].map(match => match[1]).sort())
+      .toEqual(["live", "start", "model", "ranking", "flags", "output", "explain", "diffs", "exits", "cap", "agents", "faq", "kit"].sort());
   });
 
   test("refuses a nonempty destination without changing its existing data", async () => {

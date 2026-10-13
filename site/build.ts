@@ -22,7 +22,7 @@ export interface SiteManifest {
 }
 
 const publicFiles = [
-  "index.html", "site/landing.css", "site/landing.js", "site/assets/archivo-latin.woff2",
+  "index.html", "site/landing.css", "site/landing.js", "site/manual.css", "site/manual.js", "site/assets/archivo-latin.woff2",
   "site/assets/OFL.txt", "site/assets/SOURCES.md", "site/assets/hay-benchmark.mp4",
   "site/assets/poster.png", "site/assets/favicon.svg", "MANUAL.html", "benchmark.html", "BENCHMARK_FEYNMAN.html",
   "BENCHMARK_FEYNMAN.md",
@@ -163,7 +163,6 @@ export async function buildSite(options: BuildOptions): Promise<SiteManifest> {
   const label = options.phase === "staging" ? `Beta preview · ${options.tag}`
     : options.phase === "production" ? `Website · ${options.tag}` : "Local preview";
   const canonical = options.phase === "staging" ? "https://mneves75.github.io/hay/beta/" : "https://mneves75.github.io/hay/";
-  let html = payload.get("index.html")!.toString();
   const tokens: Record<string, string> = {
     "ROBOTS": `<meta name="robots" content="${options.phase === "production" ? "index, follow" : "noindex, nofollow"}">`,
     "CANONICAL": `<link rel="canonical" href="${canonical}">`,
@@ -172,17 +171,22 @@ export async function buildSite(options: BuildOptions): Promise<SiteManifest> {
     "BENCHMARK_ROWS": evidence.rows, "BENCHMARK_DATE": evidence.date, "BENCHMARK_VERSION": evidence.version,
     "DEMO_MATCHES": demo.matches, "DEMO_FILES": demo.files, "DEMO_RG_ROWS": demo.rg, "DEMO_HAY_ROWS": demo.hay,
   };
-  for (const [token, value] of Object.entries(tokens)) html = html.replaceAll(`{{${token}}}`, value);
-  for (const type of ["css", "js"]) {
-    const path = `site/landing.${type}`;
+  const dependencies = new Map<string, string>();
+  for (const path of ["site/landing.css", "site/landing.js", "site/manual.css", "site/manual.js"]) {
     const bytes = payload.get(path)!;
-    const fingerprinted = `site/landing.${hash(bytes).slice(0, 12)}.${type}`;
+    const fingerprinted = path.replace(/\.(css|js)$/, `.${hash(bytes).slice(0, 12)}.$1`);
     payload.delete(path);
     payload.set(fingerprinted, bytes);
-    html = html.replaceAll(`"${path}"`, `"${fingerprinted}"`);
+    dependencies.set(path, fingerprinted);
   }
-  if (/\{\{[A-Z_]+\}\}/.test(html)) throw new Error("Unresolved website template token");
-  payload.set("index.html", Buffer.from(html));
+  for (const path of ["index.html", "MANUAL.html"]) {
+    let html = payload.get(path)!.toString();
+    for (const [token, value] of Object.entries(tokens)) html = html.replaceAll(`{{${token}}}`,
+      token === "CANONICAL" && path === "MANUAL.html" ? `<link rel="canonical" href="${canonical}MANUAL.html">` : value);
+    for (const [source, fingerprinted] of dependencies) html = html.replaceAll(`"${source}"`, `"${fingerprinted}"`);
+    if (/\{\{[A-Z_]+\}\}/.test(html)) throw new Error("Unresolved website template token");
+    payload.set(path, Buffer.from(html));
+  }
   // The generated method keeps its source links; the website pins them to this revision.
   const method = payload.get("BENCHMARK_FEYNMAN.html")!.toString()
     .replaceAll('href="install.sh"', `href="https://github.com/mneves75/hay/blob/${sourceSha}/install.sh"`)

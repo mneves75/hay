@@ -4,198 +4,73 @@
 <meta charset="utf-8">
 <title>hay — the manual</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="The complete user manual for hay, a ranked grep for coding agents: every flag, the JSON contract, exit codes, ranking signals, and recipes.">
+<meta name="description" content="The complete user manual for hay: flags, filename discovery, MCP, output contracts, exit codes, ranking signals and recipes.">
 <meta property="og:title" content="hay — the manual">
-<meta property="og:description" content="A ranked grep for coding agents: every flag, the JSON contract, exit codes, ranking signals, and recipes.">
-<meta name="color-scheme" content="light dark">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%238a6d10'/%3E%3Cpath d='M18 14h8v14h12V14h8v36h-8V36H26v14h-8z' fill='%23fffdf6'/%3E%3C/svg%3E">
-<style>
-/* Theme via light-dark(): one value per custom property, resolved by color-scheme.
-   The toggle sets data-theme for explicit choice; absence follows the OS. */
-:root{color-scheme:light dark;
-  --ground:light-dark(#f8f5ec,#16130c);
-  --panel:light-dark(#fffdf6,#1e1a10);
-  --ink:light-dark(#201b10,#ece5d2);
-  --ink-soft:light-dark(#5c5544,#b3aa92);
-  --ink-faint:light-dark(#6b6452,#958c72);
-  --rule:light-dark(#e7e1cf,#2e2918);
-  --rule-strong:light-dark(#cfc6a8,#46402a);
-  --accent:light-dark(#8a6d10,#ddb84f);
-  --accent-soft:light-dark(#f1e7c8,#332b14);
-  --accent-ink:light-dark(#6b5408,#e6c86e);
-  --warn:light-dark(#8a6410,#d9ad55);
-  --mark:light-dark(#ffe9a8,#4a4420);
-}
-:root[data-theme="dark"]{color-scheme:dark}
-:root[data-theme="light"]{color-scheme:light}
-*{box-sizing:border-box}
-html{scroll-behavior:smooth}
-@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
-body{
-  margin:0;background:var(--ground);color:var(--ink);
-  font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
-  font-size:16px;line-height:1.65;
-}
-h1,h2,h3{text-wrap:balance}
-p,li{text-wrap:pretty}
-a{color:var(--accent-ink);text-decoration-thickness:1px;text-underline-offset:2px}
-:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:2px}
-.skip{position:absolute;left:-9999px;top:0;background:var(--panel);padding:.5rem 1rem;z-index:99}
-.skip:focus{left:.5rem;top:.5rem}
-code,kbd,pre{font-family:"IBM Plex Mono",ui-monospace,monospace}
-kbd{
-  border:1px solid var(--rule-strong);border-bottom-width:2px;border-radius:4px;
-  padding:.05em .45em;font-size:.82em;background:var(--panel)
-}
-.layout{display:grid;grid-template-columns:minmax(0,1fr);max-width:76rem;margin:0 auto;padding:0 1.25rem}
-@media (min-width:60rem){
-  .layout{grid-template-columns:15rem minmax(0,1fr);gap:3rem}
-  /* Hero spans the full measure; the TOC drops beside the content below it. */
-  .layout > div:first-child{grid-column:1/-1}
-  main{grid-column:2}
-  nav.toc{position:sticky;top:2rem;align-self:start;max-height:calc(100vh - 4rem);overflow:auto;border:0;margin:3.2rem 0 0;padding:0}
-}
-header.hero{border-bottom:2px solid var(--rule-strong);padding:2.75rem 0 1.5rem;
-  background-image:repeating-linear-gradient(
-    color-mix(in srgb,var(--rule) 36%,transparent) 0 1px,transparent 1px 28px)}
-.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:0 0 .6rem}
-h1{font-family:"IBM Plex Serif",Georgia,serif;font-size:clamp(1.9rem,4.5vw,2.8rem);line-height:1.12;margin:0 0 .6rem;font-weight:600}
-.lede{font-size:1.06rem;color:var(--ink-soft);max-width:64ch;margin:0}
-.heroline{display:flex;justify-content:space-between;align-items:start;gap:1rem}
-#theme-toggle{
-  flex:none;background:var(--panel);border:1px solid var(--rule-strong);border-radius:4px;
-  padding:.4rem .7rem;cursor:pointer;color:var(--ink);font:inherit;font-size:.85rem
-}
-#theme-toggle:hover{border-color:var(--accent)}
-nav.toc{border-bottom:1px solid var(--rule);margin:1.5rem 0 0;padding:.75rem 0;display:flex;gap:.35rem;flex-wrap:wrap}
-nav.toc a{
-  font-family:"IBM Plex Mono",monospace;font-size:.74rem;letter-spacing:.04em;text-transform:uppercase;
-  text-decoration:none;color:var(--ink-faint);padding:.25rem .55rem;border-radius:3px
-}
-nav.toc a:hover{color:var(--accent-ink);background:var(--accent-soft)}
-nav.toc a[aria-current="true"]{color:var(--accent-ink);background:var(--accent-soft);font-weight:600}
-main{padding:2rem 0 5rem;min-width:0}
-section[id]{scroll-margin-top:1.5rem}
-h2{
-  font-family:"IBM Plex Serif",Georgia,serif;font-weight:600;font-size:1.6rem;
-  margin:2.75rem 0 1rem;padding-bottom:.4rem;border-bottom:1px solid var(--rule)
-}
-h3{font-family:"IBM Plex Serif",Georgia,serif;font-weight:600;font-size:1.15rem;margin:1.9rem 0 .5rem}
-p{margin:0 0 1rem;max-width:70ch}
-table{border-collapse:collapse;width:100%;font-size:.87rem;font-variant-numeric:tabular-nums}
-th,td{text-align:left;padding:.5rem .7rem;border-bottom:1px solid var(--rule);vertical-align:top}
-thead th{
-  font-family:"IBM Plex Mono",monospace;font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;
-  color:var(--ink-faint);font-weight:500;border-bottom:1px solid var(--rule-strong)
-}
-tbody th[scope="row"]{white-space:nowrap;font-weight:500}
-tbody th code{background:none;padding:0}
-td p{margin:0}
-code{background:var(--accent-soft);border-radius:3px;padding:.08em .35em;font-size:.86em}
-pre{
-  background:var(--panel);border:1px solid var(--rule);border-radius:4px;padding:.9rem 1rem;
-  overflow-x:auto;font-size:.8rem;line-height:1.55;position:relative
-}
-pre code{background:none;padding:0}
-.codewrap{position:relative;margin:0 0 1rem;max-width:70ch}
-.copy{
-  position:absolute;top:.45rem;right:.45rem;border:1px solid var(--rule-strong);background:var(--ground);
-  color:var(--ink-faint);border-radius:3px;font:inherit;font-size:.72rem;padding:.15rem .5rem;cursor:pointer
-}
-.copy[data-done]{color:var(--accent-ink);border-color:var(--accent)}
-.callout{background:var(--accent-soft);border-left:3px solid var(--accent);padding:.9rem 1.1rem;margin:1.4rem 0;border-radius:0 3px 3px 0;max-width:70ch}
-.callout p:last-child,.callout ul:last-child{margin-bottom:0}
-.warn{border-left-color:var(--warn)}
-mark{background:var(--mark);color:inherit;padding:0 .1em;border-radius:2px}
-.searchbar{margin:1.5rem 0 .5rem;max-width:34rem}
-.searchbar input{
-  width:100%;font:inherit;font-size:.95rem;color:var(--ink);
-  background:var(--panel);border:1px solid var(--rule-strong);border-radius:6px;padding:.6rem .9rem
-}
-.searchbar input:focus-visible{outline-offset:0;border-color:var(--accent)}
-.searchmeta{font-size:.8rem;color:var(--ink-faint);min-height:1.2em;margin:.4rem 0 0}
-body.searching section:not(.hit){display:none}
-body.searching .toc-else{display:none}
-.noresults{display:none}
-body.no-search-results .noresults{display:block}
-.explain-anatomy{display:block;width:100%;height:auto;font-size:13px}
-details.flaggroup{border:1px solid var(--rule);border-radius:4px;background:var(--panel);margin:0 0 .7rem}
-details.flaggroup summary{
-  cursor:pointer;padding:.7rem 1rem;font-family:"IBM Plex Serif",Georgia,serif;font-weight:600;
-  list-style:none;display:flex;gap:.6rem;align-items:center
-}
-details.flaggroup summary::-webkit-details-marker{display:none}
-details.flaggroup summary::after{content:"+";margin-left:auto;color:var(--ink-faint);font-family:"IBM Plex Mono",monospace}
-details.flaggroup[open] summary::after{content:"–"}
-details.flaggroup .body{padding:0 1rem 1rem;overflow-x:auto}
-button.linkish{
-  background:none;border:0;color:var(--accent-ink);cursor:pointer;font:inherit;
-  text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:2px;padding:0
-}
-footer{border-top:1px solid var(--rule);margin-top:3rem;padding-top:1.25rem;color:var(--ink-faint);font-size:.8rem}
-footer code{color:var(--ink-soft)}
-@supports (animation-timeline: view()){
-  @media (prefers-reduced-motion: no-preference){
-    section[id] > *{animation:rise linear both;animation-timeline:view();animation-range:entry 0% entry 40%}
-    @keyframes rise{from{translate:0 14px}}
-  }
-}
-@media (max-width:45rem){
-  table{table-layout:fixed}
-  th,td{overflow-wrap:anywhere;padding:.45rem .5rem}
-  tbody th[scope="row"]{white-space:normal}
-}
-@media print{.searchbar,nav.toc,#theme-toggle,.copy{display:none}body{background:#fff}section[id]{break-before:page}section:first-of-type{break-before:auto}}
-</style>
+<meta property="og:description" content="Every flag, output contract and sharp edge. Source features and supported installation, clearly distinguished.">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#ffffff">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; base-uri 'none'; object-src 'none'; form-action 'none'">
+{{ROBOTS}}
+{{CANONICAL}}
+<link rel="icon" href="site/assets/favicon.svg" type="image/svg+xml">
+<link rel="preload" href="site/assets/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="site/landing.css">
+<link rel="stylesheet" href="site/manual.css">
+<script defer src="site/manual.js"></script>
 </head>
-<body>
-<a class="skip" href="#main">Skip to content</a>
+<body class="manual">
+<a class="skip-link" href="#main">Skip to content</a>
 <div class="layout">
 
-<div>
-<header class="hero">
-  <div class="heroline">
-    <div>
-      <p class="eyebrow">hay · manual</p>
-      <h1>hay — the manual</h1>
-      <p class="lede">A ranked <code>grep</code> for coding agents. Same matches as ripgrep,
-      reordered so the declaration comes first. This manual covers every flag, every output
-      format, and the reasoning behind the sharp edges.</p>
-    </div>
-    <button id="theme-toggle" type="button" aria-label="Switch color theme">auto</button>
-  </div>
+<div class="manual-header">
+<header class="masthead">
+  <a class="wordmark" href="index.html" aria-label="hay home">hay</a>
+  <span class="release-label">{{RELEASE_LABEL}}</span>
+  <nav aria-label="Main navigation">
+    <a href="index.html">Home</a>
+    <a href="MANUAL.html" aria-current="page">Manual</a>
+    <a href="benchmark.html">Evidence</a>
+    <a href="https://github.com/mneves75/hay">GitHub</a>
+  </nav>
 </header>
-
-<div class="searchbar">
+<div class="manual-intro">
+  <h1>The manual.</h1>
+  <p class="lede">Every flag. Every output contract.<br>And the reasoning behind the sharp edges.</p>
+  <p class="manual-versions">Source <strong>{{SOURCE_VERSION}}</strong> · supported Homebrew <strong>{{HOMEBREW_VERSION}}</strong>.<br>
+    Filename discovery and MCP require the source build.</p>
+</div>
+<div class="searchbar" hidden>
   <search>
-    <label class="skip" for="q">Search the manual</label>
-    <input id="q" type="search" placeholder="Search — try “json”, “exit”, “definition”… ( / to focus )"
+    <label for="q">Search this manual</label>
+    <input id="q" type="search" placeholder="Try json, exit, definition…"
            autocomplete="off" spellcheck="false">
   </search>
-  <p class="searchmeta" id="search-meta" role="status"></p>
+  <p class="search-hint"><kbd>/</kbd> focuses search. <kbd>Esc</kbd> clears it.</p>
+  <p class="searchmeta" id="search-meta" role="status" aria-live="polite"></p>
+</div>
+<noscript><p class="search-hint">Use the contents or your browser’s Find command to search this manual.</p></noscript>
 </div>
 
 <nav class="toc" id="toc" aria-label="Manual sections">
-  <a href="#start">start</a><a href="#model">mental model</a><a href="#ranking">ranking</a>
-  <a href="#flags">flags</a><a href="#output">output</a><a href="#explain">explain</a>
-  <a href="#live">live interfaces</a>
-  <a href="#diffs">vs ripgrep</a><a href="#exits">exit codes</a><a href="#cap">the cap</a>
-  <a href="#agents">agent recipes</a><a href="#faq">faq</a><a href="#kit">the kit</a>
+  <a href="#start">Start here</a><a href="#model">Mental model</a><a href="#ranking">Ranking</a>
+  <a href="#flags">Flags</a><a href="#output">Output formats</a><a href="#explain">Explain</a>
+  <a href="#live">Filename search &amp; MCP</a>
+  <a href="#diffs">Compared with ripgrep</a><a href="#exits">Exit codes</a><a href="#cap">Candidate cap</a>
+  <a href="#agents">Agent recipes</a><a href="#faq">FAQ</a><a href="#kit">Measurement kit</a>
 </nav>
-</div>
 
 <main id="main" tabindex="-1">
 
 <section id="live">
-<h2>Optional live interfaces — source 0.4.0</h2>
+<h2>Optional live interfaces — source {{SOURCE_VERSION}}</h2>
 <p>The source tree adds filename discovery and a manually managed stdio MCP server. Ordinary
 content ranking is unchanged. Homebrew and the versioned installation examples still describe
-the published 0.3.2 release; these features require a build from the 0.4.0 source tree.</p>
+the supported {{HOMEBREW_VERSION}} release; these features require a build from source {{SOURCE_VERSION}}.</p>
 <div class="codewrap"><pre tabindex="0"><code>hay --find sesison -t rust .          # live names, adjacent typo allowed
 hay --find session.rs --exact-name .  # exact NFC-normalized basename
 hay --find config --size '&gt;1kb' --mtime '&lt;7d' .
 hay --find config --git modified --json .
-hay --mcp --root /absolute/repository # grep, find_files, multi_grep</code></pre><button class="copy" type="button">copy</button></div>
+hay --mcp --root /absolute/repository # grep, find_files, multi_grep</code></pre><button class="copy" type="button" hidden>Copy command</button></div>
 <p>Filename order is exact, substring, then typo distance, with deterministic pathname-byte ties.
 The default page is 50; <code>-m 0</code> keeps all hits. Size units are powers of 1024;
 mtime filters compare age. Git filters require Git. JSON reports total hits, completeness,
@@ -217,19 +92,19 @@ headings, flag names, and body text.</p>
 <p>Homebrew is the supported install path on macOS and Linux. It installs the exact archives the
 release workflow built, whose checksums entered the formula only after their build-provenance
 attestations verified:</p>
-<div class="codewrap"><pre tabindex="0"><code>brew install mneves75/tap/hay</code></pre><button class="copy" type="button">copy</button></div>
+<div class="codewrap"><pre tabindex="0"><code>brew install mneves75/tap/hay</code></pre><button class="copy" type="button" hidden>Copy command</button></div>
 <p>Or build from source — one line, or inspect first (Rust edition 2024, MSRV 1.88):</p>
 <div class="codewrap"><pre tabindex="0"><code>curl -fsSL https://raw.githubusercontent.com/mneves75/hay/v0.3.2/install.sh | HAY_REF=v0.3.2 bash
 
 # inspect-first form:
-git clone --depth 1 --branch v0.3.2 https://github.com/mneves75/hay.git &amp;&amp; cd hay &amp;&amp; HAY_REF=v0.3.2 ./install.sh</code></pre><button class="copy" type="button">copy</button></div>
+git clone --depth 1 --branch v0.3.2 https://github.com/mneves75/hay.git &amp;&amp; cd hay &amp;&amp; HAY_REF=v0.3.2 ./install.sh</code></pre><button class="copy" type="button" hidden>Copy command</button></div>
 <p>The script gates on the toolchain version, clones, builds release, installs via
 <code>cargo install</code>, and smoke-tests the installed binary. Set
 <code>CARGO_INSTALL_ROOT</code> to choose its destination; the script passes that root to Cargo
 and verifies the same path. Then search exactly like you would with ripgrep:</p>
 <div class="codewrap"><pre tabindex="0"><code>hay validateSession src/          # ranked results, best first
 hay -t ts -w fetchUser            # TypeScript only, whole words
-hay -C 3 -m 20 'parseConfig' .    # context, capped result count</code></pre><button class="copy" type="button">copy</button></div>
+hay -C 3 -m 20 'parseConfig' .    # context, capped result count</code></pre><button class="copy" type="button" hidden>Copy command</button></div>
 <p>The deal hay offers is narrow and honest: each complete search returns the exact match set
 from an equivalently configured ripgrep invocation, verified continuously by a differential test
 that normalizes traversal inputs on both sides — but <strong>ordered by likelihood of being the
@@ -295,7 +170,7 @@ file’s strongest line, the second its next-strongest, and so on. An agent open
 first page of ten files is worth more than ten lines of one module — measured on the behavioural
 corpus, this alone lifted the answer-in-top-10 rate from 59.2% to 78.0% without changing a single
 score. The sequence of distinct files is unchanged, so <code>-l</code> output is identical.</p>
-<div class="codewrap"><pre tabindex="0"><code>hay --no-diversify config .   # strict score order instead</code></pre><button class="copy" type="button">copy</button></div>
+<div class="codewrap"><pre tabindex="0"><code>hay --no-diversify config .   # strict score order instead</code></pre><button class="copy" type="button" hidden>Copy command</button></div>
 <h3 id="unranked">Modes that do not rank</h3>
 <p><code>-c</code>, <code>--count-matches</code>, <code>-v</code>, <code>-o</code> and
 <code>--stream</code> have nothing to order. They run ripgrep's way — its parallel traversal, its
@@ -306,7 +181,7 @@ already know the question ranks is a decision you have to make before you can us
 <div class="codewrap"><pre tabindex="0"><code>hay --stream config .      # everything rg would print, streaming, no cap
 hay -c config .            # matching lines per file
 hay -o config .            # just the matched substrings
-hay -v config .            # the lines that did not match</code></pre><button class="copy" type="button">copy</button></div>
+hay -v config .            # the lines that did not match</code></pre><button class="copy" type="button" hidden>Copy command</button></div>
 <div class="callout warn">
 <p><strong>These are the only modes whose order is not deterministic</strong>, because the order is
 ripgrep's. A sorted walk was measured at 8.0 s to the first line of a Linux-kernel search against
@@ -324,7 +199,7 @@ line output prints <code>binary file matches</code> for it, as ripgrep's does, w
 <code>-c</code>, <code>-l</code> and <code>--json</code> read to the end. Binary files found by
 walking a directory are skipped at the first NUL.</p>
 <div class="codewrap"><pre tabindex="0"><code>git diff | hay -F TODO        # searches the diff, not the working directory
-hay -c foo build/app.bin      # counts matches in a binary you named</code></pre><button class="copy" type="button">copy</button></div>
+hay -c foo build/app.bin      # counts matches in a binary you named</code></pre><button class="copy" type="button" hidden>Copy command</button></div>
 
 <h3>Turning signals off</h3>
 <p>Each signal has an ablation switch, because a contribution you cannot switch off is a belief,
@@ -333,7 +208,7 @@ not a measurement:</p>
 hay --no-path        validateSession .
 hay --no-word        validateSession .
 hay --no-tf          validateSession .
-hay --no-diversify   validateSession .</code></pre><button class="copy" type="button">copy</button></div>
+hay --no-diversify   validateSession .</code></pre><button class="copy" type="button" hidden>Copy command</button></div>
 <p>Other signals were built, measured and deleted: exact-case matching, a comment
 penalty, binary whole-word matching, a filename match, (in 0.3.0) a markdown-heading signal
 that reversed hay's documentation deficit and still did not ship, because the benchmark that liked
@@ -419,14 +294,14 @@ discontinuity between context windows:</p>
 src/auth.ts:2:export function validateSession(t: string) {
 src/auth.ts-3-  return t
 --
-src/session.ts:17:// delegates to validateSession</code></pre><button class="copy" type="button">copy</button></div>
+src/session.ts:17:// delegates to validateSession</code></pre><button class="copy" type="button" hidden>Copy command</button></div>
 <h3>JSON Lines (<code>--json</code>)</h3>
 <p>Ripgrep-shaped objects, one per line, <strong><code>match</code> and <code>context</code> messages
 only</strong>:</p>
 <div class="codewrap"><pre tabindex="0"><code>{"type":"match","data":{"path":{"text":"src/auth.ts"},
  "lines":{"text":"export function validateSession(t: string) {\n"},
  "line_number":2,"absolute_offset":31,
- "submatches":[{"match":{"text":"validateSession"},"start":16,"end":30}]}}</code></pre><button class="copy" type="button">copy</button></div>
+ "submatches":[{"match":{"text":"validateSession"},"start":16,"end":30}]}}</code></pre><button class="copy" type="button" hidden>Copy command</button></div>
 <ul>
 <li>No <code>begin</code>/<code>end</code>/<code>summary</code> records: those describe a
 file-scoped stream, and rank order interleaves files by design.</li>
@@ -442,7 +317,7 @@ cleanly (recipe below).</li>
 <h2><code>--explain</code>: reading a score</h2>
 <p>Each result is prefixed with its total score and the per-signal breakdown:</p>
 <div class="codewrap"><pre tabindex="0"><code>$ hay --explain -F validateSession src/ | head -1
-   9.00 [def +6.0 path +1.0 word +1.0 tf +1.00]  src/auth.ts:2:export function validateSession(t: string) {</code></pre><button class="copy" type="button">copy</button></div>
+   9.00 [def +6.0 path +1.0 word +1.0 tf +1.00]  src/auth.ts:2:export function validateSession(t: string) {</code></pre><button class="copy" type="button" hidden>Copy command</button></div>
 <table>
 <thead><tr><th scope="col">field</th><th scope="col">meaning</th></tr></thead>
 <tbody>
@@ -534,7 +409,7 @@ Use `hay` instead of `rg` for concept and symbol searches:
 - exit 0 = results ranked best-first; 1 = no match; 2 = INCOMPLETE — read stderr,
   then narrow (add -g/-t) rather than trusting the output wholesale
 - need every match? use `hay --stream`; counts, inversion, and `-o` also run unranked
-- structured: `hay --json -F "sym" . | jq 'select(.type=="match")'</code></pre><button class="copy" type="button">copy</button></div>
+- structured: `hay --json -F "sym" . | jq 'select(.type=="match")'</code></pre><button class="copy" type="button" hidden>Copy command</button></div>
 
 <table>
 <thead><tr><th scope="col">agent</th><th scope="col">instructions live in</th><th scope="col">notes</th></tr></thead>
@@ -559,7 +434,7 @@ line to a default:</p>
     hay -F -m 10 "&lt;symbol&gt;" .
 
 Use `hay --stream` for every match. Use `rg --sort path` only when stable path
-order or an unsupported ripgrep flag is the actual requirement.</code></pre><button class="copy" type="button">copy</button></div>
+order or an unsupported ripgrep flag is the actual requirement.</code></pre><button class="copy" type="button" hidden>Copy command</button></div>
 <ul>
 <li><strong>Claude Code</strong> — put the rule in <code>CLAUDE.md</code> (or keep it in
 <code>AGENTS.md</code> and add a <code>CLAUDE.md</code> containing just <code>@AGENTS.md</code> —
@@ -594,24 +469,24 @@ agent knows which mode it chose and why.</p>
 
 <h3>Find the definition, read it</h3>
 <div class="codewrap"><pre tabindex="0"><code># fixed-string, top hit only — the common agent case
-hay -F -m 1 "$symbol" "$root"</code></pre><button class="copy" type="button">copy</button></div>
+hay -F -m 1 "$symbol" "$root"</code></pre><button class="copy" type="button" hidden>Copy command</button></div>
 <h3>Structured consumption</h3>
 <div class="codewrap"><pre tabindex="0"><code># every match as TSV: path, line number, trimmed text
 hay --json -F "$symbol" "$root" \
 | jq -r 'select(.type=="match")
          | [.data.path.text, .data.line_number,
-            (.data.lines.text | gsub("\\n$";"") | .[0:160])] | @tsv'</code></pre><button class="copy" type="button">copy</button></div>
+            (.data.lines.text | gsub("\\n$";"") | .[0:160])] | @tsv'</code></pre><button class="copy" type="button" hidden>Copy command</button></div>
 <h3>Context without reordering surprises</h3>
-<div class="codewrap"><pre tabindex="0"><code>hay -C 3 -m 10 -F "$symbol" "$root"   # blocks stay grouped, gaps show as --</code></pre><button class="copy" type="button">copy</button></div>
+<div class="codewrap"><pre tabindex="0"><code>hay -C 3 -m 10 -F "$symbol" "$root"   # blocks stay grouped, gaps show as --</code></pre><button class="copy" type="button" hidden>Copy command</button></div>
 <h3>Honesty check on a big tree</h3>
-<div class="codewrap"><pre tabindex="0"><code>hay --stream -F "$symbol" "$root"   # exhaustive, unranked, no candidate cap</code></pre><button class="copy" type="button">copy</button></div>
+<div class="codewrap"><pre tabindex="0"><code>hay --stream -F "$symbol" "$root"   # exhaustive, unranked, no candidate cap</code></pre><button class="copy" type="button" hidden>Copy command</button></div>
 <h3>Install on an agent's machine</h3>
 <div class="codewrap"><pre tabindex="0"><code>brew install mneves75/tap/hay   # macOS and Linux
 
 # or from source:
 curl -fsSL https://raw.githubusercontent.com/mneves75/hay/v0.3.2/install.sh | HAY_REF=v0.3.2 bash   # inspect first!
 # inspect-first form:
-git clone --depth 1 --branch v0.3.2 https://github.com/mneves75/hay.git &amp;&amp; cd hay &amp;&amp; HAY_REF=v0.3.2 ./install.sh</code></pre><button class="copy" type="button">copy</button></div>
+git clone --depth 1 --branch v0.3.2 https://github.com/mneves75/hay.git &amp;&amp; cd hay &amp;&amp; HAY_REF=v0.3.2 ./install.sh</code></pre><button class="copy" type="button" hidden>Copy command</button></div>
 </section>
 
 <!-- ─────────────────────────────── faq ─────────────────────────────── -->
@@ -651,134 +526,16 @@ kept reproducible — do not extend it, do not quote it.</p>
 </section>
 
 <footer>
-Generated content lives beside the source: <code>MANUAL.html</code> documents hay
-<span id="ver"></span>. Facts pinned to behaviour: exit codes, JSON shapes and the explain format
-are asserted by <code>hay/tests/cli.rs</code>.
+<p>This manual documents source <strong>{{SOURCE_VERSION}}</strong>; supported Homebrew remains
+<strong>{{HOMEBREW_VERSION}}</strong>. Source revision:
+<a href="https://github.com/mneves75/hay/tree/{{SOURCE_SHA}}"><code>{{SOURCE_SHA}}</code></a>.
+Exit codes, JSON shapes and the explain format are asserted by the real CLI contract tests.</p>
+<nav aria-label="Footer navigation"><a href="index.html">Home</a><a href="benchmark.html">Evidence</a><a href="BENCHMARK_FEYNMAN.html">Method</a></nav>
 </footer>
 
 </main>
 </div>
 
-<script type="module">
-// ── theme: auto → dark → light → auto; persisted; falls back to OS via light-dark() ──
-const root = document.documentElement, btn = document.getElementById("theme-toggle");
-const next = { auto: "dark", dark: "light", light: "auto" };
-const readTheme = () => {
-  try { return localStorage.getItem("hay-manual-theme"); } catch { return null; }
-};
-const writeTheme = (value) => {
-  try { localStorage.setItem("hay-manual-theme", value); } catch {}
-};
-const saved = readTheme();
-let theme = saved === "dark" || saved === "light" || saved === "auto" ? saved : "auto";
-const applyTheme = () => {
-  if (theme === "auto") delete root.dataset.theme; else root.dataset.theme = theme;
-  btn.textContent = theme;
-  btn.setAttribute("aria-label", `Color theme: ${theme}. Activate to switch theme.`);
-};
-applyTheme();
-btn.addEventListener("click", () => {
-  theme = next[theme];
-  applyTheme();
-  writeTheme(theme);
-});
 
-// ── scrollspy: aria-current drives TOC highlight; IO because scroll handlers jank ──
-const links = [...document.querySelectorAll("#toc a")];
-const spy = new IntersectionObserver((entries) => {
-  for (const e of entries) if (e.isIntersecting) {
-    links.forEach((a) => a.setAttribute("aria-current", String(a.hash === `#${e.target.id}`)));
-  }
-}, { rootMargin: "-20% 0px -70% 0px" });
-document.querySelectorAll("main section[id]").forEach((s) => spy.observe(s));
-
-// ── copy buttons: secure-context API first, local-file fallback, accessible status ──
-const copyText = async (text) => {
-  if (navigator.clipboard?.writeText) {
-    try { await navigator.clipboard.writeText(text); return; } catch {}
-  }
-  const box = document.createElement("textarea");
-  box.value = text;
-  box.setAttribute("readonly", "");
-  box.style.cssText = "position:fixed;inset:0;opacity:0;pointer-events:none";
-  document.body.append(box);
-  box.select();
-  let copied = false;
-  try { copied = document.execCommand("copy"); } finally { box.remove(); }
-  if (!copied) throw new Error("clipboard unavailable");
-};
-for (const b of document.querySelectorAll(".copy")) {
-  b.setAttribute("aria-label", "Copy command to clipboard");
-  b.setAttribute("aria-live", "polite");
-  let reset;
-  b.addEventListener("click", async () => {
-    clearTimeout(reset);
-    const code = b.previousElementSibling?.querySelector("code");
-    try {
-      if (!code) throw new Error("copy source missing");
-      await copyText(code.textContent ?? "");
-      b.textContent = "copied";
-      b.dataset.done = "";
-    } catch {
-      b.textContent = "copy failed";
-      delete b.dataset.done;
-    }
-    reset = setTimeout(() => {
-      delete b.dataset.done;
-      b.textContent = "copy";
-    }, 1800);
-  });
-}
-
-// ── live search: hide non-matching sections, mark hits, report counts ──
-const q = document.getElementById("q"), meta = document.getElementById("search-meta");
-const sections = [...document.querySelectorAll("main section[id]")];
-const plain = (el) => el.textContent.toLowerCase();
-q.addEventListener("input", () => {
-  const needle = q.value.trim().toLowerCase();
-  document.body.classList.toggle("searching", !!needle);
-  let hits = 0;
-  for (const s of sections) {
-    const hit = !needle || plain(s).includes(needle);
-    s.classList.toggle("hit", hit);
-    if (needle && hit) hits++;
-    // strip previous marks, then mark the first occurrence per heading-ish element
-    for (const m of s.querySelectorAll("mark")) m.replaceWith(...m.childNodes);
-    if (needle && hit && hits <= 50) {
-      const walker = document.createTreeWalker(s, NodeFilter.SHOW_TEXT);
-      const targets = [];
-      for (let n; (n = walker.nextNode());) {
-        if (n.parentElement.closest("pre, button")) continue;
-        const i = n.data.toLowerCase().indexOf(needle);
-        if (i >= 0) targets.push([n, i]);
-      }
-      // splitText twice isolates the match as its own node; swap it for <mark>.
-      for (const [n, i] of targets.slice(0, 8)) {
-        const mid = n.splitText(i).splitText(needle.length);
-        const el = document.createElement("mark");
-        el.textContent = mid.data;
-        mid.replaceWith(el);
-      }
-    }
-  }
-  document.body.classList.toggle("no-search-results", !!needle && hits === 0);
-  meta.textContent = needle ? `${hits} section${hits === 1 ? "" : "s"} match “${q.value.trim()}”` : "";
-});
-
-// ── "/" focuses search from anywhere; Escape clears ──
-addEventListener("keydown", (e) => {
-  if (e.key === "/" && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)) { e.preventDefault(); q.focus(); }
-  if (e.key === "Escape" && document.activeElement === q) { q.value = ""; q.dispatchEvent(new Event("input")); q.blur(); }
-});
-
-// ── version stamp from the built binary, when served over http from a checkout ──
-// fetch() cannot read file:// URLs, so the stamp simply stays empty when opened from disk.
-if (location.protocol !== "file:") {
-  fetch("hay/Cargo.toml").then((r) => r.ok ? r.text() : "").then((t) => {
-    const v = t.match(/^version = "(.+)"$/m);
-    if (v) document.getElementById("ver").textContent = `v${v[1]}`;
-  }).catch(() => {});
-}
-</script>
 </body>
 </html>
