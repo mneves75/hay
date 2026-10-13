@@ -1,5 +1,8 @@
 # Editorial manual verification
 
+The owner approved this exact packet, and the manual is now in production. See the
+[completed promotion record](production-evidence.md); the beta3 checks below remain history.
+
 2026-10-13. The owner approved beta2 and identified `beta/MANUAL.html` as missed.
 The [frozen correction brief](manual.md) preserves its content and behavior while applying the
 approved Archivo/white/charcoal/green design. The approved landing styles, script and 36-second
@@ -128,20 +131,21 @@ Remaining uncertainty: this proves the served URLs at verification time, not fut
 or every browser engine. Native browser zoom, OS clipboard paste/readback and a new private
 evaluation are unclaimed. Both verifier browser sessions are closed.
 
-## Revised production approval packet
+## Revised production approval packet (approved and promoted)
 
 Repository: `mneves75/hay`. Candidate: `268e41834a0a66d922102edc70a97f5ca82aca8e`.
 Website version/tag: `site-v0.4.0`. Production target: https://mneves75.github.io/hay/.
 The [prepared production manifest](manual-production-manifest.json) has aggregate SHA-256
 `b31b1179405564961c8c097b96df4fb288f905042a88f285130dbb5902cbbb7f`.
 Actual bundle comparison found identical non-HTML assets/docs; only index/manual phase label,
-tag, canonical/robots metadata and `release.json` differ from beta3. No production tag or
-promotion has occurred. The earlier beta2 production packet is superseded.
+tag, canonical/robots metadata and `release.json` differ from beta3. The owner approved it
+with “yes to all; deploy to prod”; the [production record](production-evidence.md) reports
+the completed promotion and final tag. The earlier beta2 production packet is superseded.
 
 Staging evidence: local source-blind acceptance 7/7, Impeccable `ship`, all seven merged-source
 CI jobs and all three Pages jobs passed. Actual beta3 passed all eight independent served-interface
 criteria above, including 15 payload hashes and all seven preserved production files.
-The packet is ready for the user's exact-candidate production approval.
+The approved packet has been promoted and independently verified on the production target.
 
 Material limits: Pages publishing is shared; beta is public, not access-controlled. Supported
 Homebrew remains 0.3.2. The private retrieval gate remains FAIL as measured on 2026-09-23:
@@ -152,7 +156,7 @@ Before promotion, recheck that Pages HEAD is the verified publishing commit; ref
 unowned changes. Rollback uses a new scoped publishing commit restoring the seven incumbent
 root files from `3f891197d8642313034f73c09ed22adea4f64a1f`; retain beta and legacy media URLs,
 then verify the restored hashes and root UI. Never reset or force-push publishing history.
-Exact-candidate production approval remains the protected next action after staging passes.
+The exact-candidate approval has been used; future candidates require their own authorization.
 
 ## Cleanup
 
@@ -167,6 +171,7 @@ in the tracked record. `.scratch/manual-redo` no longer exists. Empty cited test
 remain; pre-existing pinned tooling, root dependencies, Rust build output and shared caches
 were preserved.
 
-The complete 2 MB production bundle remains at `.scratch/production-site-v0.4.0-268e418` for the
-pending approval. Its manifest, all 15 payload hashes and aggregate were rechecked after moving;
-it matches the tracked production manifest exactly. Nothing bulky was produced by this correction.
+The complete 2 MB production bundle was retained for approval. Its manifest, all 15 payload
+hashes and aggregate matched the tracked production manifest. Production closeout retires
+that duplicate after public delivery; the frozen manifest and served bytes remain available.
+Nothing bulky was produced by this correction.

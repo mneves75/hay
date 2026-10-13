@@ -601,6 +601,10 @@ GitHub Pages publishes `gh-pages` at `/`. The beta lives at `/hay/beta/` on the 
 publishing branch. Follow [the website delivery plan](plans/005-website-delivery.md): preserve
 all incumbent root bytes for beta, prove the served manifest and payload, then obtain the
 required exact-candidate production approval. Website tags do not release a Rust binary.
+The approved editorial landing, film and manual are deployed as `site-v0.4.0` from source
+`268e41834a0a66d922102edc70a97f5ca82aca8e`; beta3 remains available. See the
+[production record](docs/specs/editorial-landing/production-evidence.md) for live proof,
+publishing identity, limits and the scoped rollback.
 
 The film is a 36-second silent overview, with a text alternative alongside the native player.
 Its editable source is in `site/video-src`; read [the film README](site/video-src/README.md)

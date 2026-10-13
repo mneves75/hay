@@ -1,5 +1,8 @@
 # Editorial film verification
 
+The unchanged approved film is now part of [the verified production website](production-evidence.md).
+The beta2 identities and superseded packet below are history.
+
 2026-10-13. The owner requested a new film before production. This revision replaces the
 18-second chart animation with the frozen five-scene [storyboard](film.md). It does not
 change the Rust version, ranking weights, measurement corpus or Homebrew release.

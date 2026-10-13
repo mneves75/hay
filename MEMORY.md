@@ -26,8 +26,10 @@ Real-browser failures in search highlighting and copy pending/status behavior we
 and fixed. PR #18 merged; all seven source CI jobs and all three Pages jobs passed.
 Beta3 is live from `268e41834a0a66d922102edc70a97f5ca82aca8e`, tagged `site-v0.4.0-beta3`;
 fresh source-blind Astra served acceptance passed 8/8, including unchanged production bytes.
-The approved film is unchanged. The manual packet supersedes beta2's prepared promotion bytes;
-exact production approval is still pending. See `docs/specs/editorial-landing/manual-evidence.md`.
+The approved film is unchanged. The manual packet superseded beta2's prepared promotion bytes.
+The owner approved its exact source/target, and `site-v0.4.0` is live in production at the same
+source: all 15 payload hashes and eight independent interface criteria passed; beta3 and both
+legacy media files remain unchanged. See `docs/specs/editorial-landing/production-evidence.md`.
 
 **Website evidence stays dated** (2026-10-13). The owner selected an editorial proof sheet.
 The static site has a complete six-match/four-file real-binary example, explicit source 0.4.0
@@ -44,8 +46,9 @@ undated evidence or symlinked input. It changes no ranking weight or measurement
 website candidate supersedes the previously prepared beta1 production bundle; beta1's tag
 must not move. PR #17 merged; all seven main CI jobs passed. Beta2 is live from frozen source
 `43bfb48d9a015c12b6f754d16d8007a6beb4013a`; fresh source-blind Astra verification passed all
-eight criteria, including unchanged production bytes. Exact production promotion remains
-pending for the new candidate. See `docs/specs/editorial-landing/film-evidence.md`.
+eight criteria, including then-unchanged production bytes. That beta2 packet was superseded
+by the manual correction; current production delivery is in
+`docs/specs/editorial-landing/production-evidence.md`.
 
 **Keep only a useful consumer** (2026-10-13, source 0.4.0). fsearch transfer adds opt-in live
 filename discovery and stdio MCP over the existing engine. The inventory-only index/watcher

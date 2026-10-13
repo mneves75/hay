@@ -208,6 +208,11 @@ payload file except itself. Preserve the legacy Pages document/media URLs. The b
 public on shared Pages infrastructure. Website tags use `site-vX.Y.Z-betaN` / `site-vX.Y.Z`;
 binary releases retain the protected workflow and mandatory Homebrew update.
 
+The approved production website is `site-v0.4.0` from frozen source
+`268e41834a0a66d922102edc70a97f5ca82aca8e`. Its actual delivery/rollback evidence is in
+`docs/specs/editorial-landing/production-evidence.md`; this does not release a Rust archive
+or update the supported Homebrew 0.3.2 binary. Keep website and binary identities separate.
+
 The silent overview film is editable in `site/video-src`, with a frozen storyboard at
 `docs/specs/editorial-landing/film.md`. Run its public-input preparation tests, lint, build
 and dependency audit; inspect actual exported scene/transition frames, decode the full file

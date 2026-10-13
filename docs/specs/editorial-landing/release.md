@@ -1,5 +1,8 @@
 # Editorial website beta delivery
 
+Latest state: the approved landing, film and manual are now in production as `site-v0.4.0`.
+See [the completed production record](production-evidence.md). Beta history remains below.
+
 The owner approved beta2 but identified the missed manual. The [manual correction](manual.md)
 and [its verification record](manual-evidence.md) supersede beta2's prepared production packet.
 The film remains unchanged. The beta1 and beta2 records below and their immutable tags remain

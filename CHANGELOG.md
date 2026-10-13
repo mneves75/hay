@@ -4,6 +4,11 @@ Versions track `hay`, the shipped binary. The measurement kit is versioned with 
 This changelog starts at 0.1.0: everything before was development under a different name, and its
 history lives in git and `memory/`.
 
+## Website — site-v0.4.0 — 2026-10-13
+
+- Published the approved editorial landing page, complete 36-second film and redesigned manual to production; beta3 remains available and legacy media URLs are preserved. [Production verification](docs/specs/editorial-landing/production-evidence.md) records identity, hashes, independent live checks and rollback.
+- This website tag does not release the Rust binary: source 0.4.0 remains unreleased below and the supported Homebrew binary remains 0.3.2.
+
 ## [Unreleased — 0.4.0]
 
 ### Added

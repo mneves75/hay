@@ -1,5 +1,11 @@
 # Verified website staging and production
 
+Completed 2026-10-13: beta3 and the approved production website serve frozen source
+`268e41834a0a66d922102edc70a97f5ca82aca8e`. Source/Pages CI and independent live acceptance
+passed; the final website tag is `site-v0.4.0`. See the
+[production record](../docs/specs/editorial-landing/production-evidence.md). The plan below
+is retained as the implementation and release contract.
+
 Base: `13cb6c5`; depends on plan 004. Existing target: https://mneves75.github.io/hay/.
 Publishing source is gh-pages `/`, legacy GitHub Pages. The owner's current task requests
 working-branch delivery, merge, staging, version tags, production deployment and task cleanup.
