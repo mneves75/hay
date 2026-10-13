@@ -26,6 +26,8 @@ history lives in git and `memory/`.
   policy. MCP globs are root-relative; ordinary CLI globs retain working-directory semantics.
 - MCP reports resource failures as incomplete tool errors rather than quiet partial success.
   Global CLI help/version/type-list keep their original early-exit precedence.
+- Refreshed the existing benchmark-film dependency lock to address six current audit advisories;
+  the film source and Rust binary are unchanged. Dependency audits remain enabled.
 
 ### Fixed during independent review
 
