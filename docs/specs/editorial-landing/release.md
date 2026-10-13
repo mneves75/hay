@@ -77,7 +77,8 @@ returned 404.
 
 Criterion 7 — Incumbent production preserved: PASS — Independently fetched all seven production
 URLs listed in the public incumbent snapshot; every SHA-256 matched. Browser inspection of
-https://mneves75.github.io/hay/ confirmed the older dark v0.3.2 homepage.
+https://mneves75.github.io/hay/ retained the legacy cream/ochre/serif homepage. The earlier
+description of that preserved design as dark was incorrect; its byte hashes were unchanged.
 
 Remaining uncertainty: Native browser zoom and OS clipboard paste/readback were not tested;
 CSS enlargement, equivalent reflow and resolved native writes were tested. Source behavior

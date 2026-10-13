@@ -19,6 +19,16 @@ useful than what was attempted:
 
 ## Decisions, and why
 
+**The manual is part of the website** (2026-10-13). The owner approved beta2 but identified
+the missed legacy manual. It now shares the approved Archivo/white/charcoal/green design,
+with packaged version/source identity, desktop/mobile contents and JavaScript-free reading.
+Real-browser failures in search highlighting and copy pending/status behavior were reproduced
+and fixed. PR #18 merged; all seven source CI jobs and all three Pages jobs passed.
+Beta3 is live from `268e41834a0a66d922102edc70a97f5ca82aca8e`, tagged `site-v0.4.0-beta3`;
+fresh source-blind Astra served acceptance passed 8/8, including unchanged production bytes.
+The approved film is unchanged. The manual packet supersedes beta2's prepared promotion bytes;
+exact production approval is still pending. See `docs/specs/editorial-landing/manual-evidence.md`.
+
 **Website evidence stays dated** (2026-10-13). The owner selected an editorial proof sheet.
 The static site has a complete six-match/four-file real-binary example, explicit source 0.4.0
 versus supported Homebrew 0.3.2, and the historical public/private limitations. Its allowlisted

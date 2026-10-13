@@ -1,0 +1,25 @@
+{
+  "source_commit": "268e41834a0a66d922102edc70a97f5ca82aca8e",
+  "source_version": "0.4.0",
+  "phase": "staging",
+  "tag": "site-v0.4.0-beta3",
+  "dirty": false,
+  "files": {
+    "BENCHMARK_FEYNMAN.html": "c0a9a3964b9d3aef1ba8300a28f570f3853de68c6ed8eb28be372c5858382cfc",
+    "BENCHMARK_FEYNMAN.md": "1c9c1a210bef3e1246ad22cfa91816e34798ef5bdf80510e733bb6b8879b60a8",
+    "benchmark.html": "dd58bad0088b6715e3b38dddce2f1dd06e0e43a4e75376a1e6d23a2c40fdcc09",
+    "index.html": "8d3f4c74fdaa3ec92d7fbfa2da6ba7d3557dc1d2d240d960a60577511da41e7f",
+    "MANUAL.html": "e0dc1be95d6f89b1fdbb0ac47d91232f29e76542e09983928324609c26712077",
+    "site/assets/archivo-latin.woff2": "664cbb7bf80f6527022d4c76291f6df77dad3534c50d8862405d50040fd1ff5d",
+    "site/assets/favicon.svg": "97dbd473572093db00f06683982db0e3876ef923988e29f738c7ec96cd5b12a6",
+    "site/assets/hay-benchmark.mp4": "2e0bcae2385f02e24d2c729c65012cad944b75baf811cbe7af9592436961e84b",
+    "site/assets/OFL.txt": "1778201b7bd33e8c08a2eda32a4ad2f69bc38ced9731b01cc3fc47f268c8ef3c",
+    "site/assets/poster.png": "2bf479deab5dae73f380c6a86bcdca6cecfce4d8569542685cd16e340db709d4",
+    "site/assets/SOURCES.md": "2fe61eb05d8b0193a4f15dd6608ae8453a6738e0978d4516cf8526eed2743143",
+    "site/landing.4743b5ff80be.js": "4743b5ff80bebd9cbd1ab4ea897734133474178f4cbea73ca0c0ced0c8036fdb",
+    "site/landing.aa7e482003db.css": "aa7e482003dba4bc29e6b3499cad2a904cf7ba50df8f5abb3d9f70a51c02c7d0",
+    "site/manual.645a74b26ab2.css": "645a74b26ab2dc9603b165a296d3df3af118cca7815dfd34a6973f3ee15009c7",
+    "site/manual.9fda1d3701e2.js": "9fda1d3701e203e2f1f5f3b00f8980667f2a18a913eaad87c9c3374e1c8ef9f7"
+  },
+  "payload_sha256": "5b1f0b3580ea826d3cda16fe0bb171fbe8e4dca8c23753ea156294782f1e686e"
+}
