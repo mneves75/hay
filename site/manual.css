@@ -1,0 +1,89 @@
+.manual {
+  --ground: var(--paper);
+  --panel: var(--paper);
+  --ink-soft: var(--muted);
+  --ink-faint: var(--muted);
+  --rule-strong: var(--strong-rule);
+  --accent: var(--green);
+  --accent-soft: transparent;
+  --accent-ink: var(--green);
+  --warn: var(--muted);
+  --mark: color-mix(in srgb, var(--green) 12%, var(--paper));
+  line-height: 1.65;
+}
+.manual .layout { max-width: 1320px; margin-inline: auto; padding-inline: 48px; display: grid; grid-template-columns: 210px minmax(0, 1fr); column-gap: 72px; }
+.manual-header { grid-column: 1 / -1; }
+.manual-intro { padding-block: 56px 32px; border-bottom: 1px solid var(--strong-rule); }
+.manual h1 { font-size: clamp(3rem, 7vw, 5.5rem); line-height: 1.04; font-weight: 750; letter-spacing: -.035em; margin-bottom: 24px; }
+.manual .lede { font-size: 24px; line-height: 1.5; color: var(--ink); }
+.manual-versions { margin-top: 22px; font-size: 16px; color: var(--muted); }
+.manual-versions strong { color: var(--green); font-weight: 600; }
+.manual main { min-width: 0; padding-block: 36px 64px; }
+.manual section[id] { scroll-margin-top: 32px; }
+.manual section + section { margin-top: 48px; }
+.manual h2 { font-size: clamp(2rem, 3.2vw, 2.5rem); line-height: 1.14; font-weight: 650; letter-spacing: -.025em; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--strong-rule); }
+.manual h3 { font-size: 25px; line-height: 1.3; font-weight: 600; letter-spacing: -.015em; margin-block: 30px 14px; }
+.manual p { margin-bottom: 18px; }
+.manual li { margin-block: 8px; }
+.manual a { overflow-wrap: anywhere; }
+.manual code { overflow-wrap: anywhere; }
+.manual table { width: 100%; border-collapse: collapse; font-size: 16px; font-variant-numeric: tabular-nums; table-layout: fixed; }
+.manual th, .manual td { text-align: left; vertical-align: top; padding: 14px 16px; border-bottom: 1px solid var(--rule); overflow-wrap: anywhere; }
+.manual th:first-child, .manual td:first-child { padding-left: 0; }
+.manual tbody th { width: 32%; font-weight: 550; }
+.manual thead th { color: var(--muted); font-size: 14px; font-weight: 550; border-bottom-color: var(--strong-rule); }
+.manual td p { margin: 0; }
+.manual pre { margin: 0; padding-block: 18px; border-block: 1px solid var(--strong-rule); font-size: 14px; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; }
+.manual pre code { font-size: inherit; }
+.manual .codewrap { margin-block: 18px 24px; min-width: 0; }
+.manual .copy { margin-top: 12px; min-height: 44px; padding: 9px 12px; border: 1px solid var(--strong-rule); border-radius: 3px; background: var(--paper); color: var(--green); font-size: 14px; }
+.manual .copy:hover { background: var(--green); color: var(--paper); border-color: var(--green); }
+.manual .copy[hidden], .manual .searchbar[hidden] { display: none; }
+.manual .callout { margin-block: 26px; padding-block: 18px; border-block: 1px solid var(--strong-rule); }
+.manual .callout p:last-child, .manual .callout ul:last-child { margin-bottom: 0; }
+.manual mark { background: var(--mark); color: var(--ink); }
+.manual kbd { font-size: .82em; padding: 2px 6px; border: 1px solid var(--rule); border-radius: 3px; }
+.manual .searchbar { margin-block: 28px 20px; max-width: 600px; }
+.manual search label { display: block; margin-bottom: 10px; font-size: 16px; font-weight: 600; }
+.manual input[type="search"] { display: block; width: 100%; min-height: 48px; padding: 10px 14px; border: 1px solid var(--strong-rule); border-radius: 3px; background: var(--paper); color: var(--ink); font: inherit; }
+.manual .search-hint, .manual .searchmeta { color: var(--muted); font-size: 14px; margin-block: 12px 0; }
+.manual .searchmeta { min-height: 1.65em; }
+.manual .toc { align-self: start; position: sticky; top: 24px; max-height: calc(100vh - 48px); overflow: auto; display: flex; flex-direction: column; padding-block: 36px; }
+.manual .toc a { display: flex; align-items: center; min-height: 44px; padding-block: 8px; font-size: 16px; line-height: 1.4; color: var(--muted); text-decoration: none; }
+.manual .toc a:hover, .manual .toc a[aria-current="true"] { color: var(--green); text-decoration: underline; text-underline-offset: .2em; }
+.manual .toc a[aria-current="true"] { font-weight: 600; }
+.manual details.flaggroup { border-top: 1px solid var(--rule); }
+.manual details.flaggroup summary { padding-block: 18px; cursor: pointer; font-size: 20px; font-weight: 600; }
+.manual details.flaggroup summary::marker { color: var(--green); }
+.manual details.flaggroup .body { padding-bottom: 20px; }
+.manual .explain-anatomy { display: block; width: 100%; height: auto; font-size: 13px; }
+.manual.searching section:not(.hit) { display: none; }
+.manual .noresults { display: none; }
+.manual.no-search-results .noresults { display: block; padding-block: 18px; }
+.manual footer { display: block; margin-top: 48px; padding-top: 24px; color: var(--muted); }
+.manual footer p { font-size: 14px; }
+.manual footer nav { display: flex; gap: 24px; flex-wrap: wrap; }
+@media (max-width: 1000px) {
+  .manual .layout { padding-inline: 32px; grid-template-columns: minmax(0, 1fr); }
+  .manual .toc { position: static; max-height: none; flex-direction: row; flex-wrap: wrap; column-gap: 24px; padding-block: 20px; border-bottom: 1px solid var(--rule); }
+  .manual main { padding-top: 30px; }
+}
+@media (max-width: 700px) {
+  .manual .layout { padding-inline: 20px; }
+  .manual-intro { padding-top: 36px; }
+  .manual h1 { font-size: clamp(2.65rem, 12.2vw, 4.5rem); }
+  .manual .lede { font-size: 19px; }
+  .manual h3 { font-size: 23px; }
+  .manual .toc { column-gap: 18px; }
+  .manual .toc a { font-size: 14px; }
+  .manual table { font-size: 14px; }
+  .manual th, .manual td { padding: 12px 8px; }
+  .manual pre { font-size: 13px; }
+}
+@media print {
+  .manual .layout { display: block; padding: 0; }
+  .manual .searchbar, .manual .search-hint, .manual .toc, .manual .copy, .manual .masthead nav { display: none; }
+  .manual details.flaggroup .body { display: block; }
+  .manual section[id] { break-before: page; }
+  .manual section:first-of-type { break-before: auto; }
+}

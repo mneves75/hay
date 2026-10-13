@@ -99,7 +99,11 @@ browsers were closed. Production promotion is still pending exact-candidate appr
   `2cba9d29e65cf826511a60409c52ea59d859c2bbaee7f3f6d7f1b3dcbc19d1ed`.
 - Source 0.4.0, private film package 1.1.0, supported Homebrew 0.3.2. No Rust release cut.
 
-## Revised production packet
+## Revised production packet (superseded)
+
+The owner approved beta2 but identified the manual's legacy presentation. The
+[manual correction and new delivery record](manual-evidence.md) supersede this production
+packet. Do not promote these prepared bytes or move beta2's immutable tag.
 
 Repository `mneves75/hay`; candidate source as above; website tag `site-v0.4.0`;
 target https://mneves75.github.io/hay/. Prepared clean production payload SHA-256:

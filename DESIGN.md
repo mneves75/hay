@@ -10,6 +10,28 @@ colors:
   rule: "#d5ddd7"
   strong-rule: "#87978c"
 typography:
+  manual-display:
+    fontFamily: "Archivo, sans-serif"
+    fontSize: "clamp(3rem, 7vw, 5.5rem)"
+    fontWeight: 750
+    lineHeight: 1.04
+    letterSpacing: "-.035em"
+  manual-lead:
+    fontFamily: "Archivo, sans-serif"
+    fontSize: "24px"
+    fontWeight: 400
+    lineHeight: 1.5
+  manual-headline:
+    fontFamily: "Archivo, sans-serif"
+    fontSize: "clamp(2rem, 3.2vw, 2.5rem)"
+    fontWeight: 650
+    lineHeight: 1.14
+    letterSpacing: "-.025em"
+  manual-summary:
+    fontFamily: "Archivo, sans-serif"
+    fontSize: "20px"
+    fontWeight: 600
+    lineHeight: 1.65
   display:
     fontFamily: "Archivo, sans-serif"
     fontSize: "clamp(3.1rem, 7.4vw, 6rem)"
@@ -288,7 +310,21 @@ strong header separation and reduced narrow-layout density preserve the complete
 Installation uses open two-column rows and selectable code between strong rules. Copy is an
 adjacent enhancement, not a replacement for the command. The film uses native controls,
 a poster, a reserved widescreen ratio (16:9), no autoplay and an adjacent caption. Its text
-equivalent remains in the evidence table.
+alternative is a complete native expandable transcript alongside the player, referencing
+the complete search lists, evidence table and installation instructions.
+
+### Manual
+
+The manual shares the landing stylesheet's Archivo, palette and focus treatment, then adds
+its reading layout. A 210px contents rail sits beside a flexible text column with a 72px gap;
+it stacks into wrapping navigation below 1000px. Headings use the manual reading scale above,
+while narrow layouts reuse the compact display/lead/title roles. Commands wrap without
+changing copied text; flag tables and native disclosures remain complete on mobile.
+
+Section search and command-copy buttons appear only after the manual script initializes.
+Search marks the query itself and preserves underlying text. Escape or selecting a contents
+link restores all sections. Version/phase/source labels are stamped during public packaging,
+so no browser fetches Rust source and the document stays useful without JavaScript.
 
 Anchor scrolling is smooth by default and becomes immediate under reduced-motion preference.
 There are no timed entrance effects or control transitions.

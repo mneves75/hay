@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-13T06:32:36Z",
+  "generatedAt": "2026-10-13T14:53:39Z",
   "title": "Design System: hay",
   "extensions": {
     "colorMeta": {
@@ -167,6 +167,22 @@
       "table-value": {
         "displayName": "Table value",
         "purpose": "Tabular evidence values."
+      },
+      "manual-display": {
+        "displayName": "Manual display",
+        "purpose": "Long-form manual title."
+      },
+      "manual-lead": {
+        "displayName": "Manual lead",
+        "purpose": "Manual introductory explanation."
+      },
+      "manual-headline": {
+        "displayName": "Manual headline",
+        "purpose": "Readable long-form section headings."
+      },
+      "manual-summary": {
+        "displayName": "Manual summary",
+        "purpose": "Native flag-group disclosure headings."
       }
     },
     "shadows": [],
