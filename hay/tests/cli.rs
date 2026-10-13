@@ -46,6 +46,17 @@ fn normalize(s: &str) -> String {
 }
 
 #[test]
+fn early_core_flags_keep_their_precedence_over_opt_in_modes() {
+    for args in [
+        vec!["--help", "--mcp"],
+        vec!["--version", "--find", "name"],
+        vec!["--type-list", "--mcp"],
+    ] {
+        hay().args(args).assert().success();
+    }
+}
+
+#[test]
 fn the_definition_outranks_an_archived_mention() {
     // The behaviour the whole tool exists for, checked end to end rather than as a scoring unit.
     let d = fixture("rank");

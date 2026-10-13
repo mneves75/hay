@@ -10,6 +10,21 @@ ship gate — by 1.5 points on one of its two criteria, against 20 points at 0.1
 [manual](https://mneves75.github.io/hay/MANUAL.html) for the command surface and
 [HOWTO.md](HOWTO.md) for setup.
 
+Source version **0.4.0** adds opt-in live filename discovery and a manually started stdio MCP
+server. Ordinary content ranking is unchanged. There is no persistent index, watcher, search
+history or new speed claim. The supported Homebrew release remains 0.3.2 until the existing
+attested release process publishes a new version.
+
+```bash
+hay --find sesison .                 # live filename search, including an adjacent typo
+hay --find session --exact-name .    # exact filename, after NFC normalization
+hay --mcp --root /absolute/repo      # stdio: grep, find_files, multi_grep
+```
+
+See [the interface contract](docs/specs/fsearch-transfer/interface.md) for filters, JSON and MCP
+configuration, and [the source review](docs/specs/fsearch-transfer/review.md) for every upstream
+mechanism considered, the alternatives, and the index prototype that was removed.
+
 ```bash
 brew install mneves75/tap/hay          # macOS and Linux, prebuilt and attested
 ```

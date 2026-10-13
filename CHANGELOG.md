@@ -4,7 +4,31 @@ Versions track `hay`, the shipped binary. The measurement kit is versioned with 
 This changelog starts at 0.1.0: everything before was development under a different name, and its
 history lives in git and `memory/`.
 
-## [Unreleased]
+## [Unreleased — 0.4.0]
+
+### Added
+
+- `--find QUERY [PATH]`: live filename discovery with exact/substring/typo ordering,
+  Unicode NFC normalization, deterministic byte-path ties, bounded top-K pages, and explicit
+  size, modification-age and Git status filters. Existing glob/type/hidden/ignore rules apply.
+- `--mcp --root REPO` (repeatable): an explicitly started stdio server using the official Rust
+  MCP SDK. Exactly `grep`, `find_files`, and `multi_grep`; independent batch ordering/errors,
+  canonical registered scopes, explicit completeness versus paging, cooperative cancellation,
+  one active blocking job and byte limits for frames, arguments and structured retrieval.
+- Retained source review, interface contract, implementation plan and acceptance record in
+  `docs/specs/fsearch-transfer/`. The inventory-only watcher prototype was removed before shipping:
+  no search consumed it. No persistent index, history, proximity signal or performance gain claimed.
+
+### Changed
+
+- Extracted the existing content engine behind a thin CLI and internal adapters; ordinary
+  scoring and ranking weights remain unchanged. Filename and content search share visibility
+  policy. MCP globs are root-relative; ordinary CLI globs retain working-directory semantics.
+- MCP reports resource failures as incomplete tool errors rather than quiet partial success.
+  Global CLI help/version/type-list keep their original early-exit precedence.
+
+This is a source version bump, not a published release. Tags, attested archives and the
+Homebrew formula still follow the existing protected release workflow.
 
 ### Release chain
 

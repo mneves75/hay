@@ -1,8 +1,9 @@
 # Use `hay` and the measurement kit
 
-Written for someone who has never opened this project. Every command below has been run on macOS
-and produced the output shown. If something differs on your machine, that is a bug in this
-document — the numbers here are not aspirational.
+Written for someone who has never opened this project. Historical measurements below are
+macOS observations, not promises for your machine. New 0.4.0 interface examples are documented
+in the [CLI/MCP contract](docs/specs/fsearch-transfer/interface.md); platform evidence belongs
+to the [acceptance record](docs/specs/fsearch-transfer/evidence.md).
 
 ---
 
@@ -38,8 +39,8 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh   # Rust
 curl -fsSL https://bun.sh/install | bash                    # Bun
 ```
 
-Bun is only needed for the measurement kit. **If you just want `hay`, you need Rust and nothing
-else** — `hay` does not shell out to ripgrep, it uses ripgrep's own libraries directly.
+Bun is only needed for the measurement kit. Content search uses ripgrep's libraries directly;
+Git status filename filters and registration of MCP repository roots additionally require Git.
 
 ---
 
@@ -51,7 +52,7 @@ cd hay
 cargo build --release --manifest-path hay/Cargo.toml
 ```
 
-First build takes about 20 seconds (it compiles ripgrep's crates). The binary lands at
+Build time depends on the toolchain and cache. The binary lands at
 `hay/target/release/hay`.
 
 Check it works:

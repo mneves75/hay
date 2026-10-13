@@ -19,6 +19,12 @@ useful than what was attempted:
 
 ## Decisions, and why
 
+**Keep only a useful consumer** (2026-10-13, source 0.4.0). fsearch transfer adds opt-in live
+filename discovery and stdio MCP over the existing engine. The inventory-only index/watcher
+prototype had no retrieval consumer and was removed; this is not a measured speed loss.
+History/proximity and acceleration remain evidence-blocked. No weights/gates changed.
+See `docs/specs/fsearch-transfer/{spec,interface,review,evidence}.md` and `plans/`.
+
 **A benchmark cannot judge a signal that detects its ground-truth rule** (2026-08-28). The docs
 track's ground truth is "the token appears in exactly one markdown file's headings"; a heading
 signal is an oracle for that rule, so its enormous win there (+0.19 to +0.45 across five corpora)

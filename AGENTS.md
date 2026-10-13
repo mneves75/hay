@@ -170,3 +170,25 @@ delete them as noise. TypeScript tools run under `bun`; only archive extraction 
 audited `tar` dependency, because untrusted tar handling is not hand-rolled here.
 
 Conventional Commits. Update `CHANGELOG.md` for anything user-visible.
+
+## Agent skills
+
+### Issue tracker
+
+Local tracked Markdown in `docs/specs/`. See `docs/agents/issue-tracker.md`.
+
+### Domain docs
+
+Single context: root glossary and `docs/adr/`. See `docs/agents/domain.md`.
+
+## Optional live interfaces
+
+`--find QUERY [PATH]` discovers filenames; ordinary searches keep the ranked-grep contract.
+`--mcp --root REPO` starts a manually managed stdio server with exactly `grep`, `find_files` and
+`multi_grep`. Neither mode writes an index or collects history. Shared visibility policy lives
+in `hay/src/walk.rs`; MCP globs are relative to the requested root, CLI globs to the working
+directory. MCP roots are search scopes, not an OS sandbox against hostile concurrent mutation.
+
+Run `cargo test --locked --manifest-path hay/Cargo.toml` for both actual CLI and MCP boundaries.
+Keep the original differential gate; MCP byte-budget errors mean incomplete, never no matches.
+The retained spec, source inventory and acceptance evidence live in `docs/specs/fsearch-transfer/`.
