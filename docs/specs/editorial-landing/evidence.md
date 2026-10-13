@@ -65,7 +65,12 @@ not a served release.
 
 ## Release gates
 
-Fresh different-model interface acceptance, final branch/main CI, served beta payload identity,
-incumbent-byte preservation and production approval/promotion are pending. Builds, receipts and
+Fresh different-model interface acceptance PASS: [the exact six-criterion verdict](verification.md).
+All seven candidate CI jobs passed for `4d02c7a` in
+[run38358019400](https://github.com/mneves75/hay/actions/runs/38358019400). The manifest aggregate
+framing is now also documented in the public asset source record and HOWTO.
+
+Final documentation/main CI, served beta payload identity, incumbent-byte preservation and
+production approval/promotion are pending. Builds, receipts and
 tags alone do not mark these PASS. The private behavioral evaluation was not rerun and remains
 the dated FAIL,0.4328median-repository MRR /77.21%top10 against0.50 /80%,2026-09-23.

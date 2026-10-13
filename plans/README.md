@@ -15,7 +15,7 @@ and a passing portable live-index acceleration experiment are missing: do not sh
 | 001: Useful scope and explicit limitations | None | implemented |
 | 002: MCP/resource and Git correctness | 001 | implemented; actual CLI/MCP tests pass |
 | 003: Frozen evidence and delivery | 002 | complete: independent behavior/security acceptance PASS; all seven code/dependency CI jobs PASS; PR #16 |
-| 004: Editorial landing redesign | 003 | implemented; 14 packaging tests and two-axis review corrections pass; independent acceptance pending |
+| 004: Editorial landing redesign | 003 | complete: 14 packaging tests, review corrections, seven CI jobs and fresh different-model interface acceptance PASS |
 | 005: Verified website delivery | 004 | established Pages target inspected; staging/production pending |
 
 Chosen alternative: minimal live search. A bounded byte-validated result cache could save repeated

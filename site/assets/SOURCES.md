@@ -15,3 +15,12 @@
   delivered digest. No generated illustration is used.
 
 Fonts are served from this site. There is no runtime request to Google Fonts.
+
+## Public manifest contract
+
+`release.json` identifies the frozen source commit/version, phase, website tag and dirty state.
+Its `files` map contains lowercase SHA-256 digests of the delivered bytes. The manifest itself
+is excluded. To recompute `payload_sha256`, sort path entries using `localeCompare("en")`;
+concatenate each UTF-8 path, one NUL byte, its lowercase hexadecimal digest and one LF byte.
+SHA-256 that concatenation and encode the result as lowercase hexadecimal. Per-file hashes
+must be checked against actual bytes before trusting the aggregate.

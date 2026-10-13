@@ -591,6 +591,8 @@ Staging/production require a clean checkout, matching source SHA and `site-vX.Y.
 `site-vX.Y.Z` tag. Build with `--source COMMIT --phase staging --tag site-v0.4.0-beta1` or
 `--phase production --tag site-v0.4.0`. `release.json` records the exact source and every public
 payload digest; the manifest excludes itself from its hash set.
+The aggregate hashes UTF-8 `path`, NUL, lowercase per-file digest and LF for every entry,
+sorted with `localeCompare("en")`. See [the public manifest contract](site/assets/SOURCES.md).
 
 GitHub Pages publishes `gh-pages` at `/`. The beta lives at `/hay/beta/` on the same public
 publishing branch. Follow [the website delivery plan](plans/005-website-delivery.md): preserve
