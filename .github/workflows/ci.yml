@@ -159,7 +159,7 @@ jobs:
       - run: shellcheck benchmark-corpora.sh hay/differential-test.sh install.sh brew-formula.sh release-policy.sh site/check-demo.sh
 
   site:
-    name: benchmark film source
+    name: editorial film source
     runs-on: ubuntu-latest
     timeout-minutes: 15
     defaults:
@@ -180,5 +180,6 @@ jobs:
           cache-dependency-path: site/video-src/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
       - run: pnpm audit --audit-level high
+      - run: pnpm test
       - run: pnpm lint
       - run: pnpm build

@@ -598,3 +598,11 @@ GitHub Pages publishes `gh-pages` at `/`. The beta lives at `/hay/beta/` on the 
 publishing branch. Follow [the website delivery plan](plans/005-website-delivery.md): preserve
 all incumbent root bytes for beta, prove the served manifest and payload, then obtain the
 required exact-candidate production approval. Website tags do not release a Rust binary.
+
+The film is a 36-second silent overview, with a text alternative alongside the native player.
+Its editable source is in `site/video-src`; read [the film README](site/video-src/README.md)
+and [storyboard](docs/specs/editorial-landing/film.md). From that directory run
+`pnpm install --frozen-lockfile`, `pnpm test`, `pnpm lint`, `pnpm build` and `pnpm render`.
+Preparation copies only the known public fixture, dated evidence, palette and licensed local
+font. Inspect the exported MP4 and actual frame poster before updating `site/assets/`; record
+their provenance and digests in `site/assets/SOURCES.md`. A new film is not a new benchmark run.

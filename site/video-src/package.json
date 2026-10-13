@@ -1,13 +1,14 @@
 {
   "name": "hay-video",
-  "version": "1.0.0",
-  "description": "Remotion source for the hay public benchmark film",
+  "version": "1.1.0",
+  "description": "Remotion source for the hay editorial overview film",
   "repository": "https://github.com/mneves75/hay",
   "license": "MIT",
   "private": true,
   "packageManager": "pnpm@11.22.0",
   "dependencies": {
     "@remotion/cli": "4.0.515",
+    "@remotion/fonts": "4.0.515",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "remotion": "4.0.515"
@@ -21,11 +22,13 @@
     "typescript": "5.9.3"
   },
   "scripts": {
-    "dev": "remotion studio",
-    "build": "remotion bundle",
+    "prepare:film": "node scripts/prepare.mjs",
+    "test": "node --test scripts/prepare.test.mjs",
+    "dev": "node scripts/prepare.mjs && remotion studio",
+    "build": "node scripts/prepare.mjs && remotion bundle",
     "upgrade": "remotion upgrade",
-    "lint": "eslint src && tsc",
-    "render": "remotion render HayBenchmark out/hay-benchmark.mp4 --muted"
+    "lint": "node scripts/prepare.mjs && eslint src && tsc",
+    "render": "node scripts/prepare.mjs && remotion render HayBenchmark out/hay-benchmark.mp4 --muted"
   },
   "engines": {
     "node": ">=24.19.0"

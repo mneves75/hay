@@ -26,6 +26,14 @@ builder pins source identity and validates relative document dependencies; websi
 separate namespace. Plans004/005 and the editorial acceptance record carry observed delivery
 status; a local build is not a public deployment.
 
+**The film follows the page** (2026-10-13). The owner requested a remake before production.
+The private video package is 1.1.0: five editable Remotion scenes, 36 seconds, no audio,
+the same Archivo/white/charcoal/green design, a complete text alternative and a real frame
+poster. Input preparation reads only public sources and fails on mismatched matches,
+undated evidence or symlinked input. It changes no ranking weight or measurement. The new
+website candidate supersedes the previously prepared beta1 production bundle; beta1's tag
+must not move. Delivery and verification state belong in the editorial release record.
+
 **Keep only a useful consumer** (2026-10-13, source 0.4.0). fsearch transfer adds opt-in live
 filename discovery and stdio MCP over the existing engine. The inventory-only index/watcher
 prototype had no retrieval consumer and was removed; this is not a measured speed loss.

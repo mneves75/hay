@@ -5,14 +5,15 @@
   `66928797f271fed5ee428544e7229685e2d90127`, ofl/archivo/OFL.txt. Archivo Project Authors,
   https://github.com/Omnibus-Type/Archivo. Font SHA-256:
   `664cbb7bf80f6527022d4c76291f6df77dad3534c50d8862405d50040fd1ff5d`.
-- Benchmark film and poster: existing hay public media, from gh-pages commit
-  `3f891197d8642313034f73c09ed22adea4f64a1f`, assets/hay-benchmark.mp4 and assets/poster.png.
-  The Remotion source remains in site/video-src. Historical figures are identified as such in
-  the landing page; this is not a new benchmark run or a new video render.
-- Film SHA-256: `5005c8fbe200c8c135fc0120443b76ee9ddfb6314430e1c638e5286e229aa8b3`.
-  Original poster SHA-256: `e0cf3cc1d5bc821ab227879c29068a568a91914e9649760308a5911109e5ff87`.
-  Raster provenance metadata may change the poster's file digest; payload manifests record the
-  delivered digest. No generated illustration is used.
+- Editorial overview film: rendered locally from `site/video-src` with Remotion 4.0.515.
+  The five-scene storyboard is in `docs/specs/editorial-landing/film.md`: 36 seconds,
+  1920×1080, 30 fps, H.264, no audio. The six public fixture results and dated public
+  benchmark values come from the same checked-in inputs as the page. This is a new film,
+  not a new benchmark run or a binary release.
+- Film SHA-256: `2e0bcae2385f02e24d2c729c65012cad944b75baf811cbe7af9592436961e84b`.
+  Poster: frame 45 (1.5 seconds), with origin embedded as PNG text metadata. Poster SHA-256:
+  `2bf479deab5dae73f380c6a86bcdca6cecfce4d8569542685cd16e340db709d4`.
+  No generated illustration is used; the poster is an actual exported film frame.
 
 Fonts are served from this site. There is no runtime request to Google Fonts.
 

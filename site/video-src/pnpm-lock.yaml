@@ -17,6 +17,9 @@ importers:
       '@remotion/cli':
         specifier: 4.0.515
         version: 4.0.515(postcss@8.5.26)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(supports-color@8.1.1)(typescript@5.9.3)
+      '@remotion/fonts':
+        specifier: 4.0.515
+        version: 4.0.515(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       react:
         specifier: 19.2.8
         version: 19.2.8
@@ -453,6 +456,9 @@ packages:
     resolution: {integrity: sha512-nS2yxJamhJbx8qXwMfQA/go007fjoBy6WYSPCscFF1tI7lemghyuhlE4fdmDvu4uaHbGZ6d/ArqopzZnOCcpzQ==}
     peerDependencies:
       eslint: '>=9'
+
+  '@remotion/fonts@4.0.515':
+    resolution: {integrity: sha512-i51AFruiRfo44idH4niC86IJnsVrMJMUyBO/RQyeUzoIBYgWOZPlcNmwFthOGepd4agOu0Pp100jX3Qmytu/fA==}
 
   '@remotion/licensing@4.0.515':
     resolution: {integrity: sha512-0Yj+yHFx3aPp1Pc0awGZqORB4ErpTKNHK7oOYtzqGAFyMK02m2Gxt8+T38GSCSeT7n3qArzefN6rg7uR1aEGZA==}
@@ -2072,6 +2078,13 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
       - typescript
+
+  '@remotion/fonts@4.0.515(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
+    dependencies:
+      remotion: 4.0.515(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+    transitivePeerDependencies:
+      - react
+      - react-dom
 
   '@remotion/licensing@4.0.515': {}
 

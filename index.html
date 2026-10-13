@@ -125,17 +125,52 @@
 
       <section class="film" aria-labelledby="film-title">
         <div class="film-copy">
-          <h2 id="film-title">Eighteen seconds.<br>Then look closer.</h2>
-          <p>The film animates the historical definition-finding comparison above.
-            The table supplies its text equivalent; the full report supplies the details.</p>
+          <h2 id="film-title">Same matches.<br>See them move.</h2>
+          <p id="film-description">A silent overview of the search order, source-only filename
+            and MCP modes, dated evidence and installation choices.</p>
+          <details>
+            <summary>Read the film’s text alternative</summary>
+            <div id="film-transcript">
+              <p><strong>Same matches. Better order.</strong> hay is a ranked grep for coding
+                agents. Likely definitions come first, then one result from each file.
+                Complete searches preserve the normalized ripgrep match set; caps or read
+                errors mean incomplete results.</p>
+              <p><strong>The search order moves.</strong> The illustrative
+                <code translate="no">hay validateSession .</code> fixture has six matches in
+                four files. The declaration moves from fourth to first, with all six matches
+                retained. Four different files appear before any file’s second result.
+                <a href="#proof">Read both complete result lists above</a>.</p>
+              <p><strong>Source {{SOURCE_VERSION}} features.</strong>
+                <code translate="no">hay --find sesison .</code> finds exact names, substrings
+                and an adjacent typo. <code translate="no">hay --mcp --root .</code> manually
+                starts stdio MCP with <code translate="no">grep</code>,
+                <code translate="no">find_files</code> and <code translate="no">multi_grep</code>.
+                Both use live files. MCP searches stay within explicit Git repository scopes;
+                there is no persistent index or search history.</p>
+              <p><strong>Evidence and limits.</strong> The historical {{BENCHMARK_VERSION}}
+                definition-finding benchmark is dated {{BENCHMARK_DATE}}.
+                <a href="#evidence">The table above gives all four corpora, query counts,
+                  MRR values, absolute differences and 95% intervals shown in the film</a>.
+                Definition finding is hay’s home turf, not agent-task success. The documentation
+                track has zero detected wins and four detected regressions. The private
+                behavioral gate still fails and was not rerun for these source-only features.</p>
+              <p><strong>Choose an installation.</strong>
+                <code translate="no">brew install mneves75/tap/hay</code> installs supported
+                binary {{HOMEBREW_VERSION}}. Filename discovery and MCP require source
+                {{SOURCE_VERSION}}. <a href="#install">Use the pinned
+                  <code translate="no">--locked</code> source instructions below</a>.
+                The film ends at <span translate="no">mneves75.github.io/hay/</span> for the
+                methods and complete installation instructions.</p>
+            </div>
+          </details>
           <a class="text-link" href="BENCHMARK_FEYNMAN.html">Start with the method <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></a>
         </div>
         <figure>
-          <video controls preload="none" playsinline poster="site/assets/poster.png" aria-label="Historical benchmark comparison film">
+          <video controls preload="none" playsinline poster="site/assets/poster.png" aria-label="hay overview film" aria-describedby="film-description film-transcript">
             <source src="site/assets/hay-benchmark.mp4" type="video/mp4">
-            <a href="site/assets/hay-benchmark.mp4">Download the benchmark film</a>.
+            <a href="site/assets/hay-benchmark.mp4">Download the overview film</a>.
           </video>
-          <figcaption>Historical benchmark film · 18 seconds · no narration</figcaption>
+          <figcaption>hay overview · 36 seconds · silent · text alternative alongside</figcaption>
         </figure>
       </section>
 
