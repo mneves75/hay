@@ -571,3 +571,28 @@ holds above the 20,000-candidate cap, where eviction used to depend on walk orde
 **`measure-mrr.ts` gives slightly different numbers than yesterday** — expected if the measured
 repositories are live working trees. Ranks move when the corpus moves. Compare runs against a fixed
 checkout, not across a day's commits.
+
+## Website development and delivery
+
+Use Bun 1.4.0. `index.html` contains build tokens; serve a public bundle instead of the source
+checkout, which can hold private measurement data.
+
+```bash
+bun install --frozen-lockfile
+bun test site/build.test.ts
+bun run typecheck
+bash site/check-demo.sh       # needs the release hay binary and ripgrep
+bun site/build.ts --out .scratch/site-preview --phase preview --tag preview
+python3 -m http.server 8437 --bind 127.0.0.1 --directory .scratch/site-preview
+```
+
+The output must be new or empty. Preview explicitly permits and labels uncommitted inputs.
+Staging/production require a clean checkout, matching source SHA and `site-vX.Y.Z-betaN` /
+`site-vX.Y.Z` tag. Build with `--source COMMIT --phase staging --tag site-v0.4.0-beta1` or
+`--phase production --tag site-v0.4.0`. `release.json` records the exact source and every public
+payload digest; the manifest excludes itself from its hash set.
+
+GitHub Pages publishes `gh-pages` at `/`. The beta lives at `/hay/beta/` on the same public
+publishing branch. Follow [the website delivery plan](plans/005-website-delivery.md): preserve
+all incumbent root bytes for beta, prove the served manifest and payload, then obtain the
+required exact-candidate production approval. Website tags do not release a Rust binary.

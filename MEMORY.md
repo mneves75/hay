@@ -19,6 +19,13 @@ useful than what was attempted:
 
 ## Decisions, and why
 
+**Website evidence stays dated** (2026-10-13). The owner selected an editorial proof sheet.
+The static site has a complete six-match/four-file real-binary example, explicit source 0.4.0
+versus supported Homebrew 0.3.2, and the historical public/private limitations. Its allowlisted
+builder pins source identity and validates relative document dependencies; website tags are a
+separate namespace. Plans004/005 and the editorial acceptance record carry observed delivery
+status; a local build is not a public deployment.
+
 **Keep only a useful consumer** (2026-10-13, source 0.4.0). fsearch transfer adds opt-in live
 filename discovery and stdio MCP over the existing engine. The inventory-only index/watcher
 prototype had no retrieval consumer and was removed; this is not a measured speed loss.

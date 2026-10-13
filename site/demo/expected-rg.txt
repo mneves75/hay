@@ -1,0 +1,6 @@
+./docs/migration.md:1:The migration notes mention validateSession; the implementation lives in src/auth/session.ts.
+./src/auth/session.test.ts:1:import { validateSession } from "./session";
+./src/auth/session.test.ts:2:console.assert(validateSession("token"));
+./src/auth/session.ts:1:export function validateSession(token: string): boolean {
+./src/routes/login.ts:1:import { validateSession } from "../auth/session";
+./src/routes/login.ts:3:  return validateSession(token);

@@ -21,6 +21,13 @@ history lives in git and `memory/`.
 
 ### Changed
 
+- Redesigned the website as an accessible editorial proof sheet: complete real search output,
+  adjacent source-only capability labels, selectable/copyable install commands, dated public
+  evidence and the unchanged private failure gate. Self-hosted licensed typography and native
+  media controls keep the page useful without JavaScript or third-party runtime resources.
+- Added deterministic, explicitly allowlisted website packaging with source identity, payload
+  hashes, dependency checks and privacy/overwrite controls. Website tags use `site-v0.4.0-betaN`
+  and `site-v0.4.0`; they do not publish a binary or change the Homebrew release.
 - Extracted the existing content engine behind a thin CLI and internal adapters; ordinary
   scoring and ranking weights remain unchanged. Filename and content search share visibility
   policy. MCP globs are root-relative; ordinary CLI globs retain working-directory semantics.

@@ -10,5 +10,5 @@
     "noPropertyAccessFromIndexSignature": true,
     "types": ["bun"]
   },
-  "include": ["*.ts"]
+  "include": ["*.ts", "site/*.ts"]
 }

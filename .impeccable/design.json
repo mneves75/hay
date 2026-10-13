@@ -1,0 +1,324 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-13T06:32:36Z",
+  "title": "Design System: hay",
+  "extensions": {
+    "colorMeta": {
+      "paper": {
+        "role": "neutral",
+        "displayName": "White paper",
+        "tonalRamp": [
+          "oklch(0.15000 0.00000 0.00)",
+          "oklch(0.26429 0.00000 0.00)",
+          "oklch(0.37857 0.00000 0.00)",
+          "oklch(0.49286 0.00000 0.00)",
+          "oklch(0.60714 0.00000 0.00)",
+          "oklch(0.72143 0.00000 0.00)",
+          "oklch(0.83571 0.00000 0.00)",
+          "oklch(0.95000 0.00000 0.00)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Charcoal ink",
+        "tonalRamp": [
+          "oklch(0.15000 0.02578 155.84)",
+          "oklch(0.26429 0.02578 155.84)",
+          "oklch(0.37857 0.02578 155.84)",
+          "oklch(0.49286 0.02578 155.84)",
+          "oklch(0.60714 0.02578 155.84)",
+          "oklch(0.72143 0.02578 155.84)",
+          "oklch(0.83571 0.02578 155.84)",
+          "oklch(0.95000 0.02578 155.84)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted green-gray",
+        "tonalRamp": [
+          "oklch(0.15000 0.02146 160.45)",
+          "oklch(0.26429 0.02146 160.45)",
+          "oklch(0.37857 0.02146 160.45)",
+          "oklch(0.49286 0.02146 160.45)",
+          "oklch(0.60714 0.02146 160.45)",
+          "oklch(0.72143 0.02146 160.45)",
+          "oklch(0.83571 0.02146 160.45)",
+          "oklch(0.95000 0.02146 160.45)"
+        ]
+      },
+      "green": {
+        "role": "primary",
+        "displayName": "Forest green",
+        "tonalRamp": [
+          "oklch(0.15000 0.09656 157.36)",
+          "oklch(0.26429 0.09656 157.36)",
+          "oklch(0.37857 0.09656 157.36)",
+          "oklch(0.49286 0.09656 157.36)",
+          "oklch(0.60714 0.09656 157.36)",
+          "oklch(0.72143 0.09656 157.36)",
+          "oklch(0.83571 0.09656 157.36)",
+          "oklch(0.95000 0.09656 157.36)"
+        ]
+      },
+      "green-hover": {
+        "role": "primary",
+        "displayName": "Deep forest green",
+        "tonalRamp": [
+          "oklch(0.15000 0.06891 159.97)",
+          "oklch(0.26429 0.06891 159.97)",
+          "oklch(0.37857 0.06891 159.97)",
+          "oklch(0.49286 0.06891 159.97)",
+          "oklch(0.60714 0.06891 159.97)",
+          "oklch(0.72143 0.06891 159.97)",
+          "oklch(0.83571 0.06891 159.97)",
+          "oklch(0.95000 0.06891 159.97)"
+        ]
+      },
+      "rule": {
+        "role": "neutral",
+        "displayName": "Fine rule",
+        "tonalRamp": [
+          "oklch(0.15000 0.01182 153.65)",
+          "oklch(0.26429 0.01182 153.65)",
+          "oklch(0.37857 0.01182 153.65)",
+          "oklch(0.49286 0.01182 153.65)",
+          "oklch(0.60714 0.01182 153.65)",
+          "oklch(0.72143 0.01182 153.65)",
+          "oklch(0.83571 0.01182 153.65)",
+          "oklch(0.95000 0.01182 153.65)"
+        ]
+      },
+      "strong-rule": {
+        "role": "neutral",
+        "displayName": "Strong rule",
+        "tonalRamp": [
+          "oklch(0.15000 0.02437 155.65)",
+          "oklch(0.26429 0.02437 155.65)",
+          "oklch(0.37857 0.02437 155.65)",
+          "oklch(0.49286 0.02437 155.65)",
+          "oklch(0.60714 0.02437 155.65)",
+          "oklch(0.72143 0.02437 155.65)",
+          "oklch(0.83571 0.02437 155.65)",
+          "oklch(0.95000 0.02437 155.65)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Large product statement."
+      },
+      "display-compact": {
+        "displayName": "Compact display",
+        "purpose": "Product statement at the narrow breakpoint."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section headings."
+      },
+      "headline-compact": {
+        "displayName": "Compact headline",
+        "purpose": "Section headings at the narrow breakpoint."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Article and installation headings."
+      },
+      "title-compact": {
+        "displayName": "Compact title",
+        "purpose": "Article headings at the narrow breakpoint."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Ordinary prose."
+      },
+      "body-compact": {
+        "displayName": "Compact body",
+        "purpose": "Ordinary prose at the narrow breakpoint."
+      },
+      "lead": {
+        "displayName": "Lead",
+        "purpose": "Introductory explanation."
+      },
+      "lead-compact": {
+        "displayName": "Compact lead",
+        "purpose": "Introductory explanation at the narrow breakpoint."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Direct navigation and text actions."
+      },
+      "control-label": {
+        "displayName": "Control label",
+        "purpose": "Copy controls."
+      },
+      "action": {
+        "displayName": "Action",
+        "purpose": "Primary installation link."
+      },
+      "caption": {
+        "displayName": "Caption",
+        "purpose": "Adjacent context and evidence limitations."
+      },
+      "result": {
+        "displayName": "Result",
+        "purpose": "Literal match text."
+      },
+      "table-value": {
+        "displayName": "Table value",
+        "purpose": "Tabular evidence values."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "anchor-scroll",
+        "value": "smooth",
+        "purpose": "Anchor navigation; overridden to auto under prefers-reduced-motion: reduce."
+      },
+      {
+        "name": "skip-link-reveal",
+        "value": "translateY(-150%) → none on focus",
+        "purpose": "Immediate keyboard-only reveal, without a transition."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "middle",
+        "value": "1000px"
+      },
+      {
+        "name": "narrow",
+        "value": "700px"
+      }
+    ],
+    "provenance": {
+      "sources": [
+        "site/landing.css",
+        "index.html",
+        "site/landing.js",
+        "PRODUCT.md",
+        "docs/specs/editorial-landing/direction.md"
+      ],
+      "font": {
+        "family": "Archivo",
+        "asset": "site/assets/archivo-latin.woff2",
+        "weights": "400–900",
+        "style": "normal",
+        "license": "SIL Open Font License 1.1",
+        "licenseFile": "site/assets/OFL.txt",
+        "attribution": "The Archivo Project Authors",
+        "sourceRecord": "site/assets/SOURCES.md"
+      },
+      "tonalRamps": "Synthesized OKLCH lightness strips for panel previews only; they are not implementation tokens. Frontmatter colors remain normative.",
+      "authority": "Code-led extraction of the confirmed editorial direction; no generated comp or comp approval."
+    }
+  },
+  "components": [
+    {
+      "name": "Installation action",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Filled link for the primary installation path.",
+      "html": "<a class=\"ds-button ds-primary\" href=\"#install\">Install hay <svg class=\"ds-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M5 12h14m-6-6 6 6-6 6\"/></svg></a>",
+      "css": ".ds-button { font-family:Archivo,sans-serif; font-size:18px; line-height:1.55; min-height:52px; padding:13px 20px; display:inline-flex; align-items:center; justify-content:center; gap:20px; font-weight:600; text-decoration:none; border-radius:3px; } .ds-primary { background:var(--green,#085d38); color:var(--paper,#fff); border:1px solid var(--green,#085d38); } .ds-primary:hover { color:var(--paper,#fff); background:#063e27; border-color:#063e27; } .ds-button:focus-visible { outline: 2px solid var(--green, #085d38); outline-offset: 5px; } .ds-icon { width:20px; height:20px; flex:none; fill:none; stroke:currentColor; stroke-width:1.65; stroke-linecap:round; stroke-linejoin:round; } @media(max-width:700px) { .ds-button { min-height:48px; padding:11px 15px; gap:14px; font-size:16px; } }"
+    },
+    {
+      "name": "Text action",
+      "kind": "button",
+      "refersTo": "text-link",
+      "description": "Underlined secondary link with a directional icon.",
+      "html": "<a class=\"ds-text-link\" href=\"#proof\">See how it works <svg class=\"ds-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M5 12h14m-6-6 6 6-6 6\"/></svg></a>",
+      "css": ".ds-text-link { font-family:Archivo,sans-serif; color:var(--ink,#17251c); min-height:44px; display:inline-flex; align-items:center; gap:10px; font-size:16px; line-height:1.55; font-weight:550; text-decoration-thickness:1px; text-underline-offset:.2em; } .ds-text-link:hover { color:var(--green,#085d38); text-decoration-thickness:2px; } .ds-text-link:focus-visible { outline: 2px solid var(--green, #085d38); outline-offset: 5px; } .ds-icon { width:20px; height:20px; flex:none; fill:none; stroke:currentColor; stroke-width:1.65; stroke-linecap:round; stroke-linejoin:round; } @media(max-width:700px) { .ds-text-link { font-size:14px; gap:7px; } }"
+    },
+    {
+      "name": "Copy control",
+      "kind": "button",
+      "refersTo": "copy-button",
+      "description": "Outlined native button; live copy behavior belongs to landing.js.",
+      "html": "<button class=\"ds-copy\" type=\"button\">Copy Homebrew command <svg class=\"ds-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M9 9h11v11H9zM15 5V3H3v12h2\"/></svg></button>",
+      "css": ".ds-copy { font-family:Archivo,sans-serif; display:inline-flex; align-items:center; justify-content:space-between; gap:18px; min-height:44px; padding:9px 12px; border:1px solid var(--strong-rule,#87978c); border-radius:3px; color:var(--green,#085d38); background:var(--paper,#fff); font-size:14px; line-height:1.55; font-weight:550; cursor:pointer; } .ds-copy:hover { background:var(--green,#085d38); color:var(--paper,#fff); border-color:var(--green,#085d38); } .ds-copy:focus-visible { outline: 2px solid var(--green, #085d38); outline-offset: 5px; } .ds-copy:disabled { cursor:wait; opacity:.65; } .ds-icon { width:20px; height:20px; flex:none; fill:none; stroke:currentColor; stroke-width:1.65; stroke-linecap:round; stroke-linejoin:round; }"
+    },
+    {
+      "name": "Direct navigation",
+      "kind": "nav",
+      "refersTo": "navigation",
+      "description": "Masthead text navigation without pill surfaces.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"Main navigation\"><a href=\"MANUAL.html\">Manual</a><a href=\"#evidence\">Evidence</a><a href=\"https://github.com/mneves75/hay\">GitHub</a></nav>",
+      "css": ".ds-nav { font-family:Archivo,sans-serif; display:flex; gap:26px; align-items:center; } .ds-nav a { color:var(--ink,#17251c); display:inline-flex; align-items:center; min-height:44px; font-size:16px; line-height:1.55; font-weight:550; text-decoration:none; text-decoration-thickness:1px; text-underline-offset:.2em; } .ds-nav a:hover { color:var(--green,#085d38); text-decoration:underline; text-decoration-thickness:2px; } .ds-nav a:focus-visible { outline: 2px solid var(--green, #085d38); outline-offset: 5px; } @media(max-width:700px) { .ds-nav { gap:24px; justify-content:space-between; } .ds-nav a { font-size:14px; } }"
+    },
+    {
+      "name": "Ranked result sheet",
+      "kind": "custom",
+      "refersTo": "result-list",
+      "description": "All six rows from the actual synthetic fixture; definition emphasis preserves row order.",
+      "html": "<ol class=\"ds-results\" aria-label=\"hay ranked matches\"><li class=\"ds-definition\"><span class=\"ds-path\">./src/auth/session.ts:1</span><code>export function <mark>validateSession</mark>(token: string): boolean {</code></li><li><span class=\"ds-path\">./src/routes/login.ts:1</span><code>import { <mark>validateSession</mark> } from &quot;../auth/session&quot;;</code></li><li><span class=\"ds-path\">./src/auth/session.test.ts:1</span><code>import { <mark>validateSession</mark> } from &quot;./session&quot;;</code></li><li><span class=\"ds-path\">./docs/migration.md:1</span><code>The migration notes mention <mark>validateSession</mark>; the implementation lives in src/auth/session.ts.</code></li><li><span class=\"ds-path\">./src/routes/login.ts:3</span><code>  return <mark>validateSession</mark>(token);</code></li><li><span class=\"ds-path\">./src/auth/session.test.ts:2</span><code>console.assert(<mark>validateSession</mark>(&quot;token&quot;));</code></li></ol>",
+      "css": ".ds-results { font-family:Archivo,sans-serif; color:var(--ink,#17251c); background:var(--paper,#fff); margin:0; padding:0; list-style:none; counter-reset:rank; } .ds-results li { display:grid; grid-template-columns:24px 1fr; column-gap:12px; padding-block:14px; border-bottom:1px solid var(--rule,#d5ddd7); counter-increment:rank; } .ds-results li::before { content:counter(rank); color:var(--muted,#526058); font-size:13px; font-variant-numeric:tabular-nums; grid-row:span 2; padding-top:1px; } .ds-path { font-size:12px; line-height:1.55; color:var(--muted,#526058); margin-bottom:4px; overflow-wrap:anywhere; } .ds-results code { font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:13px; line-height:1.65; white-space:pre-wrap; overflow-wrap:anywhere; } .ds-results mark { background:none; color:inherit; font-weight:650; } .ds-results li.ds-definition { color:var(--green,#085d38); border-bottom-color:var(--green,#085d38); } .ds-definition .ds-path { color:var(--green,#085d38); } @media(max-width:700px) { .ds-results li { padding-block:12px; column-gap:9px; } .ds-results code { font-size:12px; } .ds-path { font-size:11px; } }"
+    },
+    {
+      "name": "Evidence table header",
+      "kind": "custom",
+      "refersTo": "evidence-table",
+      "description": "Actual four-column header; historical data is supplied by the validated build, not invented by this preview.",
+      "html": "<table class=\"ds-table\"><thead><tr><th scope=\"col\">Corpus</th><th scope=\"col\">hay</th><th scope=\"col\">rg <span>path order</span></th><th scope=\"col\">Difference <span>95% interval</span></th></tr></thead></table>",
+      "css": ".ds-table { font-family:Archivo,sans-serif; color:var(--ink,#17251c); background:var(--paper,#fff); width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; } .ds-table th { text-align:left; padding:20px 16px; border-bottom:1px solid var(--strong-rule,#87978c); font-size:14px; line-height:1.55; font-weight:550; color:var(--muted,#526058); } .ds-table th:first-child { padding-left:0; } .ds-table span { display:block; font-weight:400; } @media(max-width:700px) { .ds-table { table-layout:fixed; } .ds-table th:first-child { width:29%; } .ds-table th:nth-child(2),.ds-table th:nth-child(3) { width:18%; } .ds-table th:last-child { width:35%; } .ds-table th { padding:16px 5px; font-size:12px; overflow-wrap:anywhere; } }"
+    },
+    {
+      "name": "Selectable command",
+      "kind": "custom",
+      "description": "Open command area with strong rules and wrapping literal code.",
+      "html": "<div class=\"ds-command\"><pre><code>brew install mneves75/tap/hay</code></pre></div>",
+      "css": ".ds-command { min-width:0; color:var(--ink,#17251c); background:var(--paper,#fff); } .ds-command pre { margin:0; border-block:1px solid var(--strong-rule,#87978c); padding-block:16px; font-size:16px; line-height:1.8; } .ds-command code { font-family:ui-monospace,SFMono-Regular,Consolas,monospace; display:block; font-size:.88em; white-space:pre-wrap; overflow-wrap:anywhere; } @media(max-width:700px) { .ds-command pre { font-size:14px; } }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The editorial proof sheet",
+    "overview": "The editorial proof sheet uses white paper, charcoal type and a single forest-green accent. Strong typography, aligned columns and fine rules give commands, matches and evidence the same visual seriousness.\n\nThe interface stays flat and readable. Native links, ordered lists, tables and video controls carry the content; motion is limited to anchor scrolling and the keyboard skip-link reveal.",
+    "keyCharacteristics": [
+      "One sans-serif family, with monospace reserved for literal code.",
+      "Open rows and ruled sections rather than elevated cards.",
+      "Complete reading order and evidence remain visible as columns stack."
+    ],
+    "rules": [
+      {
+        "name": "The One Accent Rule",
+        "body": "Use forest green for actionable links, primary controls and the ranked definition. Keep ordinary prose in charcoal and supporting context in muted green-gray.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Family Rule",
+        "body": "Use Archivo for headings, prose, labels and numerals. Reserve monospace for commands and result text.",
+        "section": "typography"
+      },
+      {
+        "name": "The Reading Order Rule",
+        "body": "Preserve the DOM reading order when columns stack. Keep both result lists and every evidence column available on small screens.",
+        "section": "layout"
+      },
+      {
+        "name": "The Flat Sheet Rule",
+        "body": "Use spacing, type and rules to separate content. Do not introduce shadows or floating surfaces into this world.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Quiet Corner Rule",
+        "body": "Keep sheets, rows, tables and media square. Apply the small control radius only to the implemented action and copy controls.",
+        "section": "shapes"
+      }
+    ],
+    "dos": [
+      "**Do** use the named color roles and loaded Archivo weights.",
+      "**Do** distinguish literal code from prose through monospace and preserve readable wrapping.",
+      "**Do** keep explanatory notes beside the evidence or interaction they explain.",
+      "**Do** preserve native semantics, visible focus and the reduced-motion override.",
+      "**Do** use inline SVG for the implemented directional and copy icons."
+    ],
+    "donts": [
+      "**Don't** replace the white sheet with cream, off-white or gradient backgrounds.",
+      "**Don't** add pill controls, decorative kickers or numbered section labels.",
+      "**Don't** turn the proof lists, capability rows or evidence into floating cards.",
+      "**Don't** hide result rows, table values or installation commands to simplify mobile layout.",
+      "**Don't** autoplay the benchmark film or add decorative entrance animation."
+    ]
+  }
+}

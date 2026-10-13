@@ -192,3 +192,16 @@ directory. MCP roots are search scopes, not an OS sandbox against hostile concur
 Run `cargo test --locked --manifest-path hay/Cargo.toml` for both actual CLI and MCP boundaries.
 Keep the original differential gate; MCP byte-budget errors mean incomplete, never no matches.
 The retained spec, source inventory and acceptance evidence live in `docs/specs/fsearch-transfer/`.
+
+## Public website
+
+`index.html` is a template, not a file to serve directly. Read `PRODUCT.md`, `DESIGN.md` and
+`docs/specs/editorial-landing/` before visual edits. Keep complete illustrative output verified
+with `bash site/check-demo.sh`, historical evidence dates and adjacent source/Homebrew versions.
+Build only the explicit public bundle with `bun site/build.ts --out .scratch/site-preview
+--phase preview --tag preview`; serve that directory, never the repository root.
+Run `bun test site/build.test.ts` and the existing typecheck/AST gates. Releases refuse dirty
+inputs, symlinks, missing document dependencies and nonempty output. The manifest hashes every
+payload file except itself. Preserve the legacy Pages document/media URLs. The beta subtree is
+public on shared Pages infrastructure. Website tags use `site-vX.Y.Z-betaN` / `site-vX.Y.Z`;
+binary releases retain the protected workflow and mandatory Homebrew update.
