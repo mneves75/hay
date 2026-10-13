@@ -107,6 +107,9 @@ h3 { font-size: 25px; line-height: 1.3; letter-spacing: -.015em; font-weight: 60
 .quality-note .text-link { grid-column: 2; }
 .film { display: grid; grid-template-columns: 1fr 1.3fr; gap: 48px; padding-block: 64px; border-top: 1px solid var(--strong-rule); align-items: center; }
 .film-copy p { color: var(--muted); font-size: 16px; margin-top: 22px; margin-bottom: 12px; }
+.film-copy summary { cursor: pointer; min-height: 44px; padding-block: 10px; color: var(--green); font-size: 16px; }
+.film-copy details { margin-bottom: 16px; }
+.film:has(details[open]) { align-items: start; }
 video { display: block; width: 100%; aspect-ratio: 16 / 9; background: #17251c; }
 figcaption { color: var(--muted); font-size: 13px; margin-top: 12px; }
 .install-option { display: grid; grid-template-columns: 1fr 1.4fr; gap: 48px; padding-block: 30px; border-top: 1px solid var(--rule); }

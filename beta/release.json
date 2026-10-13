@@ -1,23 +1,23 @@
 {
-  "source_commit": "f172e96d15a267ed0bc48f3b55ca3e1c5e48a1ee",
+  "source_commit": "43bfb48d9a015c12b6f754d16d8007a6beb4013a",
   "source_version": "0.4.0",
   "phase": "staging",
-  "tag": "site-v0.4.0-beta1",
+  "tag": "site-v0.4.0-beta2",
   "dirty": false,
   "files": {
-    "BENCHMARK_FEYNMAN.html": "856164028d9d043f1ea4ba77162da4e9161504198c4a51871df53329c931fffb",
+    "BENCHMARK_FEYNMAN.html": "a9bd466cc76d11ff33b1de0c1993f23f648e51d5647b5b7eab177788bc5a62f5",
     "BENCHMARK_FEYNMAN.md": "1c9c1a210bef3e1246ad22cfa91816e34798ef5bdf80510e733bb6b8879b60a8",
     "benchmark.html": "dd58bad0088b6715e3b38dddce2f1dd06e0e43a4e75376a1e6d23a2c40fdcc09",
-    "index.html": "f7623e8adf41b044c37896b68d60ae9a0b98500fdbcf8631daa0ce23854ff83f",
+    "index.html": "8e736c9f57a49dc092ada3b2a01bf6ad50712dbeea6aa5ab9f05255868891239",
     "MANUAL.html": "d822650addc429f102bca99e02a03d356ca6b0d6aeeab501f76599a97c26bc9c",
     "site/assets/archivo-latin.woff2": "664cbb7bf80f6527022d4c76291f6df77dad3534c50d8862405d50040fd1ff5d",
     "site/assets/favicon.svg": "97dbd473572093db00f06683982db0e3876ef923988e29f738c7ec96cd5b12a6",
-    "site/assets/hay-benchmark.mp4": "5005c8fbe200c8c135fc0120443b76ee9ddfb6314430e1c638e5286e229aa8b3",
+    "site/assets/hay-benchmark.mp4": "2e0bcae2385f02e24d2c729c65012cad944b75baf811cbe7af9592436961e84b",
     "site/assets/OFL.txt": "1778201b7bd33e8c08a2eda32a4ad2f69bc38ced9731b01cc3fc47f268c8ef3c",
-    "site/assets/poster.png": "2e7b5ccaff96130d62cfbdcea6889941f5a935ea1feb196b9002fbb8963ec9a3",
-    "site/assets/SOURCES.md": "3928176fb20b85d5a2087b621fd62f2b17a4d78d078d42f2b6d2f7130107cabe",
+    "site/assets/poster.png": "2bf479deab5dae73f380c6a86bcdca6cecfce4d8569542685cd16e340db709d4",
+    "site/assets/SOURCES.md": "2fe61eb05d8b0193a4f15dd6608ae8453a6738e0978d4516cf8526eed2743143",
     "site/landing.4743b5ff80be.js": "4743b5ff80bebd9cbd1ab4ea897734133474178f4cbea73ca0c0ced0c8036fdb",
-    "site/landing.680d650c3e33.css": "680d650c3e331f8f97c167734145d52a4d2a6ea615550c33e70d010cdb4064d7"
+    "site/landing.aa7e482003db.css": "aa7e482003dba4bc29e6b3499cad2a904cf7ba50df8f5abb3d9f70a51c02c7d0"
   },
-  "payload_sha256": "8e923c3180dff5f7b24a2df20c18f712899b426ff5571295484f4958b7720006"
+  "payload_sha256": "2cba9d29e65cf826511a60409c52ea59d859c2bbaee7f3f6d7f1b3dcbc19d1ed"
 }
