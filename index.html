@@ -1,228 +1,227 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<title>hay — a ranked grep for coding agents</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="hay returns exactly ripgrep&rsquo;s matches, reordered so declarations rank first. It leads deterministic ripgrep ordering on four usable public code corpora; documentation retrieval is reported separately.">
-<meta property="og:title" content="hay — a ranked grep for coding agents">
-<meta property="og:description" content="Exactly ripgrep&rsquo;s matches, reordered. Leads deterministic ripgrep ordering on four usable public code corpora; docs retrieval is reported separately.">
-<meta name="color-scheme" content="light dark">
-<style>
-:root{color-scheme:light dark;
-  --ground:light-dark(#f8f5ec,#16130c);
-  --panel:light-dark(#fffdf6,#1e1a10);
-  --ink:light-dark(#201b10,#ece5d2);
-  --soft:light-dark(#5c5544,#b3aa92);
-  --faint:light-dark(#6f6756,#aaa18a);
-  --rule:light-dark(#e7e1cf,#2e2918);
-  --rule-strong:light-dark(#cfc6a8,#46402a);
-  --accent:light-dark(#83670d,#ddb84f);
-  --accent-ink:light-dark(#6b5408,#e6c86e);
-  --accent-soft:light-dark(#f1e7c8,#332b14);
-}
-*{box-sizing:border-box}
-html{scroll-behavior:smooth}
-@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
-body{margin:0;background:var(--ground);color:var(--ink);
-  font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:17px;line-height:1.65}
-.wrap{max-width:66rem;margin:0 auto;padding:0 1.25rem}
-h1,h2,h3{text-wrap:balance}
-p,li{text-wrap:pretty}
-a{color:var(--accent-ink);text-decoration-thickness:1px;text-underline-offset:2px}
-:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:2px}
-code{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.88em;background:var(--accent-soft);border-radius:3px;padding:.08em .35em}
-
-.hero{border-bottom:2px solid var(--rule-strong);padding:4.5rem 0 3rem;
-  background-image:repeating-linear-gradient(color-mix(in srgb,var(--rule) 36%,transparent) 0 1px,transparent 1px 28px)}
-.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:.74rem;letter-spacing:.24em;text-transform:uppercase;color:var(--accent);margin:0 0 .9rem}
-h1{font-family:"IBM Plex Serif",Georgia,serif;font-weight:600;font-size:clamp(2.4rem,6vw,4rem);line-height:1.06;margin:0 0 1rem;letter-spacing:-.015em}
-.lede{font-size:1.18rem;color:var(--soft);max-width:46ch;margin:0 0 1.8rem}
-.cta{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:.92rem;text-decoration:none;
-  border:1px solid var(--rule-strong);border-radius:6px;padding:.65rem 1.15rem;margin-right:.7rem;margin-bottom:.7rem;color:var(--ink)}
-.cta.primary{background:var(--accent);color:light-dark(#fff,#201b10);border-color:var(--accent);font-weight:600}
-.chips{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1.8rem}
-.chip{font-family:"IBM Plex Mono",monospace;font-size:.78rem;border:1px solid var(--rule-strong);border-radius:999px;padding:.32rem .9rem;color:var(--soft)}
-.chip b{color:var(--accent-ink)}
-
-section{padding:3.6rem 0;border-bottom:1px solid var(--rule)}
-.kicker{font-family:"IBM Plex Mono",monospace;font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);margin:0 0 .55rem}
-h2{font-family:"IBM Plex Serif",Georgia,serif;font-weight:600;font-size:clamp(1.75rem,3.6vw,2.45rem);margin:0 0 1rem}
-.sub{color:var(--soft);max-width:60ch;margin:0 0 1.5rem}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(16.5rem,1fr));gap:1rem}
-.card{background:var(--panel);border:1px solid var(--rule);border-top:2px solid var(--accent);border-radius:0 0 4px 4px;padding:1.2rem 1.3rem}
-.card h3{font-family:"IBM Plex Serif",Georgia,serif;font-size:1.13rem;margin:0 0 .5rem;font-weight:600}
-.card p{margin:0;color:var(--soft);font-size:.95rem}
-.tag{font-family:"IBM Plex Mono",monospace;font-size:.68rem;text-transform:uppercase;letter-spacing:.16em;color:var(--faint);display:block;margin-bottom:.55rem}
-
-.video{background:var(--panel);border:1px solid var(--rule);border-radius:6px;overflow:hidden;margin-top:1.3rem}
-video{width:100%;display:block;background:#000}
-.vcap{padding:.85rem 1.15rem;font-size:.87rem;color:var(--soft);border-top:1px solid var(--rule)}
-
-/* animated chart */
-.chart{background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:1.6rem;margin-top:1.3rem}
-.crow{display:grid;grid-template-columns:9.5rem 1fr;gap:1.1rem;align-items:center;margin-bottom:1.15rem}
-.cname{font-family:"IBM Plex Mono",monospace;font-size:.84rem;text-align:right;color:var(--soft)}
-.cbars{position:relative;padding-right:6rem}
-.bar{height:22px;border-radius:3px;width:0;transition:width 1.1s cubic-bezier(.2,.7,.2,1);position:relative}
-.bar.rg{background:color-mix(in srgb,var(--faint) 38%,transparent);margin-bottom:6px;height:14px}
-.bar.hay{background:var(--accent)}
-.bval{position:absolute;right:-3.4rem;top:50%;translate:0 -50%;font-family:"IBM Plex Mono",monospace;font-size:.82rem;color:var(--accent-ink);opacity:0;transition:opacity .5s .95s}
-.on .bar{width:calc(var(--v)*100%)}
-.on .hay .bval{opacity:1}
-.legend{font-family:"IBM Plex Mono",monospace;font-size:.77rem;color:var(--faint);margin-top:1rem}
-
-pre{background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:1.05rem 1.2rem;overflow-x:auto;
-  font-family:"IBM Plex Mono",monospace;font-size:.86rem;line-height:1.6}
-footer{padding:2rem 0 3.2rem;color:var(--faint);font-size:.83rem}
-footer a{color:inherit}
-@supports (animation-timeline:view()){
-  @media (prefers-reduced-motion:no-preference){
-    section>*{animation:rise linear both;animation-timeline:view();animation-range:entry 0% entry 42%}
-    @keyframes rise{from{translate:0 20px}}
-  }
-}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="description" content="hay is a ranked grep for coding agents. Ripgrep's matching engine, likely definitions first, and evidence you can inspect. Install the release or build the source.">
+  <meta property="og:title" content="hay — same matches, better order">
+  <meta property="og:description" content="A ranked grep for coding agents. See the mechanism, read the evidence, and choose your installation.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self'; media-src 'self'; base-uri 'none'; object-src 'none'; form-action 'none'">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://mneves75.github.io/hay/">
+  <title>hay — same matches, better order</title>
+  <link rel="icon" href="site/assets/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="site/assets/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="site/landing.aa7e482003db.css">
+  <script defer src="site/landing.4743b5ff80be.js"></script>
 </head>
 <body>
-<div class="wrap">
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="page">
+    <header class="masthead">
+      <a class="wordmark" href="#main" aria-label="hay home" translate="no">hay</a>
+      <span class="release-label">Website · site-v0.4.0</span>
+      <nav aria-label="Main navigation">
+        <a href="MANUAL.html">Manual</a>
+        <a href="#evidence">Evidence</a>
+        <a href="https://github.com/mneves75/hay">GitHub <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg></a>
+      </nav>
+    </header>
 
-<header class="hero">
-  <p class="eyebrow">grep-hygiene · hay · v0.3.2</p>
-  <h1>A ranked grep for coding agents.</h1>
-  <p class="lede"><code>hay</code> returns <strong>exactly ripgrep's matches</strong> — never more,
-  never fewer — reordered so the line that declares what you asked about comes first, and so the
-  first page is ten files rather than ten lines of one file. Because an agent reads the first page
-  and opens something.</p>
-  <div>
-    <a class="cta primary" href="#numbers">See the benchmark</a>
-    <a class="cta" href="MANUAL.html">Read the manual</a>
-    <a class="cta" href="https://github.com/mneves75/hay">Source on GitHub</a>
+    <main id="main">
+      <section class="hero" aria-labelledby="hero-title">
+        <h1 id="hero-title">Same matches.<br><span>Better order.</span></h1>
+        <div class="hero-intro">
+          <p>Meet <strong translate="no">hay</strong>, a ranked grep for coding agents. Ripgrep’s matching engine,
+            with likely definitions first—and one result per file before a file’s second line.</p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="#install">Install hay <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></a>
+            <a class="text-link" href="#proof">See how it works <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14m-6-6 6 6 6-6"/></svg></a>
+          </div>
+        </div>
+        <p class="contract-note">Complete searches preserve the normalized ripgrep match set.
+          Candidate caps or read errors return exit 2, so an incomplete answer stays explicit.</p>
+      </section>
+
+      <section id="proof" class="proof" aria-labelledby="proof-title">
+        <div class="section-heading">
+          <h2 id="proof-title">One query.<br>Two reading orders.</h2>
+          <p class="margin-note">In this fixture, the declaration moves from fourth to first.
+            The matches stay the same.</p>
+        </div>
+        <div class="query-line"><code translate="no">hay validateSession .</code><span>Illustrative fixture · 6 matches · 4 files</span></div>
+        <div class="reading-orders">
+          <div class="reading-order">
+            <h3><code translate="no">rg --sort path</code><span>Path order</span></h3>
+            <ol class="result-lines" role="list" aria-label="ripgrep path-ordered matches"><li><span class="result-path">./docs/migration.md:1</span><code translate="no">The migration notes mention <mark>validateSession</mark>; the implementation lives in src/auth/session.ts.</code></li>
+<li><span class="result-path">./src/auth/session.test.ts:1</span><code translate="no">import { <mark>validateSession</mark> } from &quot;./session&quot;;</code></li>
+<li><span class="result-path">./src/auth/session.test.ts:2</span><code translate="no">console.assert(<mark>validateSession</mark>(&quot;token&quot;));</code></li>
+<li class="is-definition"><span class="result-path">./src/auth/session.ts:1</span><code translate="no">export function <mark>validateSession</mark>(token: string): boolean {</code></li>
+<li><span class="result-path">./src/routes/login.ts:1</span><code translate="no">import { <mark>validateSession</mark> } from &quot;../auth/session&quot;;</code></li>
+<li><span class="result-path">./src/routes/login.ts:3</span><code translate="no">  return <mark>validateSession</mark>(token);</code></li></ol>
+          </div>
+          <div class="reading-order reading-order-hay">
+            <h3><span translate="no">hay</span><span>Ranked reading order</span></h3>
+            <ol class="result-lines" role="list" aria-label="hay ranked matches"><li class="is-definition"><span class="result-path">./src/auth/session.ts:1</span><code translate="no">export function <mark>validateSession</mark>(token: string): boolean {</code></li>
+<li><span class="result-path">./src/routes/login.ts:1</span><code translate="no">import { <mark>validateSession</mark> } from &quot;../auth/session&quot;;</code></li>
+<li><span class="result-path">./src/auth/session.test.ts:1</span><code translate="no">import { <mark>validateSession</mark> } from &quot;./session&quot;;</code></li>
+<li><span class="result-path">./docs/migration.md:1</span><code translate="no">The migration notes mention <mark>validateSession</mark>; the implementation lives in src/auth/session.ts.</code></li>
+<li><span class="result-path">./src/routes/login.ts:3</span><code translate="no">  return <mark>validateSession</mark>(token);</code></li>
+<li><span class="result-path">./src/auth/session.test.ts:2</span><code translate="no">console.assert(<mark>validateSession</mark>(&quot;token&quot;));</code></li></ol>
+          </div>
+        </div>
+        <p class="caption">Real output from a small, synthetic fixture. This shows the mechanism,
+          not general retrieval quality. <a href="https://github.com/mneves75/hay/tree/268e41834a0a66d922102edc70a97f5ca82aca8e/site/demo">Inspect the fixture and commands <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg></a></p>
+      </section>
+
+      <section class="capabilities" aria-labelledby="capabilities-title">
+        <div class="section-heading">
+          <h2 id="capabilities-title">Find the file.<br>Keep the conversation.</h2>
+          <p class="margin-note">Two deliberate additions to a focused tool. Neither changes
+            ordinary content ranking.</p>
+        </div>
+        <article class="capability">
+          <h3>Start with a name.</h3>
+          <div>
+            <p>Exact names, substrings, or an adjacent typo. Search live filenames, then refine
+              by glob, type, size, age or Git status.</p>
+            <p class="availability">Available in source 0.4.0.</p>
+            <pre><code translate="no">hay --find sesison .</code></pre>
+            <a class="text-link" href="MANUAL.html">Explore filename search <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></a>
+          </div>
+        </article>
+        <article class="capability">
+          <h3>Give your agent a session.</h3>
+          <div>
+            <p>Use <code translate="no">grep</code>, <code translate="no">find_files</code> and
+              <code translate="no">multi_grep</code> through stdio MCP. You choose the Git repositories;
+              every query reads live files.</p>
+            <p class="availability">Available in source 0.4.0.</p>
+            <pre><code translate="no">hay --mcp --root .</code></pre>
+            <a class="text-link" href="MANUAL.html">Set up MCP <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></a>
+          </div>
+        </article>
+      </section>
+
+      <section id="evidence" class="evidence" aria-labelledby="evidence-title">
+        <div class="section-heading">
+          <h2 id="evidence-title">Evidence.<br>Including the limits.</h2>
+          <p class="margin-note">The public test asks for a declaring file. That is hay’s home turf;
+            it does not measure an agent completing a task.</p>
+        </div>
+        <div class="evidence-intro">
+          <h3>Published definition-finding benchmark</h3>
+          <p>Mean reciprocal rank: 1.0 means the declaring file is first on every query.
+            Historical results from 2026-08-28, using hay 0.3.0.</p>
+        </div>
+        <table class="benchmark-table">
+          <caption class="sr-only">Historical public mean reciprocal rank, deterministic ripgrep comparison, and absolute difference with a 95% confidence interval.</caption>
+          <thead><tr><th scope="col">Corpus</th><th scope="col">hay</th><th scope="col">rg <span>path order</span></th><th scope="col">Difference <span>95% interval</span></th></tr></thead>
+          <tbody><tr><th scope="row">Linux kernel<small>30 queries</small></th><td class="hay-score">0.933</td><td>0.541</td><td>+0.392<small>[0.247, 0.544]</small></td></tr>
+<tr><th scope="row">openclaw<small>30 queries</small></th><td class="hay-score">0.928</td><td>0.819</td><td>+0.109<small>[0.035, 0.200]</small></td></tr>
+<tr><th scope="row">ripgrep<small>23 queries</small></th><td class="hay-score">0.877</td><td>0.419</td><td>+0.458<small>[0.304, 0.613]</small></td></tr>
+<tr><th scope="row">Alamofire<small>29 queries</small></th><td class="hay-score">0.776</td><td>0.433</td><td>+0.343<small>[0.235, 0.459]</small></td></tr></tbody>
+        </table>
+        <p class="caption">The separate documentation track has no detected wins and four
+          regressions. <a href="benchmark.html">Read the complete report</a> for methods,
+          exclusions and both statistical tests.</p>
+        <div class="quality-note">
+          <h3>The private behavioral gate still fails.</h3>
+          <p>Median-repository MRR <strong>0.4328 / 0.50</strong>; answer in the top ten
+            <strong>77.21% / 80%</strong>. Historical corpus: 2026-09-23. These results were
+            not rerun for this release, and the gate was not moved.</p>
+          <a class="text-link" href="https://github.com/mneves75/hay#the-negative-result-that-produced-hay">Read the research record <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg></a>
+        </div>
+      </section>
+
+      <section class="film" aria-labelledby="film-title">
+        <div class="film-copy">
+          <h2 id="film-title">Same matches.<br>See them move.</h2>
+          <p id="film-description">A silent overview of the search order, source-only filename
+            and MCP modes, dated evidence and installation choices.</p>
+          <details>
+            <summary>Read the film’s text alternative</summary>
+            <div id="film-transcript">
+              <p><strong>Same matches. Better order.</strong> hay is a ranked grep for coding
+                agents. Likely definitions come first, then one result from each file.
+                Complete searches preserve the normalized ripgrep match set; caps or read
+                errors mean incomplete results.</p>
+              <p><strong>The search order moves.</strong> The illustrative
+                <code translate="no">hay validateSession .</code> fixture has six matches in
+                four files. The declaration moves from fourth to first, with all six matches
+                retained. Four different files appear before any file’s second result.
+                <a href="#proof">Read both complete result lists above</a>.</p>
+              <p><strong>Source 0.4.0 features.</strong>
+                <code translate="no">hay --find sesison .</code> finds exact names, substrings
+                and an adjacent typo. <code translate="no">hay --mcp --root .</code> manually
+                starts stdio MCP with <code translate="no">grep</code>,
+                <code translate="no">find_files</code> and <code translate="no">multi_grep</code>.
+                Both use live files. MCP searches stay within explicit Git repository scopes;
+                there is no persistent index or search history.</p>
+              <p><strong>Evidence and limits.</strong> The historical hay 0.3.0
+                definition-finding benchmark is dated 2026-08-28.
+                <a href="#evidence">The table above gives all four corpora, query counts,
+                  MRR values, absolute differences and 95% intervals shown in the film</a>.
+                Definition finding is hay’s home turf, not agent-task success. The documentation
+                track has zero detected wins and four detected regressions. The private
+                behavioral gate still fails and was not rerun for these source-only features.</p>
+              <p><strong>Choose an installation.</strong>
+                <code translate="no">brew install mneves75/tap/hay</code> installs supported
+                binary 0.3.2. Filename discovery and MCP require source
+                0.4.0. <a href="#install">Use the pinned
+                  <code translate="no">--locked</code> source instructions below</a>.
+                The film ends at <span translate="no">mneves75.github.io/hay/</span> for the
+                methods and complete installation instructions.</p>
+            </div>
+          </details>
+          <a class="text-link" href="BENCHMARK_FEYNMAN.html">Start with the method <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></a>
+        </div>
+        <figure>
+          <video controls preload="none" playsinline poster="site/assets/poster.png" aria-label="hay overview film" aria-describedby="film-description film-transcript">
+            <source src="site/assets/hay-benchmark.mp4" type="video/mp4">
+            <a href="site/assets/hay-benchmark.mp4">Download the overview film</a>.
+          </video>
+          <figcaption>hay overview · 36 seconds · silent · text alternative alongside</figcaption>
+        </figure>
+      </section>
+
+      <section id="install" class="installation" aria-labelledby="install-title">
+        <div class="section-heading">
+          <h2 id="install-title">Your terminal.<br>Your choice.</h2>
+          <p class="margin-note">Use the supported release, or build the pinned source for the
+            new filename and MCP modes.</p>
+        </div>
+        <article class="install-option">
+          <div><h3>Homebrew</h3><p>Supported binary 0.3.2.<br>macOS and Linux; prebuilt and attested.</p></div>
+          <div class="command-area">
+            <pre><code id="brew-command" translate="no">brew install mneves75/tap/hay</code></pre>
+            <button class="copy-button" type="button" data-copy-target="brew-command" data-feedback="brew-feedback" hidden>Copy Homebrew command <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 9h11v11H9zM15 5V3H3v12h2"/></svg></button>
+            <p id="brew-feedback" class="copy-feedback" role="status" aria-live="polite"></p>
+          </div>
+        </article>
+        <article class="install-option">
+          <div><h3>Build from source</h3><p>Source 0.4.0.<br>Includes <code translate="no">--find</code> and <code translate="no">--mcp</code>.<br>Requires Rust 1.88 or later.</p></div>
+          <div class="command-area">
+            <pre><code id="source-command" translate="no">git clone https://github.com/mneves75/hay.git
+cd hay
+git checkout --detach 268e41834a0a66d922102edc70a97f5ca82aca8e
+cargo install --locked --path hay</code></pre>
+            <button class="copy-button" type="button" data-copy-target="source-command" data-feedback="source-feedback" hidden>Copy source install <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 9h11v11H9zM15 5V3H3v12h2"/></svg></button>
+            <p id="source-feedback" class="copy-feedback" role="status" aria-live="polite"></p>
+          </div>
+        </article>
+        <p class="install-next">Make your first search, then keep the <a href="MANUAL.html">manual</a>
+          close. Flags, JSON, exit codes and MCP configuration are all there.</p>
+      </section>
+    </main>
+
+    <footer>
+      <a class="wordmark" href="#main" aria-label="hay, back to top" translate="no">hay</a>
+      <p>A ranked grep, built from a negative result.<br>Open source. MIT licensed. No invented wins.</p>
+      <nav aria-label="Footer navigation"><a href="MANUAL.html">Manual</a><a href="benchmark.html">Benchmark</a><a href="BENCHMARK_FEYNMAN.html">Method</a><a href="https://github.com/mneves75/hay">Source</a></nav>
+    </footer>
   </div>
-  <div class="chips">
-    <span class="chip"><b>Rust</b> · MSRV 1.88</span>
-    <span class="chip">no index · no daemon · no state</span>
-    <span class="chip">differential-tested vs rg</span>
-    <span class="chip">exit codes that refuse to lie</span>
-  </div>
-</header>
-
-<main>
-
-<section id="why">
-  <p class="kicker">why hay</p>
-  <h2>One opinion replaces shelf order.</h2>
-  <div class="cards">
-    <div class="card"><span class="tag">the problem</span><h3>Path order is shelf order.</h3>
-      <p>ripgrep is prior-free by design: every match, in walk order. For an agent that reads the
-      first page and acts, a dead planning document sorting before the real function isn't a quirk
-      of ranking — it's the whole answer being wrong.</p></div>
-    <div class="card"><span class="tag">the choice</span><h3>Definitions outrank mentions.</h3>
-      <p>hay adds one prior: a line that <em>declares</em> the thing beats a line that merely names
-      it. Declaration keywords, typed-declaration shapes, key styles — each signal counted before
-      it was coded, each switchable with <code>--no-*</code>.</p></div>
-    <div class="card"><span class="tag">the honesty</span><h3>The win says how weak it is.</h3>
-      <p>The public benchmark's ground truth <em>is</em> declarations — hay's home turf. So the
-      report leads with its own warning, shows intervals, cross-checks with Fisher randomization,
-      and points at the behavioural evaluation nobody designed around the tool. That evaluation
-      still <strong>fails the ship gate written before the first line of Rust</strong>: 0.44 median
-      MRR against 0.50, 78.5% against 80%. The gate has not been moved.</p></div>
-  </div>
-</section>
-
-<section id="film">
-  <p class="kicker">watch</p>
-  <h2>The benchmark in eighteen seconds.</h2>
-  <div class="video">
-    <video controls preload="metadata" poster="assets/poster.png">
-      <source src="assets/hay-benchmark.mp4" type="video/mp4">
-      Your browser does not support embedded video.
-      <a href="assets/hay-benchmark.mp4">Download the benchmark film</a>.
-    </video>
-    <div class="vcap"><b>Ranked grep, measured.</b> Mean reciprocal rank per corpus — muted bars are
-    deterministic <code>rg --sort path</code>, gold is hay. Ground truth comes from ast-grep, a parser
-    independent of every tool under test.</div>
-  </div>
-</section>
-
-<section id="numbers">
-  <p class="kicker">the numbers, animated</p>
-  <h2>MRR by corpus — scroll to grow.</h2>
-  <p class="sub">Mean reciprocal rank of the declaring file against deterministic <code>rg --sort path</code>.
-  This definition-finding track is hay&rsquo;s home turf; the separate docs track has no detected wins and four regressions.
-  Full intervals, exclusions, and tests are in the <a href="benchmark.html">complete report</a>.</p>
-  <div class="chart" id="chart">
-    <div class="crow"><div class="cname">linux kernel</div><div class="cbars">
-      <div class="bar rg" style="--v:.541"></div><div class="bar hay" style="--v:.933"><span class="bval">MRR 0.933</span></div>
-    </div></div>
-    <div class="crow"><div class="cname">openclaw</div><div class="cbars">
-      <div class="bar rg" style="--v:.819"></div><div class="bar hay" style="--v:.928"><span class="bval">MRR 0.928</span></div>
-    </div></div>
-    <div class="crow"><div class="cname">ripgrep source</div><div class="cbars">
-      <div class="bar rg" style="--v:.419"></div><div class="bar hay" style="--v:.877"><span class="bval">MRR 0.877</span></div>
-    </div></div>
-    <div class="crow"><div class="cname">alamofire (swift)</div><div class="cbars">
-      <div class="bar rg" style="--v:.433"></div><div class="bar hay" style="--v:.776"><span class="bval">MRR 0.776</span></div>
-    </div></div>
-    <div class="legend">muted = deterministic rg --sort path · gold = hay · n = 30/30/23/29 sampled queries · ground truth: ast-grep</div>
-  </div>
-</section>
-
-<section id="what">
-  <p class="kicker">what it does</p>
-  <h2>Deliberately narrow, loudly honest.</h2>
-  <div class="cards">
-    <div class="card"><span class="tag">drop-in shape</span><h3>rg-compatible I/O</h3>
-      <p><code>path:line:text</code>, globs, file types, context windows, JSON Lines — combined short
-      flags included, via lexopt. As of 0.3.0 <em>every</em> valid ripgrep invocation has an answer:
-      <code>-c</code>, <code>-v</code>, <code>-o</code> and <code>--stream</code> run unranked, in
-      ripgrep's own traversal, with no candidate cap.</p></div>
-    <div class="card"><span class="tag">the product</span><h3>Definition-first ranking</h3>
-      <p>Four signals and a file-interleaved layout, each with an ablation switch
-      (<code>--no-definition</code>, <code>--no-path</code>, <code>--no-word</code>,
-      <code>--no-tf</code>, <code>--no-diversify</code>): a contribution you cannot switch off is a
-      belief, not a measurement. Six more were built, measured and deleted — the latest, opt-in task
-      hints, won the public benchmark and lost its pre-registered private confirmation.</p></div>
-    <div class="card"><span class="tag">for agents</span><h3>Loud by design</h3>
-      <p>Candidate cap hit? stderr notice plus exit 2. Flag refused? The reason, out loud, with the
-      ripgrep equivalent named. Quiet wrong answers are the defect this tool exists to prevent.</p></div>
-    <div class="card"><span class="tag">verified</span><h3>Differential-tested</h3>
-      <p>Every change to walking, matching, or output must return exactly ripgrep's matches — the
-      harness has caught three defects no unit test could see.</p></div>
-  </div>
-</section>
-
-<section id="install">
-  <p class="kicker">install</p>
-  <h2>One line.</h2>
-<pre tabindex="0">brew install mneves75/tap/hay     # macOS and Linux, prebuilt and attested
-hay validateSession src/          # best answer first
-
-# or from source:
-git clone https://github.com/mneves75/hay.git &amp;&amp; cd hay &amp;&amp; cargo install --path hay</pre>
-  <p style="margin-top:1.2rem">Then read the <a href="MANUAL.html">manual</a> — every flag, the JSON
-  contract, exit codes — or the <a href="benchmark.html">full benchmark report</a>, or how all of it
-  works <a href="BENCHMARK_FEYNMAN.html">from zero</a>.</p>
-</section>
-
-</main>
-
-<footer>
-  hay — a ranked grep for coding agents ·
-  <a href="https://github.com/mneves75/hay">source</a> ·
-  <a href="MANUAL.html">manual</a> ·
-  <a href="benchmark.html">benchmark report</a> ·
-  numbers regenerate from <code>bun benchmark.ts</code> · built with Remotion for the film
-</footer>
-
-</div>
-<script>
-// Scroll-triggered bar growth + value reveal. IntersectionObserver because scroll handlers jank.
-const rows = document.querySelectorAll("#chart .cbars");
-const io = new IntersectionObserver((es) => {
-  for (const e of es) if (e.isIntersecting) { e.target.closest(".crow").classList.add("on"); io.unobserve(e.target); }
-}, { threshold: 0.35 });
-rows.forEach((r) => io.observe(r));
-</script>
 </body>
 </html>
