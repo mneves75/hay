@@ -154,8 +154,9 @@ Above 20,000 candidates it exits 2 and identifies the incomplete
 prescore-retained set on stderr. Ordinary invocation has no index, daemon or persistent state.
 `--mcp` explicitly starts the optional stdio service; `--find` discovers live filenames.
 Every flag, output format, traversal difference, and exit code is documented in the
-[manual](https://mneves75.github.io/hay/MANUAL.html) — an offline, self-contained page with
-search.
+[manual](https://mneves75.github.io/hay/MANUAL.html), with section search and selectable
+commands. Its editorial revision is available in the [beta manual](https://mneves75.github.io/hay/beta/MANUAL.html).
+The packaged manual uses local assets; retain the complete public bundle for offline reading.
 
 ```bash
 brew install mneves75/tap/hay
