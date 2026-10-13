@@ -205,3 +205,10 @@ inputs, symlinks, missing document dependencies and nonempty output. The manifes
 payload file except itself. Preserve the legacy Pages document/media URLs. The beta subtree is
 public on shared Pages infrastructure. Website tags use `site-vX.Y.Z-betaN` / `site-vX.Y.Z`;
 binary releases retain the protected workflow and mandatory Homebrew update.
+
+The silent overview film is editable in `site/video-src`, with a frozen storyboard at
+`docs/specs/editorial-landing/film.md`. Run its public-input preparation tests, lint, build
+and dependency audit; inspect actual exported scene/transition frames, decode the full file
+and verify duration, dimensions, frame rate and absence of audio. Keep the page's complete
+text alternative, poster and asset provenance synchronized. Do not invent fresh benchmark
+numbers or imply source-only features are in Homebrew.

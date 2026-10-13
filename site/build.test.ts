@@ -67,6 +67,19 @@ afterEach(async () => {
 });
 
 describe("public website packaging", () => {
+  test("the silent overview has a complete on-page text alternative", async () => {
+    const html = await readFile(fileURLToPath(new URL("../index.html", import.meta.url)), "utf8");
+    expect(html).toContain('aria-describedby="film-description film-transcript"');
+    expect(html).toContain("36 seconds · silent");
+    const transcript = html.match(/<div id="film-transcript">([\s\S]*?)<\/div>/)?.[1]?.replace(/\s+/g, " ");
+    expect(transcript).toBeDefined();
+    for (const phrase of ["Same matches. Better order.", "fourth to first", "all six matches",
+      "hay --find sesison .", "hay --mcp --root .", "{{SOURCE_VERSION}}", "{{HOMEBREW_VERSION}}",
+      "{{BENCHMARK_DATE}}", "{{BENCHMARK_VERSION}}", "95% intervals", "four detected regressions",
+      "private behavioral gate still fails", "brew install mneves75/tap/hay"])
+      expect(transcript).toContain(phrase);
+  });
+
   test("builds a deterministic allowlisted beta with pinned identity and content hashes", async () => {
     const { root, sha } = await fixture();
     const build = (directory: string) => buildSite({ sourceRoot: root, outputDir: join(root, directory),

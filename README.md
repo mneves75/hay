@@ -20,6 +20,9 @@ source-only capabilities, installation choices and dated evidence. Its editorial
 delivery plan live in [plan 004](plans/004-editorial-landing.md) and
 [plan 005](plans/005-website-delivery.md). Website tags are separate from binary releases;
 `site-v0.4.0` never implies an installable 0.4.0 Homebrew archive.
+The editorial film is a 36-second silent overview with an on-page text alternative;
+its [editable source and render commands](site/video-src/README.md) preserve the public
+fixture results and dated evidence rather than presenting a new measurement.
 
 ```bash
 hay --find sesison .                 # live filename search, including an adjacent typo

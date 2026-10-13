@@ -1,26 +1,30 @@
-# Benchmark film source
+# hay editorial film
 
-Remotion composition for `assets/hay-benchmark.mp4` on the GitHub Pages branch. The video build
-tooling stays separate from the measurement tooling.
+Editable Remotion source for the website's silent 36-second overview. The composition ID
+remains `HayBenchmark`. The five scenes have standalone Studio timelines.
 
-The composition imports `../../evidence/benchmark.json` and `../../evidence/docs-track.json` at
-build time. It derives the usable `hay`/deterministic-`rg` bars and the documentation
-counter-result from those files. Rendering fails if the evidence no longer supports the
-four-corpus layout, stable-order comparison, or documentation summary.
-
-The film contains no hand-copied scores, narration, or soundtrack. Renders pass `--muted` so the
-MP4 does not carry a phantom silent audio track. Its install command defaults to the stable
-evidence version; a beta render must pass a matching beta ref so the shown command resolves before
-the stable tag exists. Refresh both evidence files and re-render the film together whenever a
-release publishes new public benchmark results.
+`scripts/prepare.mjs` derives the exact real-binary illustrative outputs, historical public
+benchmark rows/date/version, source/Homebrew availability and palette from known public inputs.
+It copies the already licensed self-hosted Archivo font into generated `public/`. No transcript,
+private corpus, narration, soundtrack or runtime font service is used.
 
 ```bash
 cd site/video-src
 pnpm install --frozen-lockfile
+pnpm test
+pnpm dev --no-open --port 8460
+pnpm lint
+pnpm build
+pnpm audit --audit-level high
 pnpm render
-
-# Staging example
-pnpm exec remotion render HayBenchmark out/hay-benchmark.mp4 --props='{"releaseRef":"v0.1.4-beta1"}' --muted
 ```
 
-Copy `out/hay-benchmark.mp4` to the Pages branch's `assets/` directory.
+Preparation runs before Studio, lint, bundle and render; generated public files are ignored.
+Edit scene source, not generated data. Animation depends only on frames; exact scores stay
+visible rather than counting through invented intermediate values. `--muted` avoids a silent
+audio track. Inspect the MP4 and poster before replacing `../assets/hay-benchmark.mp4` and
+`../assets/poster.png`, then verify the website bundle and actual beta playback.
+
+The full storyboard and release constraints live in
+[film.md](../../docs/specs/editorial-landing/film.md). Historical benchmark data is not a new
+measurement of source 0.4.0, and the private behavioral gate remains failed.

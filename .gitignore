@@ -6,6 +6,7 @@ hay/target/
 node_modules/
 site/video-src/build/
 site/video-src/out/
+site/video-src/public/
 
 # Local environment files may contain secrets or personal paths.
 .env

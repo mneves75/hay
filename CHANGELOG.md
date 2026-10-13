@@ -28,6 +28,12 @@ history lives in git and `memory/`.
 - Added deterministic, explicitly allowlisted website packaging with source identity, payload
   hashes, dependency checks and privacy/overwrite controls. Website tags use `site-v0.4.0-betaN`
   and `site-v0.4.0`; they do not publish a binary or change the Homebrew release.
+- Rebuilt the landing film as a 36-second silent editorial overview: all six illustrative
+  matches visibly reorder, source-only filename/MCP availability stays adjacent, and dated
+  evidence includes the documentation regressions and failed private gate. Added a complete
+  expandable text alternative, a matching exported poster, deterministic public-input
+  preparation and entry-point tests. The private film package is 1.1.0; source/binary versions
+  and ranking measurements are unchanged.
 - Extracted the existing content engine behind a thin CLI and internal adapters; ordinary
   scoring and ranking weights remain unchanged. Filename and content search share visibility
   policy. MCP globs are root-relative; ordinary CLI globs retain working-directory semantics.
