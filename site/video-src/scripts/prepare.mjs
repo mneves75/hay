@@ -54,8 +54,10 @@ function docsResult(bytes, benchmark) {
   const data = JSON.parse(bytes);
   if (data.meta?.date !== benchmark.date || data.meta?.versions?.hay !== benchmark.version)
     throw new Error("Historical tracks have different identities");
-  const corpora = data.corpora?.filter(row => Array.isArray(row.queries) && row.queries.length >= 10);
-  if (!corpora?.length) throw new Error("Missing documentation comparison");
+  if (!Array.isArray(data.corpora) || data.corpora.some(row => !Array.isArray(row?.queries)))
+    throw new Error("Malformed documentation corpus");
+  const corpora = data.corpora.filter(row => row.queries.length >= 10);
+  if (!corpora.length) throw new Error("Missing documentation comparison");
   let wins = 0;
   let regressions = 0;
   for (const corpus of corpora) {

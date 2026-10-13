@@ -1,17 +1,9 @@
-import {Series, useVideoConfig} from "remotion";
-import {OpeningScene} from "./OpeningScene";
-import {OrderScene} from "./OrderScene";
-import {FeaturesScene} from "./FeaturesScene";
-import {EvidenceScene} from "./EvidenceScene";
-import {InstallScene} from "./InstallScene";
+import {Series} from "remotion";
+import {fps, scenes} from "./scenes";
 
 export function HayBenchmark() {
-  const {fps} = useVideoConfig();
   return <Series>
-    <Series.Sequence name="Promise" durationInFrames={4 * fps} premountFor={fps}><OpeningScene/></Series.Sequence>
-    <Series.Sequence name="Same matches, better order" durationInFrames={12 * fps} premountFor={fps}><OrderScene/></Series.Sequence>
-    <Series.Sequence name="Source-only features" durationInFrames={7 * fps} premountFor={fps}><FeaturesScene/></Series.Sequence>
-    <Series.Sequence name="Dated evidence and limits" durationInFrames={8 * fps} premountFor={fps}><EvidenceScene/></Series.Sequence>
-    <Series.Sequence name="Installation choices" durationInFrames={5 * fps} premountFor={fps}><InstallScene/></Series.Sequence>
+    {scenes.map(scene => <Series.Sequence key={scene.id} name={scene.name}
+      durationInFrames={scene.frames} premountFor={fps}><scene.component/></Series.Sequence>)}
   </Series>;
 }

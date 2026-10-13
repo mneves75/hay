@@ -95,6 +95,20 @@ test("undated benchmark input fails rather than inventing current evidence", asy
   assert.match(result.stderr, /date|identity/i);
 });
 
+test("malformed documentation corpora cannot silently reduce the regression count", async () => {
+  for (const broken of [undefined, "not an array"]) {
+    const f = await fixture();
+    const file = join(f.root, "evidence/docs-track.json");
+    const data = JSON.parse(await readFile(file, "utf8"));
+    data.corpora[1].queries = broken;
+    await writeFile(file, JSON.stringify(data));
+    const result = run(f);
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /documentation|corpus/i);
+    await assert.rejects(readdir(f.publicDir), /ENOENT/);
+  }
+});
+
 test("symlinked known input cannot copy unrelated content", async () => {
   const f = await fixture();
   const font = join(f.root, "site/assets/archivo-latin.woff2");
