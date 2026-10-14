@@ -12,11 +12,14 @@ ship gate — by 1.5 points on one of its two criteria, against 20 points at 0.1
 
 Source version **0.4.0** adds opt-in live filename discovery and a manually started stdio MCP
 server. Ordinary content ranking is unchanged. There is no persistent index, watcher, search
-history or new speed claim. The supported Homebrew release remains 0.3.2 until the existing
-attested release process publishes a new version.
+history or new speed claim. The supported Homebrew release is now **0.4.0**, built from
+`660221a0aa712480fa03613fc35496c3e9e06771` by the protected, attested release process.
+See the [binary release record](docs/specs/fsearch-transfer/release.md).
 
 The [website](https://mneves75.github.io/hay/) presents a complete illustrative search,
-source-only capabilities, installation choices and dated evidence. Its editorial design and
+capabilities, installation choices and dated evidence. Its frozen website/film snapshot predates
+the binary release and labels the new interfaces as source-only. Current Homebrew availability
+is recorded above. Its editorial design and
 delivery plan live in [plan 004](plans/004-editorial-landing.md) and
 [plan 005](plans/005-website-delivery.md). Website tags are separate from binary releases;
 `site-v0.4.0` never implies an installable 0.4.0 Homebrew archive.

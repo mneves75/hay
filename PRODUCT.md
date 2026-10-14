@@ -27,8 +27,9 @@ persistent index, watcher or automatic history is part of the delivered implemen
 ## Operating Context
 
 Source version 0.4.0 adds explicit live filename discovery and stdio MCP. The supported
-Homebrew binary is still 0.3.2 until the protected binary release and tap update occur.
-Source installation can access the merged 0.4.0 implementation. Ordinary CLI behavior remains
+Homebrew binary is now 0.4.0 after the protected binary release and attestation-verified tap update.
+The frozen `site-v0.4.0` website/film predates that release and retains its then-current labels.
+Source and Homebrew installation can access the 0.4.0 implementation. Ordinary CLI behavior remains
 the product contract. The website publishes on the existing GitHub Pages gh-pages branch.
 
 ## Capabilities and Constraints

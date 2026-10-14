@@ -211,7 +211,10 @@ binary releases retain the protected workflow and mandatory Homebrew update.
 The approved production website is `site-v0.4.0` from frozen source
 `268e41834a0a66d922102edc70a97f5ca82aca8e`. Its actual delivery/rollback evidence is in
 `docs/specs/editorial-landing/production-evidence.md`; this does not release a Rust archive
-or update the supported Homebrew 0.3.2 binary. Keep website and binary identities separate.
+or update a Homebrew binary. The later binary `v0.4.0` from
+`660221a0aa712480fa03613fc35496c3e9e06771` is published and supported by Homebrew;
+see `docs/specs/fsearch-transfer/release.md`. Keep website and binary identities separate,
+including the website/film's historical source-only labels.
 
 The silent overview film is editable in `site/video-src`, with a frozen storyboard at
 `docs/specs/editorial-landing/film.md`. Run its public-input preparation tests, lint, build

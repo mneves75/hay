@@ -19,6 +19,13 @@ useful than what was attempted:
 
 ## Decisions, and why
 
+**Homebrew 0.4.0 is released** (2026-10-13 locally). The owner approved binary `v0.4.0`
+at `660221a0aa712480fa03613fc35496c3e9e06771`, separately from the website. Five platform
+builds and provenance passed; a fresh source-blind Astra context passed three actual-archive
+criteria. Generated formula commit `de9da2a` is pushed in `mneves75/homebrew-tap`.
+The Mac installation upgraded to 0.4.0. The frozen website/film labels remain historical;
+no new retrieval or speed claim. See `docs/specs/fsearch-transfer/release.md`.
+
 **The manual is part of the website** (2026-10-13). The owner approved beta2 but identified
 the missed legacy manual. It now shares the approved Archivo/white/charcoal/green design,
 with packaged version/source identity, desktop/mobile contents and JavaScript-free reading.

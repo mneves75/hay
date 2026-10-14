@@ -9,7 +9,14 @@ history lives in git and `memory/`.
 - Published the approved editorial landing page, complete 36-second film and redesigned manual to production; beta3 remains available and legacy media URLs are preserved. [Production verification](docs/specs/editorial-landing/production-evidence.md) records identity, hashes, independent live checks and rollback.
 - This website tag does not release the Rust binary: source 0.4.0 remains unreleased below and the supported Homebrew binary remains 0.3.2.
 
-## [Unreleased — 0.4.0]
+## [Unreleased — 0.4.1]
+
+## [0.4.0] — 2026-10-13
+
+Published the attested binary from `660221a0aa712480fa03613fc35496c3e9e06771` and updated
+the supported Homebrew formula. Publication timestamp: 2026-10-14 01:35 UTC (October 13 locally).
+See the [binary release record](docs/specs/fsearch-transfer/release.md). The website entry above
+records its earlier state; this binary release makes filename discovery and MCP available in Homebrew.
 
 ### Added
 
