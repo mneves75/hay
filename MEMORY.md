@@ -26,6 +26,13 @@ criteria. Generated formula commit `de9da2a` is pushed in `mneves75/homebrew-tap
 The Mac installation upgraded to 0.4.0. The frozen website/film labels remain historical;
 no new retrieval or speed claim. See `docs/specs/fsearch-transfer/release.md`.
 
+**Pending website/video follow-up** (owner requested "take note", 2026-10-13 locally).
+The frozen `site-v0.4.0` website and overview film still label filename/MCP capabilities as
+source-only and show the earlier Homebrew 0.3.2 availability. Prepare updated availability
+labels in a new website candidate when authorized; do not move existing tags. Preserve dated
+benchmark evidence and the failed private retrieval gate. The Homebrew update did not redeploy
+the website or rerender the video.
+
 **The manual is part of the website** (2026-10-13). The owner approved beta2 but identified
 the missed legacy manual. It now shares the approved Archivo/white/charcoal/green design,
 with packaged version/source identity, desktop/mobile contents and JavaScript-free reading.
