@@ -11,7 +11,7 @@
     "@remotion/fonts": "4.0.515",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "remotion": "4.0.515"
+    "remotion": "4.0.523"
   },
   "devDependencies": {
     "@remotion/eslint-config-flat": "4.0.515",
