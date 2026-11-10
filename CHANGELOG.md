@@ -11,6 +11,13 @@ history lives in git and `memory/`.
 
 ## [Unreleased — 0.4.1]
 
+### Changed
+
+- Agent instructions: the Homebrew formula step in `AGENTS.md` writes to the tap clone that
+  `brew --repository mneves75/homebrew-tap` resolves, not a missing `../homebrew-tap`. A new
+  `.claude/settings.json` refuses force-adding `corpus/` and removing or moving the release
+  workflow, asks before editing it, and adds a Stop gate (Rust tests, typecheck, ast-grep lint).
+
 ## [0.4.0] — 2026-10-13
 
 Published the attested binary from `660221a0aa712480fa03613fc35496c3e9e06771` and updated
