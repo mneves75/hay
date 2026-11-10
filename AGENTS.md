@@ -78,7 +78,7 @@ a line scored.
 4. **A release is not finished until the Homebrew formula is bumped.** The tap
    (`mneves75/homebrew-tap`) is the supported install path, so a published tag whose formula still
    points at the previous version is a release nobody can install. Run
-   `./brew-formula.sh vX.Y.Z > ../homebrew-tap/Formula/hay.rb` — it takes the checksums from the
+   `./brew-formula.sh vX.Y.Z > "$(brew --repository mneves75/homebrew-tap)/Formula/hay.rb"` — it takes the checksums from the
    release's own manifest and refuses to emit one for an archive whose build-provenance
    attestation does not verify, so the formula can never describe a binary nobody can trace.
    Never hand-edit the urls or hashes. Releases are cut by creating a lightweight `v*` tag at a
